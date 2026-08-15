@@ -33,7 +33,7 @@ class HppIndex extends Component
     public $tipe_output = 'produk_jadi'; // 'produk_jadi' | 'setengah_jadi'
     public $mode_perhitungan = 'satuan'; // 'satuan' | 'batch'
     public $bahan_baku = [];
-    public $alokasi_biaya_tetap = 3800; // default
+    public $alokasi_biaya_tetap = ''; // default kosong agar menampilkan placeholder 0
     public $kenaikan_persen = 0; // slider
     public $selected_tier = 'standar'; // 'kompetitif' | 'standar' | 'premium'
 
@@ -77,7 +77,8 @@ class HppIndex extends Component
                 $this->nama_produk = $product->name;
                 $this->category_id = $product->category_id;
                 $this->price = (float) $product->price;
-                $this->alokasi_biaya_tetap = 3800;
+                $cost = (float) ($product->operational_cost ?? 0);
+                $this->alokasi_biaya_tetap = $cost > 0 ? $cost : '';
                 $this->kenaikan_persen = 0;
                 $this->selected_tier = 'standar';
                 
@@ -86,16 +87,16 @@ class HppIndex extends Component
                     foreach ($product->ingredients as $ing) {
                         $this->bahan_baku[] = [
                             'nama' => $ing->name,
-                            'takaran' => (float) $ing->amount,
+                            'takaran' => ((float) $ing->amount > 0) ? (float) $ing->amount : '',
                             'satuan_takaran' => $ing->unit,
-                            'harga_beli' => (float) $ing->buy_price,
-                            'jumlah_beli' => (float) $ing->buy_amount,
+                            'harga_beli' => ((float) $ing->buy_price > 0) ? (float) $ing->buy_price : '',
+                            'jumlah_beli' => ((float) $ing->buy_amount > 0) ? (float) $ing->buy_amount : 1,
                             'satuan_beli' => $ing->buy_unit,
                             'subtotal' => (float) $ing->subtotal,
                         ];
                     }
                     $this->syncSelectedTier();
-                    $this->notify('info', 'Memuat resep bahan baku yang tersimpan untuk ' . $product->name);
+                    $this->notify('info', 'Memuat resep & biaya operasional tersimpan untuk ' . $product->name);
                 } else {
                     $this->bahan_baku = [];
                     $this->addIngredientRow();
@@ -108,6 +109,7 @@ class HppIndex extends Component
             $this->nama_produk = '';
             $this->category_id = '';
             $this->price = 0;
+            $this->alokasi_biaya_tetap = '';
             $this->kenaikan_persen = 0;
             $this->selected_tier = 'standar';
             $this->bahan_baku = [];
@@ -183,9 +185,9 @@ class HppIndex extends Component
     {
         $this->bahan_baku[] = [
             'nama' => '',
-            'takaran' => 0,
+            'takaran' => '',
             'satuan_takaran' => 'gram',
-            'harga_beli' => 0,
+            'harga_beli' => '',
             'jumlah_beli' => 1,
             'satuan_beli' => 'kg',
             'subtotal' => 0
@@ -203,10 +205,10 @@ class HppIndex extends Component
         if (!isset($this->bahan_baku[$index])) return;
 
         $row = $this->bahan_baku[$index];
-        $amount = (float) ($row['takaran'] ?? 0);
+        $amount = !empty($row['takaran']) ? (float) $row['takaran'] : 0;
         $unit = $row['satuan_takaran'] ?? 'gram';
-        $buyPrice = (float) ($row['harga_beli'] ?? 0);
-        $buyAmount = (float) ($row['jumlah_beli'] ?? 1);
+        $buyPrice = !empty($row['harga_beli']) ? (float) $row['harga_beli'] : 0;
+        $buyAmount = !empty($row['jumlah_beli']) ? (float) $row['jumlah_beli'] : 1;
         $buyUnit = $row['satuan_beli'] ?? 'kg';
 
         $pricePerBuyUnit = $buyAmount > 0 ? $buyPrice / $buyAmount : 0;
@@ -254,6 +256,8 @@ class HppIndex extends Component
                 $this->bahan_baku = [];
                 foreach ($data as $item) {
                     $item['subtotal'] = 0;
+                    $item['takaran'] = !empty($item['takaran']) ? $item['takaran'] : '';
+                    $item['harga_beli'] = !empty($item['harga_beli']) ? $item['harga_beli'] : '';
                     $this->bahan_baku[] = $item;
                     $this->calculateSubtotal(count($this->bahan_baku) - 1);
                 }
@@ -271,7 +275,7 @@ class HppIndex extends Component
     public function hppCalculation()
     {
         $totalVariable = collect($this->bahan_baku)->sum('subtotal');
-        $biayaTetap = (float) $this->alokasi_biaya_tetap;
+        $biayaTetap = !empty($this->alokasi_biaya_tetap) ? (float) $this->alokasi_biaya_tetap : 0;
         $totalHpp = $totalVariable + $biayaTetap;
         
         $kenaikan = (float) $this->kenaikan_persen;
@@ -369,6 +373,7 @@ class HppIndex extends Component
                 'category_id' => $categoryId,
                 'sku' => $sku,
                 'harga_beli' => $totalHpp,
+                'operational_cost' => (float) $this->alokasi_biaya_tetap,
                 'price' => $sellingPrice,
                 'stock' => 999,
                 'description' => 'Menu racikan via Kalkulator HPP & AI Pricing Strategy',
@@ -378,6 +383,7 @@ class HppIndex extends Component
             $updateData = [
                 'name' => $this->nama_produk,
                 'harga_beli' => $totalHpp,
+                'operational_cost' => (float) $this->alokasi_biaya_tetap,
             ];
             
             if (!empty($this->category_id)) {

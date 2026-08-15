@@ -491,7 +491,7 @@
                                                 <span class="group relative cursor-pointer">
                                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                     <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2.5 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl hidden group-hover:block z-20 text-center font-normal">
-                                                        Alokasi listrik, cup kemasan, air & gas per porsi.
+                                                        Alokasi listrik, air & gas per porsi.
                                                     </div>
                                                 </span>
                                             </div>
@@ -500,7 +500,7 @@
                                     </div>
                                     <div class="relative w-28">
                                         <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-bold text-slate-400 pointer-events-none">Rp</span>
-                                        <input type="number" wire:model.live.debounce.400ms="alokasi_biaya_tetap" class="w-full pl-8 pr-2 py-1.5 text-sm font-bold text-right bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
+                                        <input type="number" wire:model.live.debounce.400ms="alokasi_biaya_tetap" placeholder="0" class="w-full pl-8 pr-2 py-1.5 text-sm font-bold text-right bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
                                     </div>
                                 </div>
                                 

@@ -18,6 +18,7 @@ class Product extends Model
         'stock',
         'barcode',
         'harga_beli',
+        'operational_cost',
         'image'
     ];
     
