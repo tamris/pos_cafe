@@ -46,6 +46,29 @@ class HppIndex extends Component
         }
     }
 
+    public function syncSelectedTier()
+    {
+        $tiers = $this->pricingTiers();
+        if (empty($tiers) || $this->price <= 0) {
+            $this->selected_tier = 'standar';
+            return;
+        }
+
+        $currentPrice = (float) $this->price;
+        $closestTier = 'standar';
+        $minDiff = PHP_FLOAT_MAX;
+
+        foreach ($tiers as $key => $data) {
+            $diff = abs($currentPrice - (float) $data['harga']);
+            if ($diff < $minDiff) {
+                $minDiff = $diff;
+                $closestTier = $key;
+            }
+        }
+
+        $this->selected_tier = $closestTier;
+    }
+
     public function updatedSelectedProductId($value)
     {
         if (!empty($value)) {
@@ -55,6 +78,8 @@ class HppIndex extends Component
                 $this->category_id = $product->category_id;
                 $this->price = (float) $product->price;
                 $this->alokasi_biaya_tetap = 3800;
+                $this->kenaikan_persen = 0;
+                $this->selected_tier = 'standar';
                 
                 if ($product->ingredients->count() > 0) {
                     $this->bahan_baku = [];
@@ -69,10 +94,12 @@ class HppIndex extends Component
                             'subtotal' => (float) $ing->subtotal,
                         ];
                     }
+                    $this->syncSelectedTier();
                     $this->notify('info', 'Memuat resep bahan baku yang tersimpan untuk ' . $product->name);
                 } else {
                     $this->bahan_baku = [];
                     $this->addIngredientRow();
+                    $this->selected_tier = 'standar';
                     $this->notify('info', 'Produk ' . $product->name . ' dipilih. Silakan isi bahan baku atau gunakan AI.');
                 }
             }
@@ -81,6 +108,8 @@ class HppIndex extends Component
             $this->nama_produk = '';
             $this->category_id = '';
             $this->price = 0;
+            $this->kenaikan_persen = 0;
+            $this->selected_tier = 'standar';
             $this->bahan_baku = [];
             $this->addIngredientRow();
         }
@@ -91,6 +120,7 @@ class HppIndex extends Component
         $tiers = $this->pricingTiers();
         if (isset($tiers[$tierKey])) {
             $this->price = $tiers[$tierKey]['harga'];
+            $this->selected_tier = $tierKey;
             $this->notify('success', 'Harga jual kasir disetel ke Rp ' . number_format($this->price, 0, ',', '.') . ' (' . ucfirst($tierKey) . ')');
         }
     }
@@ -227,6 +257,7 @@ class HppIndex extends Component
                     $this->bahan_baku[] = $item;
                     $this->calculateSubtotal(count($this->bahan_baku) - 1);
                 }
+                $this->syncSelectedTier();
                 $this->notify('success', 'Berhasil mendapatkan rekomendasi resep AI untuk ' . $this->nama_produk);
             } else {
                 $this->notify('error', 'Gagal mem-parsing respons AI. Pastikan nama produk spesifik (misal: "Kopi Susu Gula Aren").');

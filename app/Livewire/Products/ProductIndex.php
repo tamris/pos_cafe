@@ -68,10 +68,75 @@ class ProductIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedCategoryId($value)
+    {
+        if (!$this->isEdit) {
+            $this->sku = $this->generateSku($value);
+        }
+    }
+
+    public function generateSku($categoryId = null)
+    {
+        $prefix = 'PRD';
+
+        $catId = $categoryId ?: $this->category_id;
+        if ($catId) {
+            $category = Category::find($catId);
+            if ($category) {
+                $catName = strtolower($category->name);
+                if (str_contains($catName, 'coffee') && !str_contains($catName, 'non-coffee')) {
+                    $prefix = 'COF';
+                } elseif (str_contains($catName, 'non-coffee') || str_contains($catName, 'tea')) {
+                    $prefix = 'NCF';
+                } elseif (str_contains($catName, 'pastry') || str_contains($catName, 'bakery')) {
+                    $prefix = 'PST';
+                } elseif (str_contains($catName, 'food') || str_contains($catName, 'main course')) {
+                    $prefix = 'FOD';
+                } elseif (str_contains($catName, 'snack')) {
+                    $prefix = 'SNK';
+                } else {
+                    $clean = preg_replace('/[^A-Za-z0-9]/', '', $category->name);
+                    $prefix = strtoupper(substr($clean, 0, 3));
+                    if (strlen($prefix) < 3) {
+                        $prefix = 'PRD';
+                    }
+                }
+            }
+        }
+
+        // Cari nomor urut terbesar dari SKU dengan prefix tersebut
+        $existingSkus = Product::where('sku', 'LIKE', $prefix . '%')->pluck('sku');
+        $maxNum = 0;
+        foreach ($existingSkus as $existingSku) {
+            if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $existingSku, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        $nextNum = $maxNum + 1;
+        $newSku = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+
+        while (Product::where('sku', $newSku)->exists()) {
+            $nextNum++;
+            $newSku = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+        }
+
+        return $newSku;
+    }
+
+    public function regenerateSku()
+    {
+        $this->sku = $this->generateSku($this->category_id);
+    }
+
     public function openModal()
     {
-        $this->showModal = true;
         $this->resetForm();
+        $this->sku = $this->generateSku();
+        $this->showModal = true;
     }
 
     public function closeModal()
@@ -89,6 +154,10 @@ class ProductIndex extends Component
 
     public function save()
     {
+        if (empty(trim($this->sku))) {
+            $this->sku = $this->generateSku($this->category_id);
+        }
+
         if ($this->isEdit) {
             $this->rules['sku'] = 'required|unique:products,sku,' . $this->productId;
             $this->rules['barcode'] = 'nullable|string|unique:products,barcode,' . $this->productId;
