@@ -339,7 +339,7 @@ class HppIndex extends Component
                 'sku' => $sku,
                 'harga_beli' => $totalHpp,
                 'price' => $sellingPrice,
-                'stock' => 0,
+                'stock' => 999,
                 'description' => 'Menu racikan via Kalkulator HPP & AI Pricing Strategy',
             ]);
         } else {

@@ -134,17 +134,7 @@
                 </div>
             </div>
 
-            @if ($lowStockProducts > 0)
-                <div class="mb-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-center gap-4">
-                    <div class="p-2 bg-amber-100 dark:bg-amber-800 rounded-full text-amber-600 dark:text-amber-200">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-amber-900 dark:text-amber-100">Peringatan Stok Rendah!</h4>
-                        <p class="text-sm text-amber-700 dark:text-amber-200/80">Ada <b>{{ $lowStockProducts }} produk</b> yang stoknya menipis (kurang dari 10). Segera lakukan restock.</p>
-                    </div>
-                </div>
-            @endif
+
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow p-6">

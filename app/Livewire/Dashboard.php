@@ -17,7 +17,6 @@ class Dashboard extends Component
     public $totalCategories;
     public $todayTransactions;
     public $todayRevenue;
-    public $lowStockProducts;
     public $recentTransactions;
     public $topProducts;
     public $todayProfit;
@@ -44,7 +43,6 @@ class Dashboard extends Component
         $this->todayProfit = Transaction::whereDate('transactions.created_at', today())
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.profit');
-        $this->lowStockProducts = Product::where('stock', '<', 10)->count();
 
         // Data Kemarin untuk Komparasi (Growth %)
         $yesterday = now()->subDay();
