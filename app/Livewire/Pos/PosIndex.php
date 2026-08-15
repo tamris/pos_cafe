@@ -15,7 +15,6 @@ use Livewire\Attributes\Title;
 #[Title('POS Kasir - Cafe Noli')]
 class PosIndex extends Component
 {
-    public $categories;
     public $products = [];
     public $selectedCategory = '';
     public $search = '';
@@ -31,6 +30,9 @@ class PosIndex extends Component
     // Cafe Specific State
     public $orderType = 'dine_in'; // dine_in, take_away, delivery
     public $tableNumber = '';
+    public $selectedTable = '';
+    public $customTableNumber = '';
+    public $isCustomTable = false;
     public $customerName = '';
 
     // Item Customization State
@@ -49,7 +51,6 @@ class PosIndex extends Component
 
     public function mount()
     {
-        $this->categories = Category::all();
         $this->loadProducts();
     }
 
@@ -59,11 +60,55 @@ class PosIndex extends Component
         $this->dispatch('show-toast', type: $type, message: $message);
     }
 
+    public function selectCategory($categoryId = '')
+    {
+        $this->selectedCategory = $categoryId;
+        $this->loadProducts();
+    }
+
+    public function clearSearch()
+    {
+        $this->search = '';
+        $this->loadProducts();
+    }
+
+    public function getCartQuantity($productId)
+    {
+        $qty = 0;
+        foreach ($this->cart as $item) {
+            if ($item['id'] == $productId) {
+                $qty += $item['quantity'];
+            }
+        }
+        return $qty;
+    }
+
+    public function updatedSelectedTable($val)
+    {
+        if ($val === 'custom') {
+            $this->isCustomTable = true;
+            $this->tableNumber = $this->customTableNumber;
+        } else {
+            $this->isCustomTable = false;
+            $this->tableNumber = $val;
+        }
+    }
+
+    public function updatedCustomTableNumber($val)
+    {
+        if ($this->isCustomTable) {
+            $this->tableNumber = $val;
+        }
+    }
+
     public function setOrderType($type)
     {
         $this->orderType = $type;
         if ($type !== 'dine_in') {
             $this->tableNumber = '';
+            $this->selectedTable = '';
+            $this->customTableNumber = '';
+            $this->isCustomTable = false;
         } else {
             $this->customerName = '';
         }
@@ -240,6 +285,9 @@ class PosIndex extends Component
         $this->paymentMethod = 'cash';
         $this->orderType = 'dine_in';
         $this->tableNumber = '';
+        $this->selectedTable = '';
+        $this->customTableNumber = '';
+        $this->isCustomTable = false;
         $this->customerName = '';
         $this->loadProducts();
         $this->showMobileCart = false;
@@ -272,23 +320,76 @@ class PosIndex extends Component
         }
 
         $this->showPaymentModal = true;
+        if ($this->paymentMethod !== 'cash') {
+            $this->paid = $this->total;
+            $this->change = 0;
+        } else {
+            $this->paid = $this->total;
+            $this->calculateChange();
+        }
+    }
+
+    public function setPaymentMethod($method)
+    {
+        $this->paymentMethod = $method;
+        if ($method !== 'cash') {
+            $this->paid = $this->total;
+            $this->change = 0;
+        } else {
+            $this->calculateChange();
+        }
+    }
+
+    public function updatedPaymentMethod()
+    {
+        if ($this->paymentMethod !== 'cash') {
+            $this->paid = $this->total;
+            $this->change = 0;
+        } else {
+            $this->calculateChange();
+        }
+    }
+
+    public function updatedPaid()
+    {
+        if ($this->paymentMethod === 'cash') {
+            $this->calculateChange();
+        } else {
+            $this->paid = $this->total;
+            $this->change = 0;
+        }
+    }
+    
+    public function setExactPaid()
+    {
         $this->paid = $this->total;
         $this->calculateChange();
     }
 
-    public function updatedPaid() { $this->calculateChange(); }
+    public function setPaidAmount($amount)
+    {
+        if ($this->paymentMethod === 'cash') {
+            $this->paid = (float) $amount;
+            $this->calculateChange();
+        }
+    }
+
     public function calculateChange()
     {
+        if ($this->paymentMethod !== 'cash') {
+            $this->change = 0;
+            return;
+        }
         $paid = is_numeric($this->paid) ? (float) $this->paid : 0;
         $this->change = max(0, $paid - (float) $this->total);
     }
-    public function closeSuccessModal() { $this->showSuccessModal = false; }
     public function closePaymentModal() { $this->showPaymentModal = false; }
+    public function closeSuccessModal() { $this->showSuccessModal = false; }
 
     public function processPayment()
     {
         $paid = (float) $this->paid;
-        $total = (float) $this->total;
+        $total = (float) $this->total;      
 
         if ($paid < $total) {
             $this->notify('error', 'Jumlah pembayaran kurang.');
@@ -356,5 +457,14 @@ class PosIndex extends Component
             DB::rollBack();
             $this->notify('error', 'Error: ' . $e->getMessage());
         }
+    }
+
+    public function render()
+    {
+        $categories = Category::withCount('products')->orderBy('name', 'asc')->get();
+
+        return view('livewire.pos.pos-index', [
+            'categories' => $categories,
+        ]);
     }
 }
