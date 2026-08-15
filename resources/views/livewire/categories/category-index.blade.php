@@ -192,7 +192,7 @@
                             <button type="submit"
                                 class="px-4 py-2.5 bg-slate-900 dark:bg-blue-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors font-medium"
                                 wire:loading.attr="disabled">
-                                <span wire:loading.remove>{{ $isEdit ? 'Update' : 'Simpan' }}</span>
+                                <span wire:loading.remove>{{ $isEdit ? 'Simpan Perubahan' : 'Simpan Kategori' }}</span>
                                 <span wire:loading>
                                     <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg"
                                         fill="none" viewBox="0 0 24 24">

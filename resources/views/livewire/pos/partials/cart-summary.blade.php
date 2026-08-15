@@ -7,7 +7,7 @@
                 <span x-text="showDiscountTax ? '▼ Sembunyikan Diskon & Pajak' : '▶ Tambah Diskon / Pajak'"></span>
                 @if($discount > 0 || $tax > 0)
                     <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
-                        {{ $discount > 0 ? 'Disc '.$discount.'%' : '' }} {{ $tax > 0 ? 'Tax '.$tax.'%' : '' }}
+                        {{ $discount > 0 ? 'Diskon '.$discount.'%' : '' }} {{ $tax > 0 ? 'Pajak '.$tax.'%' : '' }}
                     </span>
                 @endif
             </button>

@@ -16,15 +16,15 @@
                     <div class="inline-flex rounded-lg p-1 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
                         <button type="button" wire:click="setOrderType('dine_in')"
                             class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 {{ $orderType === 'dine_in' ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                            🍽️ Dine In (Meja)
+                            🍽️ Makan di Tempat (Meja)
                         </button>
                         <button type="button" wire:click="setOrderType('take_away')"
                             class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 {{ $orderType === 'take_away' ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                            🛍️ Take Away
+                            🛍️ Bawa Pulang (Take Away)
                         </button>
                         <button type="button" wire:click="setOrderType('delivery')"
                             class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 {{ $orderType === 'delivery' ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                            🚚 Delivery
+                            🚚 Pesan Antar (Delivery)
                         </button>
                     </div>
                 </div>
@@ -158,14 +158,14 @@
                                 🛒 Pesanan Cafe Noli
                             </h3>
                             <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-                                Mode: {{ strtoupper(str_replace('_', ' ', $orderType)) }} 
+                                Mode: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} 
                                 @if($orderType === 'dine_in')
                                     ({{ $tableNumber ?: 'Belum isi meja' }})
                                 @endif
                             </p>
                         </div>
                         @if(count($cart) > 0)
-                            <button onclick="confirmResetCart()" class="text-xs text-red-500 hover:underline font-semibold">Clear</button>
+                            <button onclick="confirmResetCart()" class="text-xs text-red-500 hover:underline font-semibold">Kosongkan</button>
                         @endif
                     </div>
 
@@ -229,7 +229,7 @@
             <div class="inline-block bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
                     <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
-                        📝 Catatan & Options Pesanan
+                        📝 Catatan & Pilihan Pesanan
                     </h3>
                     <button wire:click="closeItemNotesModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -245,9 +245,9 @@
                     @if($isDrink)
                         {{-- Sugar Level --}}
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Level Gula / Sugar Level:</label>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Tingkat Manis (Level Gula):</label>
                             <div class="grid grid-cols-4 gap-2">
-                                @foreach(['Normal', 'Less (50%)', 'Low (25%)', 'No Sugar'] as $sugar)
+                                @foreach(['Normal (100%)', 'Sedikit (50%)', 'Rendah (25%)', 'Tanpa Gula'] as $sugar)
                                     <button type="button" wire:click="$set('tempSugarLevel', '{{ $sugar }}')"
                                         class="py-2 text-xs font-semibold rounded-lg border transition-all text-center {{ $tempSugarLevel === $sugar ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white border-slate-900 dark:border-blue-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
                                         {{ $sugar }}
@@ -258,9 +258,9 @@
 
                         {{-- Ice Level --}}
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Level Es / Ice Level:</label>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Tingkat Es (Level Es):</label>
                             <div class="grid grid-cols-4 gap-2">
-                                @foreach(['Normal', 'Less Ice', 'No Ice', 'Hot (Panas)'] as $ice)
+                                @foreach(['Normal', 'Sedikit Es', 'Tanpa Es', 'Panas (Hot)'] as $ice)
                                     <button type="button" wire:click="$set('tempIceLevel', '{{ $ice }}')"
                                         class="py-2 text-xs font-semibold rounded-lg border transition-all text-center {{ $tempIceLevel === $ice ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white border-slate-900 dark:border-blue-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
                                         {{ $ice }}
@@ -298,7 +298,7 @@
                         <div class="bg-slate-900 dark:bg-slate-700 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800 dark:border-slate-600">
                             <div>
                                 <h3 class="text-base font-bold">Pembayaran Cafe Noli</h3>
-                                <p class="text-xs opacity-90 font-medium">Tipe: {{ strtoupper(str_replace('_', ' ', $orderType)) }} {{ $orderType === 'dine_in' ? ($tableNumber ? '| Meja: '.$tableNumber : '') : ($customerName ? '| Pelanggan: '.$customerName : '') }}</p>
+                                <p class="text-xs opacity-90 font-medium">Tipe: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} {{ $orderType === 'dine_in' ? ($tableNumber ? '| Meja: '.$tableNumber : '') : ($customerName ? '| Pelanggan: '.$customerName : '') }}</p>
                             </div>
                             <button type="button" wire:click="closePaymentModal" class="text-white hover:opacity-80"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         </div>
@@ -412,7 +412,7 @@
                                 <div class="text-xs space-y-1 text-slate-700 dark:text-slate-300">
                                     <div class="flex justify-between">
                                         <span>Tipe Pesanan:</span>
-                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 uppercase">{{ str_replace('_', ' ', $lastTransaction->order_type) }}</span>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 uppercase">{{ $lastTransaction->order_type === 'dine_in' ? 'Makan di Tempat' : ($lastTransaction->order_type === 'take_away' ? 'Bawa Pulang' : 'Pesan Antar') }}</span>
                                     </div>
                                     @if($lastTransaction->order_type === 'dine_in' && $lastTransaction->table_number)
                                         <div class="flex justify-between">

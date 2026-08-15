@@ -230,19 +230,19 @@
                                         {{ $detail->transaction->invoice_number ?? '-' }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span class="font-semibold text-slate-900 dark:text-white block capitalize">
-                                            {{ str_replace('_', ' ', $detail->transaction->order_type ?? 'dine_in') }}
+                                        <span class="font-semibold text-slate-900 dark:text-white block">
+                                            {{ ($detail->transaction->order_type ?? 'dine_in') === 'dine_in' ? 'Makan di Tempat' : (($detail->transaction->order_type ?? '') === 'take_away' ? 'Bawa Pulang' : 'Pesan Antar') }}
                                         </span>
                                         <span class="text-[11px] text-slate-500 dark:text-slate-400">
                                             @if(($detail->transaction->order_type ?? 'dine_in') === 'dine_in')
                                                 {{ $detail->transaction->table_number ? 'Meja: '.$detail->transaction->table_number : '-' }}
                                             @else
-                                                {{ $detail->transaction->customer_name ? 'Cust: '.$detail->transaction->customer_name : '-' }}
+                                                {{ $detail->transaction->customer_name ? 'Pelanggan: '.$detail->transaction->customer_name : '-' }}
                                             @endif
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-center font-bold text-slate-900 dark:text-white">
-                                        {{ $detail->quantity }} Qty
+                                        {{ $detail->quantity }} Porsi
                                     </td>
                                     <td class="px-4 py-3">
                                         @if($detail->notes)

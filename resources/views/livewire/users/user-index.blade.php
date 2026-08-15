@@ -5,7 +5,7 @@
     {{-- 2. Main Content Wrapper --}}
     <div class="lg:pl-64">
         {{-- Header --}}
-        @include('livewire.includes.header', ['title' => 'Manajemen User', 'subtitle' => 'Kelola akses admin dan kasir'])
+        @include('livewire.includes.header', ['title' => 'Manajemen Pengguna', 'subtitle' => 'Kelola hak akses administrator dan kasir'])
 
         {{-- Content --}}
         <main class="p-6">
@@ -49,7 +49,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                 </svg>
-                                <span>Tambah User</span>
+                                <span>Tambah Pengguna</span>
                             </button>
                         </div>
                     </div>
@@ -62,7 +62,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Nama</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role / Jabatan</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Jabatan / Peran</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Terdaftar</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-right">Aksi</th>
                             </tr>
@@ -85,11 +85,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($user->role === 'admin')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800">
-                                            Admin (Owner)
+                                            Administrator (Pemilik)
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                            Kasir (Staff)
+                                            Kasir (Staf)
                                         </span>
                                     @endif
                                 </td>
@@ -142,7 +142,7 @@
                     {{-- Modal Header --}}
                     <div class="bg-white dark:bg-slate-800 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                            {{ $isEdit ? 'Edit User' : 'Tambah User Baru' }}
+                            {{ $isEdit ? 'Ubah Data Pengguna' : 'Tambah Pengguna Baru' }}
                         </h3>
                         <button type="button" wire:click="closeModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -177,8 +177,8 @@
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Jabatan (Role) <span class="text-red-500">*</span></label>
                             <select wire:model="role" class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                <option value="kasir">Kasir (Staff)</option>
-                                <option value="admin">Admin (Owner)</option>
+                                <option value="kasir">Kasir (Staf)</option>
+                                <option value="admin">Administrator (Pemilik)</option>
                             </select>
                             @error('role') <span class="text-red-500 dark:text-red-400 text-xs mt-1">{{ $message }}</span> @enderror
                         </div>
@@ -190,7 +190,7 @@
                             Batal
                         </button>
                         <button type="submit" class="px-4 py-2.5 bg-slate-900 dark:bg-blue-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors font-medium text-sm">
-                            Simpan
+                            Simpan Pengguna
                         </button>
                     </div>
                 </form>

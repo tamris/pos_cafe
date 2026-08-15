@@ -145,7 +145,7 @@
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                            Live Data
+                            Data Terkini
                         </div>
                     </div>
                     <div id="salesChart" class="w-full h-[300px]"></div>
@@ -179,7 +179,9 @@
                                                 <p class="font-bold text-slate-900 dark:text-white text-sm">{{ $transaction->invoice_number }}</p>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400">
                                                     {{ $transaction->created_at->diffForHumans() }} • {{ $transaction->user->name }} •
-                                                    <span class="capitalize font-medium">{{ str_replace('_', ' ', $transaction->order_type ?? 'dine_in') }}</span>
+                                                    <span class="font-medium">
+                                                        {{ ($transaction->order_type ?? 'dine_in') === 'dine_in' ? 'Makan di Tempat' : (($transaction->order_type ?? '') === 'take_away' ? 'Bawa Pulang' : 'Pesan Antar') }}
+                                                    </span>
                                                     ({{ ($transaction->order_type ?? 'dine_in') === 'dine_in' ? ($transaction->table_number ? 'Meja '.$transaction->table_number : '-') : ($transaction->customer_name ?: '-') }})
                                                 </p>
                                             </div>
@@ -187,19 +189,19 @@
                                         <div class="text-right">
                                             <p class="font-bold text-slate-900 dark:text-white text-sm">Rp {{ number_format($transaction->total, 0, ',', '.') }}</p>
                                             @if($transaction->payment_method == 'cash')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 capitalize">
-                                                {{ $transaction->payment_method }}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                                Tunai
                                             </span>
                                             @elseif($transaction->payment_method == 'transfer')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-100 dark:border-green-800 capitalize">
-                                                    {{ $transaction->payment_method }}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-100 dark:border-green-800">
+                                                    Transfer
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 capitalize">
-                                                    {{ $transaction->payment_method }}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800">
+                                                    QRIS
                                                 </span>
                                             @endif
-                                            </div>
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>

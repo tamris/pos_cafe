@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Pengaturan Toko - Toko Kendali')]
+#[Title('Pengaturan Struk & Cafe - Cafe Noli')]
 class SettingIndex extends Component
 {
     public $shop_name;

@@ -233,7 +233,7 @@
                                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">PNG, JPG maksimal 2MB</p>
                                         </div>
                                     </div>
-                                    <div wire:loading wire:target="image" class="mt-2 text-sm text-slate-500 dark:text-slate-400">Uploading...</div>
+                                    <div wire:loading wire:target="image" class="mt-2 text-sm text-slate-500 dark:text-slate-400">Mengunggah gambar...</div>
                                 </div>
                             </div>
                         </div>
@@ -241,7 +241,7 @@
                         <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex justify-end space-x-3 border-t border-slate-200 dark:border-slate-700">
                             <button type="button" wire:click="closeModal" class="px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium">Batal</button>
                             <button type="submit" class="px-4 py-2.5 bg-slate-900 dark:bg-blue-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors font-medium" wire:loading.attr="disabled">
-                                <span wire:loading.remove>{{ $isEdit ? 'Update' : 'Simpan' }}</span>
+                                <span wire:loading.remove>{{ $isEdit ? 'Simpan Perubahan' : 'Simpan Menu' }}</span>
                                 <span wire:loading>
                                     <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

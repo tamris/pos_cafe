@@ -10,7 +10,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Manajemen User - Toko Kendali')]
+#[Title('Manajemen Pengguna - Cafe Noli')]
 class UserIndex extends Component
 {
     use WithPagination;
@@ -49,6 +49,14 @@ class UserIndex extends Component
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|in:admin,kasir',
+        ], [
+            'name.required' => 'Nama pengguna wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 6 karakter.',
+            'role.required' => 'Jabatan wajib dipilih.',
         ]);
 
         User::create([
@@ -58,7 +66,7 @@ class UserIndex extends Component
             'role' => $this->role,
         ]);
 
-        session()->flash('success', 'User berhasil ditambahkan.');
+        session()->flash('success', 'Pengguna baru berhasil ditambahkan.');
         $this->closeModal();
     }
 
@@ -79,6 +87,12 @@ class UserIndex extends Component
             'name' => 'required',
             'email' => 'required|email|unique:users,email,' . $this->userId,
             'role' => 'required|in:admin,kasir',
+        ], [
+            'name.required' => 'Nama pengguna wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'role.required' => 'Jabatan wajib dipilih.',
         ]);
 
         $user = User::findOrFail($this->userId);
@@ -96,7 +110,7 @@ class UserIndex extends Component
 
         $user->update($data);
 
-        session()->flash('success', 'Data user diperbarui.');
+        session()->flash('success', 'Data pengguna berhasil diperbarui.');
         $this->closeModal();
     }
 
@@ -108,7 +122,7 @@ class UserIndex extends Component
         }
 
         User::find($id)->delete();
-        session()->flash('success', 'User berhasil dihapus.');
+        session()->flash('success', 'Pengguna berhasil dihapus.');
     }
 
     public function render()
