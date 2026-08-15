@@ -10,60 +10,90 @@
         <main class="p-6">
             
             {{-- KPI SUMMARY CARDS --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {{-- Rata-Rata Profit Margin --}}
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow transition-colors">
-                    <div class="flex items-center space-x-4">
-                        <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full text-amber-600 dark:text-amber-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+                {{-- 1. Rata-Rata Margin --}}
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700 card-shadow transition-colors flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                         </div>
-                        <div>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Rata-Rata Margin</p>
-                            <h3 class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ number_format($avgMargin, 1) }}%</h3>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Rata-rata persentase margin</p>
-                        </div>
+                        @if($avgMargin >= 50)
+                            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                Sangat Sehat
+                            </span>
+                        @else
+                            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                Perlu Pantau
+                            </span>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Rata-Rata Margin</p>
+                        <h3 class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ number_format($avgMargin, 1) }}%</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Rata-rata persentase margin</p>
                     </div>
                 </div>
 
-                {{-- Rata-Rata Profit per Item --}}
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow transition-colors">
-                    <div class="flex items-center space-x-4">
-                        <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-full text-emerald-600 dark:text-emerald-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {{-- 2. Rata-Rata Profit / Item --}}
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700 card-shadow transition-colors flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </div>
-                        <div>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Rata-Rata Profit/Item</p>
-                            <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">Rp {{ number_format($avgProfitPerItem, 0, ',', '.') }}</h3>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Keuntungan per porsi</p>
-                        </div>
+                        <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            Per Cup/Porsi
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Rata-Rata Profit / Porsi</p>
+                        <h3 class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">Rp {{ number_format($avgProfitPerItem, 0, ',', '.') }}</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Keuntungan bersih per menu</p>
                     </div>
                 </div>
 
-                {{-- Alert Low Margin (< 35%) --}}
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow transition-colors">
-                    <div class="flex items-center space-x-4">
-                        <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-full text-red-600 dark:text-red-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                {{-- 3. Rata-Rata Food Cost --}}
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700 card-shadow transition-colors flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
-                        <div>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Margin Tipis (&lt; 35%)</p>
-                            <h3 class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{{ $lowMarginCount }} <span class="text-xs font-normal text-slate-500">Menu</span></h3>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Perlu perhatian</p>
-                        </div>
+                        @if($avgFoodCost <= 35)
+                            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                Ideal (&le; 35%)
+                            </span>
+                        @else
+                            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                Tinggi (&gt; 35%)
+                            </span>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Rata-Rata Food Cost</p>
+                        <h3 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{{ number_format($avgFoodCost, 1) }}%</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Rasio modal bahan vs jual</p>
                     </div>
                 </div>
 
-                {{-- Total Varian Menu --}}
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow transition-colors">
-                    <div class="flex items-center space-x-4">
-                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-600 dark:text-blue-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                {{-- 4. Margin Tipis (< 35%) --}}
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700 card-shadow transition-colors flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         </div>
-                        <div>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Menu Active</p>
-                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">{{ $totalMenuCount }} <span class="text-xs font-normal text-slate-500">Menu</span></h3>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Total menu aktif</p>
-                        </div>
+                        @if($lowMarginCount > 0)
+                            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                Perlu Review
+                            </span>
+                        @else
+                            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                Semua Aman
+                            </span>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Margin Kritis (&lt; 35%)</p>
+                        <h3 class="text-2xl font-black text-red-600 dark:text-red-400 mt-1">{{ $lowMarginCount }} <span class="text-sm font-bold text-slate-500 dark:text-slate-400">Menu</span></h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Menu dengan margin tipis</p>
                     </div>
                 </div>
             </div>
@@ -216,17 +246,76 @@
                     
                     {{-- Form Header: Pilih Menu & Nama Produk --}}
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
-                        <div class="md:col-span-5">
+                        <div class="md:col-span-5" x-data="{
+                            open: false,
+                            search: '',
+                            products: @js($allProducts->map(fn($p) => ['id' => (string)$p->id, 'name' => $p->name])),
+                            selectedId: @entangle('selected_product_id').live,
+                            get selectedName() {
+                                if (!this.selectedId) return '-- Pilih Menu Cafe --';
+                                let item = this.products.find(p => p.id == this.selectedId);
+                                return item ? item.name : '-- Pilih Menu Cafe --';
+                            },
+                            get filteredProducts() {
+                                if (!this.search) return this.products;
+                                return this.products.filter(p => p.name.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            select(id) {
+                                this.selectedId = id;
+                                this.open = false;
+                                this.search = '';
+                            }
+                        }" @click.outside="open = false">
                             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
                                 <span>Pilih Dari Menu Cafe</span>
-                                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Pilih atau Ketik Baru</span>
+                                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Bisa Cari Menu</span>
                             </label>
-                            <select wire:model.live="selected_product_id" class="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 shadow-xs">
-                                <option value="">-- ✨ Buat Menu Baru (Ketik Manual) --</option>
-                                @foreach($allProducts as $p)
-                                    <option value="{{ $p->id }}">{{ $p->name }} (Harga Jual: Rp {{ number_format($p->price, 0, ',', '.') }})</option>
-                                @endforeach
-                            </select>
+                            
+                            {{-- Trigger Button --}}
+                            <div class="relative">
+                                <button type="button" @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())" class="w-full px-4 py-2.5 text-sm text-left border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 shadow-xs flex items-center justify-between cursor-pointer">
+                                    <span class="truncate font-medium" :class="!selectedId ? 'text-slate-400 dark:text-slate-500' : ''" x-text="selectedName"></span>
+                                    <svg class="w-4 h-4 text-slate-400 ml-2 shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                
+                                {{-- Dropdown Panel --}}
+                                <div x-show="open" x-transition.origin.top.duration.150ms class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden" style="display: none;">
+                                    
+                                    {{-- Search Box --}}
+                                    <div class="p-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                                        <div class="relative">
+                                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                            <input type="text" x-model="search" x-ref="searchInput" @keydown.escape="open = false" placeholder="Ketik cari nama menu..." class="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden">
+                                        </div>
+                                    </div>
+                                    
+                                    {{-- Items List --}}
+                                    <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50">
+                                        {{-- Option Reset / Pilih Menu --}}
+                                        <div @click="select('')" class="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer flex items-center justify-between transition-colors">
+                                            <span>-- Pilih Menu Cafe --</span>
+                                            <template x-if="!selectedId">
+                                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                            </template>
+                                        </div>
+                                        
+                                        {{-- Filtered Menu Options --}}
+                                        <template x-for="p in filteredProducts" :key="p.id">
+                                            <div @click="select(p.id)" class="px-4 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer flex items-center justify-between transition-colors" :class="selectedId == p.id ? 'bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold' : ''">
+                                                <span x-text="p.name"></span>
+                                                <template x-if="selectedId == p.id">
+                                                    <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        
+                                        {{-- Empty Search Results --}}
+                                        <div x-show="filteredProducts.length === 0" class="px-4 py-6 text-xs text-center text-slate-400 dark:text-slate-500">
+                                            Menu tidak ditemukan.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="md:col-span-7">
@@ -238,15 +327,22 @@
 
                     {{-- Tombol AI CTA --}}
                     <div class="mb-8">
-                        <button wire:click="analyzeWithAI" wire:loading.attr="disabled" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-3.5 w-full text-base transition-all shadow-sm hover:shadow flex justify-center items-center">
-                            <span wire:loading.remove wire:target="analyzeWithAI" class="flex items-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                Bantu Analisis Resep & HPP dengan AI
-                            </span>
-                            <span wire:loading wire:target="analyzeWithAI" class="flex items-center">
-                                <svg class="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 
-                                Menganalisis Komponen Resep Terbaik...
-                            </span>
+                        <button type="button" wire:click="analyzeWithAI" wire:loading.attr="disabled" wire:target="analyzeWithAI" class="relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-85 disabled:cursor-not-allowed text-white font-bold rounded-xl py-3.5 px-6 w-full text-base transition-all duration-200 shadow-sm hover:shadow flex justify-center items-center min-h-[52px]">
+                            
+                            {{-- Normal State --}}
+                            <div wire:loading.remove wire:target="analyzeWithAI" class="flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                <span>Bantu Analisis Resep & HPP dengan AI</span>
+                            </div>
+                            
+                            {{-- Loading State --}}
+                            <div wire:loading.flex wire:target="analyzeWithAI" class="items-center justify-center gap-3">
+                                <svg class="animate-spin h-5 w-5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg> 
+                                <span class="font-medium tracking-wide">Menganalisis Komponen Resep Terbaik...</span>
+                            </div>
                         </button>
                     </div>
 
@@ -363,67 +459,108 @@
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {{-- Sisi Kiri: Rincian HPP --}}
                         <div class="lg:col-span-5 space-y-4">
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider">Rincian HPP per Produk</h3>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider">Rincian HPP per Produk</h3>
+                               
+                            </div>
                             
-                            <div class="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-slate-600 dark:text-slate-400 font-medium">Biaya Variabel per Produk</span>
-                                    <span class="font-bold text-slate-900 dark:text-white">Rp {{ number_format($calc['totalVariable'], 0, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-slate-600 dark:text-slate-400 font-medium flex items-center">
-                                        Alokasi Biaya Tetap
-                                        <span class="group relative cursor-pointer ml-1.5">
-                                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 text-white text-xs rounded-xl shadow-xl hidden group-hover:block z-10 text-center">
-                                                Asumsi biaya operasional (listrik, air, packaging) per porsi.
-                                            </div>
-                                        </span>
-                                    </span>
-                                    <div class="flex items-center gap-1.5">
-                                        <div class="relative w-32">
-                                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-bold text-slate-500 pointer-events-none">Rp</span>
-                                            <input type="number" wire:model.live.debounce.400ms="alokasi_biaya_tetap" class="w-full pl-8 pr-2.5 py-1.5 text-sm font-bold text-right bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
+                            <div class="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3.5">
+                                {{-- Biaya Variabel (Bahan Baku) --}}
+                                <div class="flex justify-between items-center p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                                         </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200">Biaya Bahan Baku</div>
+                                            <div class="text-[11px] text-slate-400">Total Komponen Variabel</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm font-extrabold text-slate-900 dark:text-white">
+                                        Rp {{ number_format($calc['totalVariable'], 0, ',', '.') }}
+                                    </div>
+                                </div>
+
+                                {{-- Biaya Tetap (Operasional) --}}
+                                <div class="flex justify-between items-center p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                                                Biaya Operasional
+                                                <span class="group relative cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-slate-900 text-white text-[11px] rounded-lg shadow-xl hidden group-hover:block z-20 text-center font-normal">
+                                                        Alokasi listrik, cup/kemasan, air & gas per porsi.
+                                                    </div>
+                                                </span>
+                                            </div>
+                                            <div class="text-[11px] text-slate-400">Alokasi Biaya Tetap</div>
+                                        </div>
+                                    </div>
+                                    <div class="relative w-28">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-bold text-slate-400 pointer-events-none">Rp</span>
+                                        <input type="number" wire:model.live.debounce.400ms="alokasi_biaya_tetap" class="w-full pl-8 pr-2 py-1.5 text-sm font-bold text-right bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
                                     </div>
                                 </div>
                                 
-                                <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
-                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Total HPP per Produk</span>
-                                    <span class="text-2xl lg:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">Rp {{ number_format($calc['totalHpp'], 0, ',', '.') }}</span>
+                                {{-- Total HPP Banner --}}
+                                <div class="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">Total HPP per Porsi</span>
+                                        <span class="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">Bahan Baku + Operasional</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">Rp {{ number_format($calc['totalHpp'], 0, ',', '.') }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {{-- Sisi Kanan: Analisis Sensitivitas --}}
                         <div class="lg:col-span-7 space-y-4">
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider">Analisis Sensitivitas Harga</h3>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider">Analisis Sensitivitas Harga</h3>
+                            </div>
                             
-                            <div class="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
-                                <div>
-                                    <div class="flex justify-between text-xs sm:text-sm mb-2">
-                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Simulasi Kenaikan Harga Bahan Baku</span>
-                                        <span class="font-bold text-emerald-600 dark:text-emerald-400">Dampak ke HPP: Rp {{ number_format($calc['simulatedHpp'], 0, ',', '.') }} (+{{ $kenaikan_persen }}%)</span>
+                            <div class="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3.5">
+                                {{-- Slider Control Card --}}
+                                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs space-y-3">
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="font-bold text-slate-700 dark:text-slate-300">
+                                            Simulasi Kenaikan Bahan Baku: <span class="text-emerald-600 dark:text-emerald-400 font-extrabold">+{{ $kenaikan_persen }}%</span>
+                                        </span>
+                                        <span class="font-extrabold text-emerald-600 dark:text-emerald-400">
+                                            Dampak ke HPP: Rp {{ number_format($calc['simulatedHpp'], 0, ',', '.') }}
+                                        </span>
                                     </div>
-                                    <input type="range" wire:model.live="kenaikan_persen" min="0" max="100" class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                                    <input type="range" wire:model.live="kenaikan_persen" min="0" max="100" class="w-full h-2.5 bg-slate-100 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                                    <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 pt-0.5">
+                                        <span>0%</span>
+                                        <span>50%</span>
+                                        <span>100%</span>
+                                    </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                                    <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center shadow-xs">
-                                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">HPP Sekarang</div>
-                                        <div class="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1">Rp {{ number_format($calc['totalHpp'], 0, ',', '.') }}</div>
+                                {{-- 4 Metric Cards Grid --}}
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 text-center shadow-2xs">
+                                        <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">HPP Sekarang</div>
+                                        <div class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-1">Rp {{ number_format($calc['totalHpp'], 0, ',', '.') }}</div>
                                     </div>
-                                    <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-center shadow-xs">
-                                        <div class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">HPP Baru (+{{ $kenaikan_persen }}%)</div>
-                                        <div class="text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-300 mt-1">Rp {{ number_format($calc['simulatedHpp'], 0, ',', '.') }}</div>
+                                    <div class="bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-center shadow-2xs">
+                                        <div class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">HPP Baru</div>
+                                        <div class="text-sm sm:text-base font-extrabold text-emerald-700 dark:text-emerald-300 mt-1">Rp {{ number_format($calc['simulatedHpp'], 0, ',', '.') }}</div>
                                     </div>
-                                    <div class="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-xl border border-amber-200 dark:border-amber-800/60 text-center shadow-xs">
-                                        <div class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Harga Jual Min.</div>
-                                        <div class="text-sm sm:text-base font-bold text-amber-700 dark:text-amber-300 mt-1">Rp {{ number_format($calc['simulatedHpp'] * 1.1, 0, ',', '.') }}</div>
+                                    <div class="bg-amber-50/80 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-200 dark:border-amber-800/60 text-center shadow-2xs">
+                                        <div class="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Harga Jual Min.</div>
+                                        <div class="text-sm sm:text-base font-extrabold text-amber-700 dark:text-amber-300 mt-1">Rp {{ number_format($calc['simulatedHpp'] * 1.1, 0, ',', '.') }}</div>
                                     </div>
-                                    <div class="bg-blue-50 dark:bg-blue-950/40 p-3 rounded-xl border border-blue-200 dark:border-blue-800/60 text-center shadow-xs">
-                                        <div class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Margin Skrg</div>
-                                        <div class="text-sm sm:text-base font-bold text-blue-700 dark:text-blue-300 mt-1">
+                                    <div class="bg-blue-50/80 dark:bg-blue-950/40 p-3.5 rounded-xl border border-blue-200 dark:border-blue-800/60 text-center shadow-2xs">
+                                        <div class="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Margin Skrg</div>
+                                        <div class="text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300 mt-1">
                                             @if($calc['simulatedHpp'] > 0)
                                                 {{ number_format(max(0, (($price ?? 0) - $calc['simulatedHpp']) / ($price ?: 1) * 100), 1) }}%
                                             @else
@@ -534,9 +671,15 @@
                         </div>
                         
                         <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                            <button wire:click="saveCalculation" class="w-full md:max-w-md mx-auto block py-3.5 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-base font-bold rounded-xl shadow-md transition-colors flex justify-center items-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                                Simpan Resep & Tetapkan HPP
+                            <button type="button" wire:click="saveCalculation" wire:loading.attr="disabled" wire:target="saveCalculation" class="w-full md:max-w-md mx-auto py-3.5 px-6 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-emerald-600 dark:hover:bg-emerald-700 disabled:opacity-85 disabled:cursor-not-allowed text-white text-base font-bold rounded-xl shadow-md transition-all duration-200 flex justify-center items-center min-h-[52px]">
+                                <div wire:loading.remove wire:target="saveCalculation" class="flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                                    <span>Simpan Resep & Tetapkan HPP</span>
+                                </div>
+                                <div wire:loading.flex wire:target="saveCalculation" class="items-center justify-center gap-3">
+                                    <svg class="animate-spin h-5 w-5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span>Menyimpan Resep & HPP...</span>
+                                </div>
                             </button>
                         </div>
                     </div>

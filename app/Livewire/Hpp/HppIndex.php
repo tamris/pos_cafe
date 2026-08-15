@@ -406,6 +406,7 @@ class HppIndex extends Component
         $totalMenuCount = $allProducts->count();
         
         $totalMarginPercent = 0;
+        $totalFoodCostPercent = 0;
         $lowMarginCount = 0;
         $totalProfitSum = 0;
 
@@ -414,8 +415,10 @@ class HppIndex extends Component
             $jual = (float) $p->price;
             $profit = max(0, $jual - $hpp);
             $margin = $jual > 0 ? ($profit / $jual) * 100 : 0;
+            $foodCost = $jual > 0 ? ($hpp / $jual) * 100 : 0;
 
             $totalMarginPercent += $margin;
+            $totalFoodCostPercent += $foodCost;
             $totalProfitSum += $profit;
 
             if ($margin < 35 && $jual > 0) {
@@ -424,6 +427,7 @@ class HppIndex extends Component
         }
 
         $avgMargin = $totalMenuCount > 0 ? ($totalMarginPercent / $totalMenuCount) : 0;
+        $avgFoodCost = $totalMenuCount > 0 ? ($totalFoodCostPercent / $totalMenuCount) : 0;
         $avgProfitPerItem = $totalMenuCount > 0 ? ($totalProfitSum / $totalMenuCount) : 0;
 
         $products = $query->orderBy('name', 'asc')->paginate(12);
@@ -435,6 +439,7 @@ class HppIndex extends Component
             'categories' => $categories,
             'totalMenuCount' => $totalMenuCount,
             'avgMargin' => $avgMargin,
+            'avgFoodCost' => $avgFoodCost,
             'lowMarginCount' => $lowMarginCount,
             'avgProfitPerItem' => $avgProfitPerItem
         ]);
