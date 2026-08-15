@@ -12,7 +12,7 @@ use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\Storage;
 
 #[Layout('components.layouts.app')]
-#[Title('Produk Menu - Cafe Noli')]
+#[Title('Produk Menu - POS Cafe')]
 class ProductIndex extends Component
 {
     use WithPagination, WithFileUploads;

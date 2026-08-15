@@ -2,7 +2,7 @@
     @include('livewire.includes.sidebar')
 
     <div class="lg:pl-64">
-        @include('livewire.includes.header', ['title' => 'POS Kasir Cafe Noli', 'subtitle' => 'Noli Coffee & Eatery - Sistem Kasir'])
+        @include('livewire.includes.header', ['title' => 'POS Kasir Cafe', 'subtitle' => 'Sistem Pemesanan & Kasir Cafe'])
 
         <main class="p-4 lg:p-6 space-y-4">
             
@@ -155,7 +155,7 @@
                     <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 flex justify-between items-center">
                         <div>
                             <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
-                                🛒 Pesanan Cafe Noli
+                                🛒 Pesanan Menu
                             </h3>
                             <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
                                 Mode: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} 
@@ -205,7 +205,7 @@
             <div class="fixed inset-0 transition-opacity bg-slate-900/50 backdrop-blur-sm" wire:click="closeMobileCart"></div>
             <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-t-2xl text-left overflow-hidden shadow-xl transform transition-all w-full h-[88vh] flex flex-col border-t border-slate-200 dark:border-slate-700">
                 <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
-                    <h3 class="font-bold text-slate-900 dark:text-white text-lg">Rincian Pesanan Cafe Noli</h3>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-lg">Rincian Pesanan</h3>
                     <button wire:click="closeMobileCart" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white p-2 bg-white dark:bg-slate-700 rounded-full shadow-sm">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -297,7 +297,7 @@
                         {{-- Header --}}
                         <div class="bg-slate-900 dark:bg-slate-700 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800 dark:border-slate-600">
                             <div>
-                                <h3 class="text-base font-bold">Pembayaran Cafe Noli</h3>
+                                <h3 class="text-base font-bold">Pembayaran Pesanan</h3>
                                 <p class="text-xs opacity-90 font-medium">Tipe: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} {{ $orderType === 'dine_in' ? ($tableNumber ? '| Meja: '.$tableNumber : '') : ($customerName ? '| Pelanggan: '.$customerName : '') }}</p>
                             </div>
                             <button type="button" wire:click="closePaymentModal" class="text-white hover:opacity-80"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
@@ -401,7 +401,7 @@
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         </div>
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-1">Pesanan Berhasil Disimpan!</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Transaksi telah tercatat di sistem Cafe Noli</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Transaksi telah tercatat di sistem POS</p>
                         
                         <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl mb-4 border border-slate-200 dark:border-slate-700 text-left">
                             <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">

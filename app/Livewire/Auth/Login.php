@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.guest')]
-#[Title('Masuk - Cafe Noli POS')]
+#[Title('Masuk - POS Cafe')]
 class Login extends Component
 {
     public $email = '';

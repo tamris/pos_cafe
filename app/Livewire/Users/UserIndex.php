@@ -10,7 +10,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Manajemen Pengguna - Cafe Noli')]
+#[Title('Manajemen Pengguna - POS Cafe')]
 class UserIndex extends Component
 {
     use WithPagination;

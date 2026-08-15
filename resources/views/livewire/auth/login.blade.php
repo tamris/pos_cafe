@@ -3,8 +3,8 @@
         <div class="w-16 h-16 bg-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg text-3xl">
             ☕
         </div>
-        <h1 class="text-2xl font-extrabold text-slate-900 mb-1">Cafe Noli POS</h1>
-        <p class="text-slate-500 text-xs font-medium uppercase tracking-wider">Noli Coffee & Eatery System</p>
+        <h1 class="text-2xl font-extrabold text-slate-900 mb-1">POS Kasir Cafe</h1>
+        <p class="text-slate-500 text-xs font-medium uppercase tracking-wider">Point of Sale & Management System</p>
     </div>
 
     <form wire:submit.prevent="login" class="space-y-5">

@@ -12,7 +12,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('POS Kasir - Cafe Noli')]
+#[Title('POS Kasir - POS Cafe')]
 class PosIndex extends Component
 {
     public $products = [];
@@ -439,7 +439,7 @@ class PosIndex extends Component
                     'product_id' => $item['id'],
                     'quantity' => -$item['quantity'],
                     'type' => 'out',
-                    'notes' => 'Penjualan Cafe Noli: ' . $transaction->invoice_number
+                    'notes' => 'Penjualan POS: ' . $transaction->invoice_number
                 ]);
             }
 

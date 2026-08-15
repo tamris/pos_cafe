@@ -4,7 +4,7 @@
     <div class="lg:pl-64">
         @include('livewire.includes.header', [
             'title' => 'Penjualan Menu Hari Ini',
-            'subtitle' => 'Monitor porsi terjual & performa omset Cafe Noli realtime',
+            'subtitle' => 'Monitor porsi terjual & performa omset cafe realtime',
         ])
 
         <main class="p-6">

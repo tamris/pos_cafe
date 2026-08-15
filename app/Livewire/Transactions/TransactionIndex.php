@@ -9,7 +9,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Riwayat Transaksi - Cafe Noli')]
+#[Title('Riwayat Transaksi - POS Cafe')]
 class TransactionIndex extends Component
 {
     use WithPagination;

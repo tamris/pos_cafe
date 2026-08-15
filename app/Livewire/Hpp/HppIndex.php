@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Computed;
 
 #[Layout('components.layouts.app')]
-#[Title('Manajemen HPP & Margin - Cafe Noli')]
+#[Title('Manajemen HPP & Margin - POS Cafe')]
 class HppIndex extends Component
 {
     use WithPagination;

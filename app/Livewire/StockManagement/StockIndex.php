@@ -12,7 +12,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Penjualan Menu Hari Ini - Cafe Noli')]
+#[Title('Penjualan Menu Hari Ini - POS Cafe')]
 class StockIndex extends Component
 {
     use WithPagination;

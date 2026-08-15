@@ -17,10 +17,10 @@ class ProductSeeder extends Seeder
             // ☕ Espresso & Coffee (Category 1)
             [
                 'category_id' => 1,
-                'name' => 'Noli Signature Palm Sugar Latte',
+                'name' => 'Signature Palm Sugar Latte',
                 'sku' => 'COF001',
                 'barcode' => '8991001',
-                'description' => 'Kopi gula aren khas Cafe Noli dengan espresso ganda dan susu creamy',
+                'description' => 'Kopi gula aren khas barista dengan espresso ganda dan susu creamy',
                 'price' => 22000,
                 'harga_beli' => 9000,
                 'stock' => 100,
@@ -88,7 +88,7 @@ class ProductSeeder extends Seeder
                 'name' => 'Dark Chocolate Velvet',
                 'sku' => 'NCF002',
                 'barcode' => '8992002',
-                'description' => 'Cokelat pekat rich dan creamy khas Noli Cafe',
+                'description' => 'Cokelat pekat rich dan creamy khas cafe',
                 'price' => 24000,
                 'harga_beli' => 10000,
                 'stock' => 65,
@@ -155,7 +155,7 @@ class ProductSeeder extends Seeder
             // 🍝 Main Course & Food (Category 4)
             [
                 'category_id' => 4,
-                'name' => 'Nasi Goreng Noli Special',
+                'name' => 'Nasi Goreng Special Cafe',
                 'sku' => 'FOD001',
                 'barcode' => '8994001',
                 'description' => 'Nasi goreng bumbu rempah dengan telur mata sapi dan ayam pop',

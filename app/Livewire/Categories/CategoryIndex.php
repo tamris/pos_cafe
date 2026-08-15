@@ -9,7 +9,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Kategori Menu - Cafe Noli')]
+#[Title('Kategori Menu - POS Cafe')]
 class CategoryIndex extends Component
 {
     use WithPagination;

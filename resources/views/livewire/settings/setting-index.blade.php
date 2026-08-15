@@ -31,7 +31,7 @@
                                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nama Cafe / Toko</label>
                                     <input type="text" wire:model.live="shop_name" 
                                         class="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all" 
-                                        placeholder="Contoh: Cafe Noli">
+                                        placeholder="Contoh: Kopi Senja / Cafe Nusantara">
                                     @error('shop_name') <span class="text-red-500 dark:text-red-400 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
 
@@ -64,14 +64,14 @@
                                             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Network (SSID)</label>
                                             <input type="text" wire:model.live="wifi_name" 
                                                 class="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400" 
-                                                placeholder="Contoh: CafeNoli_Guest">
+                                                placeholder="Contoh: Cafe_Guest">
                                             @error('wifi_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                         </div>
                                         <div>
                                             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Password WiFi</label>
                                             <input type="text" wire:model.live="wifi_password" 
                                                 class="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400" 
-                                                placeholder="Contoh: nolicoffee2026">
+                                                placeholder="Contoh: cafepos2026">
                                             @error('wifi_password') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
@@ -82,7 +82,7 @@
                                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Catatan Bawah Struk (Footer)</label>
                                     <input type="text" wire:model.live="receipt_footer" 
                                         class="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all" 
-                                        placeholder="Terima kasih telah berkunjung ke Cafe Noli! ☕">
+                                        placeholder="Terima kasih telah berkunjung! ☕">
                                     @error('receipt_footer') <span class="text-red-500 dark:text-red-400 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -125,7 +125,7 @@
                                 <div class="text-center mb-2">
                                     <div style="font-size: 18px; margin-bottom: 2px;">☕</div>
                                     <h2 class="receipt-bold" style="font-size: 15px; margin-bottom: 2px; text-transform: uppercase;">
-                                        {{ $shop_name ?: 'CAFE NOLI' }}
+                                        {{ $shop_name ?: 'CAFE & EATERY' }}
                                     </h2>
                                     <p class="receipt-text-xs" style="margin-bottom: 2px;">{{ $address ?: 'Jl. Kopi Arabica No. 8, Jakarta' }}</p>
                                     <p class="receipt-text-xs">Telp: {{ $phone ?: '0812-3456-7890' }}</p>
@@ -213,7 +213,7 @@
 
                                 {{-- FOOTER --}}
                                 <div class="text-center receipt-text-xs" style="margin-top: 6px;">
-                                    <p class="receipt-bold" style="font-size: 10px;">{{ $shop_name ?: 'CAFE NOLI' }}</p>
+                                    <p class="receipt-bold" style="font-size: 10px;">{{ $shop_name ?: 'CAFE & EATERY' }}</p>
                                     <p style="margin-top: 2px;">{{ $receipt_footer ?: 'Terima kasih telah berkunjung! ☕' }}</p>
                                     <p style="margin-top: 6px; font-size: 8.5px; letter-spacing: 0.5px;">-- PAUSED TO REFRESH & ENJOY --</p>
                                 </div>

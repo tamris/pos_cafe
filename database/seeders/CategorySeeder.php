@@ -17,7 +17,7 @@ class CategorySeeder extends Seeder
             [
                 'id' => 1,
                 'name' => '☕ Espresso & Coffee',
-                'description' => 'Kopi racikan barista khas Cafe Noli (Hot & Iced)'
+                'description' => 'Kopi racikan barista khas cafe (Hot & Iced)'
             ],
             [
                 'id' => 2,
@@ -32,7 +32,7 @@ class CategorySeeder extends Seeder
             [
                 'id' => 4,
                 'name' => '🍝 Main Course & Food',
-                'description' => 'Makanan berat khas Cafe Noli (Rice Bowl, Pasta, Nasi Goreng)'
+                'description' => 'Makanan berat pilihan (Rice Bowl, Pasta, Nasi Goreng)'
             ],
             [
                 'id' => 5,

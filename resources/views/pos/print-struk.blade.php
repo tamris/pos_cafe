@@ -119,8 +119,8 @@
         {{-- HEADER CAFE --}}
         <div class="text-center">
             <div class="cafe-logo">☕</div>
-            <h2 class="font-bold uppercase" style="font-size: 15px;">{{ $setting->shop_name ?? 'CAFE NOLI' }}</h2>
-            <p style="font-size: 9.5px; margin-top: 2px;">{{ $setting->address ?? 'Noli Coffee & Eatery' }}</p>
+            <h2 class="font-bold uppercase" style="font-size: 15px;">{{ $setting->shop_name ?? 'CAFE & EATERY' }}</h2>
+            <p style="font-size: 9.5px; margin-top: 2px;">{{ $setting->address ?? 'Coffee & Eatery' }}</p>
             <p style="font-size: 9.5px;">Telp: {{ $setting->phone ?? '-' }}</p>
         </div>
 
@@ -221,7 +221,7 @@
 
         {{-- FOOTER STRUK --}}
         <div class="text-center" style="margin-top: 6px;">
-            <p class="font-bold uppercase" style="font-size: 11px;">{{ $setting->shop_name ?? 'CAFE NOLI' }}</p>
+            <p class="font-bold uppercase" style="font-size: 11px;">{{ $setting->shop_name ?? 'CAFE & EATERY' }}</p>
             <p style="font-size: 9.5px; margin-top: 2px; white-space: pre-line;">{{ $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungan Anda!' }}</p>
             <p style="font-size: 8.5px; margin-top: 6px; letter-spacing: 0.5px;">-- PAUSED TO REFRESH & ENJOY --</p>
         </div>

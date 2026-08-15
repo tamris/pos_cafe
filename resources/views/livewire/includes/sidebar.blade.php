@@ -35,9 +35,12 @@
             <div class="flex items-center justify-center w-10 h-10 bg-amber-600 dark:bg-amber-700 rounded-xl shadow-md">
                 <span class="text-xl">☕</span>
             </div>
+            @php
+                $currentShopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe';
+            @endphp
             <div>
-                <span class="text-lg font-extrabold text-slate-900 dark:text-white block leading-tight">Cafe Noli</span>
-                <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block uppercase tracking-wider">Coffee & Eatery</span>
+                <span class="text-lg font-extrabold text-slate-900 dark:text-white block leading-tight truncate max-w-[140px]" title="{{ $currentShopName }}">{{ $currentShopName }}</span>
+                <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block uppercase tracking-wider">POS & Inventory</span>
             </div>
         </div>
     </div>

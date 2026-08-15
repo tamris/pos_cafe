@@ -12,12 +12,12 @@ class SettingSeeder extends Seeder
         DB::table('settings')->truncate();
 
         DB::table('settings')->insert([
-            'shop_name' => 'Cafe Noli',
+            'shop_name' => 'Cafe & Eatery',
             'address' => 'Jl. Kopi Arabica No. 8, Jakarta Selatan',
             'phone' => '0812-3456-7890',
-            'receipt_footer' => "Terima kasih telah berkunjung ke Cafe Noli! ☕\nEnjoy your fresh coffee & food! Follow us @cafenoli.id",
-            'wifi_name' => 'CafeNoli_Guest',
-            'wifi_password' => 'nolicoffee2026',
+            'receipt_footer' => "Terima kasih telah berkunjung! ☕\nEnjoy your fresh coffee & delicious food!",
+            'wifi_name' => 'Cafe_Guest',
+            'wifi_password' => 'cafepos2026',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

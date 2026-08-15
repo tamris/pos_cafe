@@ -57,8 +57,9 @@ class SalesReportExport implements
         $formattedStart = Carbon::parse($this->dateFrom)->translatedFormat('d F Y');
         $formattedEnd = Carbon::parse($this->dateTo)->translatedFormat('d F Y');
 
+        $shopName = \App\Models\Setting::first()?->shop_name ?? 'CAFE & EATERY';
         return [
-            ['LAPORAN PENJUALAN CAFE NOLI (NOLI COFFEE & EATERY)'],
+            ['LAPORAN PENJUALAN ' . strtoupper($shopName)],
             ['Periode: ' . $formattedStart . ' - ' . $formattedEnd],
             [''],
             [
@@ -134,7 +135,7 @@ class SalesReportExport implements
                 $sheet->mergeCells('A2:K2');
                 $sheet->getStyle('A1:A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Styling Header Tabel (Warna Cokelat Kopi Amber Cafe Noli)
+                // Styling Header Tabel (Warna Cokelat Kopi Amber)
                 $sheet->getStyle("A{$headerRow}:K{$headerRow}")->applyFromArray([
                     'font' => [
                         'bold' => true,

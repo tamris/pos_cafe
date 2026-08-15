@@ -92,7 +92,8 @@ class GeminiAIService
 
     private function buildPrompt($prompt, $context)
     {
-        $systemPrompt = "Anda adalah asisten AI profesional untuk sistem POS Cafe Noli (Noli Coffee & Eatery). Anda ahli dalam analisis bisnis cafe, penjualan menu (kopi, pastry, food), dan manajemen inventori.\n\n";
+        $shopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe & Eatery';
+        $systemPrompt = "Anda adalah asisten AI profesional untuk sistem {$shopName}. Anda ahli dalam analisis bisnis cafe & resto, penjualan menu (kopi, minuman, pastry, makanan), dan manajemen inventori.\n\n";
 
         $systemPrompt .= "KEMAMPUAN ANDA:\n";
         $systemPrompt .= "- Menganalisis data penjualan dan transaksi\n";

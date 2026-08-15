@@ -14,7 +14,7 @@ use App\Exports\SalesReportExport;
 use Carbon\Carbon;
 
 #[Layout('components.layouts.app')]
-#[Title('Laporan Ringkasan - Cafe Noli')]
+#[Title('Laporan Ringkasan - POS Cafe')]
 class ReportIndex extends Component
 {
     use WithPagination;
@@ -51,7 +51,7 @@ class ReportIndex extends Component
 
     public function exportExcel()
     {
-        $fileName = 'Laporan_Penjualan_Cafe_Noli_' . $this->dateFrom . '_sd_' . $this->dateTo . '.xlsx';
+        $fileName = 'Laporan_Penjualan_Cafe_' . $this->dateFrom . '_sd_' . $this->dateTo . '.xlsx';
         return Excel::download(new SalesReportExport($this->dateFrom, $this->dateTo), $fileName);
     }
 

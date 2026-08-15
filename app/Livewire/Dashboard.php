@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\DB;
 
 #[Layout('components.layouts.app')]
-#[Title('Dashboard - Cafe Noli POS')]
+#[Title('Dashboard - POS Cafe')]
 class Dashboard extends Component
 {
     public $totalCategories;
