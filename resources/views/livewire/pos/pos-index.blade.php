@@ -107,7 +107,7 @@
                                 @endif
 
                                 @if ($product->image)
-                                    <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}" class="w-full h-28 lg:h-32 object-cover rounded-lg mb-3 bg-slate-50 dark:bg-slate-700">
+                                    <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}" class="w-full h-28 lg:h-32 object-fill rounded-lg mb-3 bg-slate-50 dark:bg-slate-700">
                                 @else
                                     <div class="w-full h-28 lg:h-32 bg-slate-100 dark:bg-slate-700/60 rounded-lg flex items-center justify-center mb-3 group-hover:bg-slate-200/60 dark:group-hover:bg-slate-700 transition-colors">
                                         <span class="text-3xl">
