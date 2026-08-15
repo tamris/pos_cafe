@@ -128,11 +128,11 @@
                                 
                                 <div class="flex-1 flex flex-col justify-between">
                                     <div>
-                                        <h3 class="font-bold text-slate-900 dark:text-white mb-1 text-xs lg:text-sm line-clamp-2 leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ $product->name }}</h3>
+                                        <h3 class="font-bold text-slate-900 dark:text-white mb-1 text-xs lg:text-sm line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{{ $product->name }}</h3>
                                         <p class="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">{{ $product->description }}</p>
                                     </div>
                                     <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
-                                        <p class="font-bold text-amber-600 dark:text-amber-400 text-sm lg:text-base">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                                        <p class="font-bold text-emerald-600 dark:text-emerald-400 text-sm lg:text-base">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
                                         <span class="text-xs bg-slate-900 dark:bg-blue-600 text-white rounded-lg p-1.5 group-hover:bg-slate-800 dark:group-hover:bg-blue-700 transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                         </span>
@@ -157,7 +157,7 @@
                             <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
                                 🛒 Pesanan Cafe Noli
                             </h3>
-                            <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
                                 Mode: {{ strtoupper(str_replace('_', ' ', $orderType)) }} 
                                 @if($orderType === 'dine_in')
                                     ({{ $tableNumber ?: 'Belum isi meja' }})
@@ -189,7 +189,7 @@
     <div class="fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 shadow-2xl lg:hidden z-40 flex justify-between items-center gap-4 safe-area-bottom animate-slide-up transition-colors">
         <div class="flex flex-col">
             <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ count($cart) }} Menu di keranjang</span>
-            <span class="text-lg font-bold text-amber-600 dark:text-amber-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
+            <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
         </div>
         <button wire:click="openMobileCart" class="bg-slate-900 dark:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 dark:hover:bg-blue-700 active:scale-95 transition-all shadow-md">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -412,7 +412,7 @@
                                 <div class="text-xs space-y-1 text-slate-700 dark:text-slate-300">
                                     <div class="flex justify-between">
                                         <span>Tipe Pesanan:</span>
-                                        <span class="font-bold text-amber-600 dark:text-amber-400 uppercase">{{ str_replace('_', ' ', $lastTransaction->order_type) }}</span>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 uppercase">{{ str_replace('_', ' ', $lastTransaction->order_type) }}</span>
                                     </div>
                                     @if($lastTransaction->order_type === 'dine_in' && $lastTransaction->table_number)
                                         <div class="flex justify-between">

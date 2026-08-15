@@ -4,7 +4,7 @@
         <div class="flex items-start justify-between gap-2">
             <div class="flex-1 min-w-0 pr-2">
                 <p class="font-semibold text-slate-900 dark:text-white text-sm line-clamp-1">{{ $item['name'] }}</p>
-                <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
                     Rp {{ number_format($item['price'], 0, ',', '.') }}
                 </p>
             </div>
@@ -40,13 +40,13 @@
             <div>
                 @if(!empty($item['notes']))
                     <button type="button" wire:click="openItemNotesModal({{ $index }})"
-                        class="text-[11px] font-mono text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded hover:underline max-w-[180px] truncate text-left"
+                        class="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded hover:underline max-w-[180px] truncate text-left"
                         title="Ubah catatan">
                         📝 {{ $item['notes'] }}
                     </button>
                 @else
                     <button type="button" wire:click="openItemNotesModal({{ $index }})"
-                        class="text-[11px] text-slate-400 hover:text-amber-600 dark:text-slate-500 dark:hover:text-amber-400 font-medium hover:underline flex items-center gap-1">
+                        class="text-[11px] text-slate-400 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-400 font-medium hover:underline flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         <span>Opsi / Catatan</span>
                     </button>

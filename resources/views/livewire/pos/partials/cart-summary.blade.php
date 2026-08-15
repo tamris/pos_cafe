@@ -55,7 +55,7 @@
 
         <div class="flex justify-between items-end pt-2 border-t border-slate-200 dark:border-slate-700">
             <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Total Tagihan</span>
-            <span class="text-xl font-bold text-amber-600 dark:text-amber-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
+            <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
         </div>
     </div>
 
