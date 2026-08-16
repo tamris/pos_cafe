@@ -24,13 +24,28 @@
                         </p>
                     </div>
 
-                    {{-- Quick Date Buttons --}}
-                    <div class="flex flex-wrap items-center gap-1.5">
-                        <button type="button" wire:click="setQuickDate('today')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">Hari Ini</button>
-                        <button type="button" wire:click="setQuickDate('yesterday')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">Kemarin</button>
-                        <button type="button" wire:click="setQuickDate('this_week')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">Minggu Ini</button>
-                        <button type="button" wire:click="setQuickDate('this_month')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">Bulan Ini</button>
-                        <button type="button" wire:click="setQuickDate('last_month')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">Bulan Lalu</button>
+                    {{-- Quick Date Buttons Tabs --}}
+                    <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                        <button type="button" wire:click="setQuickDate('today')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'today' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Hari Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('yesterday')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'yesterday' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Kemarin
+                        </button>
+                        <button type="button" wire:click="setQuickDate('this_week')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'this_week' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Minggu Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('this_month')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'this_month' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Bulan Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('last_month')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'last_month' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Bulan Lalu
+                        </button>
                     </div>
                 </div>
 

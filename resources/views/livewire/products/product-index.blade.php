@@ -78,7 +78,7 @@
                         </div>
                     </div>
 
-                    {{-- Status Filter Tabs (Semua, Aktif, Non-aktif, Tong Sampah/Arsip) --}}
+                    {{-- Status Filter Tabs (Semua, Aktif, Non-aktif, Arsip) --}}
                     <div class="flex items-center gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/60 overflow-x-auto scrollbar-none text-xs">
                         <button wire:click="setStatusFilter('all')"
                             class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'all' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600' }}">
@@ -103,7 +103,7 @@
                         <button wire:click="setStatusFilter('trashed')"
                             class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'trashed' ? 'bg-rose-700 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30' }}">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            <span>Tong Sampah / Arsip</span>
+                            <span>Arsip</span>
                             @if($countTrashed > 0)
                                 <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'trashed' ? 'bg-white/20 text-white' : 'bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200' }}">{{ $countTrashed }}</span>
                             @endif
@@ -229,7 +229,7 @@
                                             <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                                             <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">
                                                 @if($statusFilter === 'trashed')
-                                                    Tong sampah kosong. Tidak ada menu yang diarsipkan.
+                                                    Arsip kosong. Tidak ada menu yang diarsipkan.
                                                 @else
                                                     Tidak ada produk menu ditemukan.
                                                 @endif
