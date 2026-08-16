@@ -7,6 +7,13 @@
         <p class="text-slate-500 text-xs font-medium uppercase tracking-wider">Point of Sale & Management System</p>
     </div>
 
+    @if (session()->has('success') || session()->has('status'))
+        <div class="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center gap-2.5 animate-fade-in">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ session('success') ?? session('status') }}</span>
+        </div>
+    @endif
+
     <form wire:submit.prevent="login" class="space-y-5">
         <!-- Email -->
         <div>

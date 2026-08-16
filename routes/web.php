@@ -85,7 +85,7 @@ Route::middleware('auth')->group(function () {
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-        return redirect('/');
+        return redirect('/')->with('success', 'Anda telah berhasil keluar dari sistem POS.');
     })->name('logout');
 
     Route::middleware(IsAdmin::class)->group(function () {
