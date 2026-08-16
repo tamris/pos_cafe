@@ -10,10 +10,10 @@
             'subtitle' => 'Sistem Pemesanan & Kasir Cafe'
         ])
 
-        <main class="p-3 sm:p-4 lg:p-6 space-y-4 flex-1">
+        <main class="p-3 sm:p-4 lg:p-5 space-y-3 flex-1 flex flex-col min-h-0">
             
             {{-- TOP BAR: ORDER TYPE & TABLE NUMBER SELECTION --}}
-            <div class="bg-white dark:bg-slate-800 rounded-xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-3.5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
                 
                 {{-- Order Type Switcher --}}
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -65,7 +65,7 @@
             </div>
 
             {{-- SHIFT STATUS & MANAGEMENT BANNER --}}
-            <div class="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="bg-white dark:bg-slate-800 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-2.5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
                 <div class="flex items-center gap-3">
                     @if ($activeShift)
                         <div class="flex flex-wrap items-center gap-2">
@@ -102,13 +102,13 @@
                 <div class="flex items-center gap-2 shrink-0">
                     @if ($activeShift)
                         <button type="button" wire:click="openEndShiftModal"
-                            class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
+                            class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                             Tutup Shift & Rekap Kas
                         </button>
                     @else
                         <button type="button" wire:click="openStartShiftModal"
-                            class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
                             ⚡ Buka Shift Kasir
                         </button>
@@ -116,31 +116,31 @@
                 </div>
             </div>
 
-            {{-- MAIN LAYOUT: SPLIT SCREEN KIRI (PRODUK) & KANAN (KERANJANG MD+) --}}
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-start">
+            {{-- MAIN LAYOUT: SPLIT SCREEN KIRI (PRODUK SCROLL MANDIRI) & KANAN (KERANJANG MD+ TETAP PAS DI LAYAR) --}}
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-4 lg:gap-5 items-start flex-1 min-h-0">
                 
-                {{-- LEFT COLUMN: SEARCH & COMPACT PRODUCTS (7 cols on md, 8 cols on xl) --}}
-                <div class="md:col-span-7 xl:col-span-8 space-y-4">
+                {{-- LEFT COLUMN: SEARCH & SCROLLABLE COMPACT PRODUCTS --}}
+                <div class="md:col-span-7 xl:col-span-8 flex flex-col md:h-[calc(100vh-14.5rem)] xl:h-[calc(100vh-13.8rem)] space-y-3 min-h-0">
                     
-                    {{-- SEARCH & CATEGORY SELECTOR --}}
-                    <div class="bg-white dark:bg-slate-800 rounded-xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors">
-                        <div class="flex flex-col sm:flex-row gap-3">
+                    {{-- SEARCH & CATEGORY SELECTOR (TETAP DI ATAS) --}}
+                    <div class="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-3.5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors shrink-0">
+                        <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
                             <div class="flex-1 relative">
                                 <input type="text" wire:model.live="search"
                                     id="searchInput"
                                     placeholder="Cari menu / scan barcode..."
-                                    class="w-full pl-10 pr-10 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 text-xs"
+                                    class="w-full pl-10 pr-10 py-2 sm:py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 text-xs"
                                     autocomplete="off">
-                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 absolute left-3 top-2.5 sm:top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 absolute left-3 top-2 sm:top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                                 @if(!empty($search))
                                     <button type="button" wire:click="clearSearch"
-                                        class="absolute right-3 top-2 sm:top-2.5 text-slate-400 hover:text-slate-600 p-1 rounded-md"
+                                        class="absolute right-3 top-1.5 sm:top-2 text-slate-400 hover:text-slate-600 p-1 rounded-md"
                                         title="Hapus pencarian">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
                                 @endif
                             </div>
-                            <select wire:model.live="selectedCategory" class="px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs font-medium w-full sm:w-56">
+                            <select wire:model.live="selectedCategory" class="px-3 sm:px-4 py-2 sm:py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs font-medium w-full sm:w-56">
                                 <option value="">Semua Menu ({{ $categories->sum('products_count') }})</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }} ({{ $category->products_count }})</option>
@@ -149,80 +149,82 @@
                         </div>
                     </div>
 
-                    {{-- Products Grid: Card Mungil Compact (Tablet: square + title, Desktop XL: detail lengkap) --}}
-                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
-                        @forelse($products as $product)
-                            @php
-                                $inCartQty = $this->getCartQuantity($product->id);
-                            @endphp
-                            <div wire:click="addToCart({{ $product->id }})"
-                                class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3.5 border {{ $inCartQty > 0 ? 'border-slate-900 dark:border-blue-500 ring-2 ring-slate-900/10 dark:ring-blue-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.96] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
-                                
-                                {{-- In-Cart Badge Indicator --}}
-                                @if($inCartQty > 0)
-                                    <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-slate-900 dark:bg-blue-600 text-white text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
-                                        {{ $inCartQty }}x
-                                    </div>
-                                @endif
+                    {{-- Products Grid: Scroll Mandiri Di Dalam Area Ini Saja --}}
+                    <div class="flex-1 overflow-y-auto pr-1 sm:pr-1.5 pb-6 scrollbar-thin dark:scrollbar-thumb-slate-700 min-h-0">
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3 xl:gap-3.5">
+                            @forelse($products as $product)
+                                @php
+                                    $inCartQty = $this->getCartQuantity($product->id);
+                                @endphp
+                                <div wire:click="addToCart({{ $product->id }})"
+                                    class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3.5 border {{ $inCartQty > 0 ? 'border-slate-900 dark:border-blue-500 ring-2 ring-slate-900/10 dark:ring-blue-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.96] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
+                                    
+                                    {{-- In-Cart Badge Indicator --}}
+                                    @if($inCartQty > 0)
+                                        <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-slate-900 dark:bg-blue-600 text-white text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
+                                            {{ $inCartQty }}x
+                                        </div>
+                                    @endif
 
-                                <div>
-                                    {{-- Frame Gambar --}}
-                                    <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2.5 overflow-hidden bg-slate-100 dark:bg-slate-700 relative flex items-center justify-center">
-                                        @if ($product->image)
-                                            <img src="{{ Storage::url($product->image) }}" 
-                                                 alt="{{ $product->name }}" 
-                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-700/60 group-hover:bg-slate-200/60 transition-colors">
-                                                <span class="text-2xl sm:text-3xl">
-                                                    @if(str_contains(strtolower($product->name), 'coffee') || str_contains(strtolower($product->name), 'latte') || str_contains(strtolower($product->name), 'americano') || str_contains(strtolower($product->name), 'v60'))
-                                                        ☕
-                                                    @elseif(str_contains(strtolower($product->name), 'tea') || str_contains(strtolower($product->name), 'matcha') || str_contains(strtolower($product->name), 'chocolate'))
-                                                        🍵
-                                                    @elseif(str_contains(strtolower($product->name), 'croissant') || str_contains(strtolower($product->name), 'brownies'))
-                                                        🥐
-                                                    @elseif(str_contains(strtolower($product->name), 'nasi') || str_contains(strtolower($product->name), 'spaghetti') || str_contains(strtolower($product->name), 'katsu'))
-                                                        🍝
-                                                    @else
-                                                        🍟
-                                                    @endif
-                                                </span>
-                                            </div>
-                                        @endif
+                                    <div>
+                                        {{-- Frame Gambar --}}
+                                        <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2.5 overflow-hidden bg-slate-100 dark:bg-slate-700 relative flex items-center justify-center">
+                                            @if ($product->image)
+                                                <img src="{{ Storage::url($product->image) }}" 
+                                                     alt="{{ $product->name }}" 
+                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-700/60 group-hover:bg-slate-200/60 transition-colors">
+                                                    <span class="text-2xl sm:text-3xl">
+                                                        @if(str_contains(strtolower($product->name), 'coffee') || str_contains(strtolower($product->name), 'latte') || str_contains(strtolower($product->name), 'americano') || str_contains(strtolower($product->name), 'v60'))
+                                                            ☕
+                                                        @elseif(str_contains(strtolower($product->name), 'tea') || str_contains(strtolower($product->name), 'matcha') || str_contains(strtolower($product->name), 'chocolate'))
+                                                            🍵
+                                                        @elseif(str_contains(strtolower($product->name), 'croissant') || str_contains(strtolower($product->name), 'brownies'))
+                                                            🥐
+                                                        @elseif(str_contains(strtolower($product->name), 'nasi') || str_contains(strtolower($product->name), 'spaghetti') || str_contains(strtolower($product->name), 'katsu'))
+                                                            🍝
+                                                        @else
+                                                            🍟
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        
+                                        {{-- Judul Menu --}}
+                                        <h3 class="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-center xl:text-left">
+                                            {{ $product->name }}
+                                        </h3>
+                                        
+                                        {{-- Deskripsi (Desktop XL Only) --}}
+                                        <p class="hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-2 mt-0.5">
+                                            {{ $product->description }}
+                                        </p>
                                     </div>
                                     
-                                    {{-- Judul Menu --}}
-                                    <h3 class="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-center xl:text-left">
-                                        {{ $product->name }}
-                                    </h3>
-                                    
-                                    {{-- Deskripsi (Desktop XL Only) --}}
-                                    <p class="hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-2 mt-0.5">
-                                        {{ $product->description }}
-                                    </p>
+                                    {{-- Harga & Plus Button (Desktop XL Only) --}}
+                                    <div class="hidden xl:flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-1">
+                                        <p class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                                        <span class="text-xs bg-slate-900 dark:bg-blue-600 text-white rounded-lg p-1.5 group-hover:bg-slate-800 dark:group-hover:bg-blue-700 transition-colors shadow-xs">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        </span>
+                                    </div>
                                 </div>
-                                
-                                {{-- Harga & Plus Button (Desktop XL Only) --}}
-                                <div class="hidden xl:flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-1">
-                                    <p class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                                    <span class="text-xs bg-slate-900 dark:bg-blue-600 text-white rounded-lg p-1.5 group-hover:bg-slate-800 dark:group-hover:bg-blue-700 transition-colors shadow-xs">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    </span>
+                            @empty
+                                <div class="col-span-full text-center py-12">
+                                    <div class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 border-dashed">
+                                        <span class="text-4xl block mb-2">☕</span>
+                                        <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">Tidak ada menu cafe ditemukan</p>
+                                    </div>
                                 </div>
-                            </div>
-                        @empty
-                            <div class="col-span-full text-center py-12">
-                                <div class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 border-dashed">
-                                    <span class="text-4xl block mb-2">☕</span>
-                                    <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">Tidak ada menu cafe ditemukan</p>
-                                </div>
-                            </div>
-                        @endforelse
+                            @endforelse
+                        </div>
                     </div>
                 </div>
 
-                {{-- RIGHT COLUMN: KERANJANG PERMANEN (TINGGI PAS DENGAN VIEWPORT LAYAR MD & XL, TIDAK SCROLL HALAMAN) --}}
-                <div class="hidden md:flex md:col-span-5 xl:col-span-4 flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm h-[calc(100vh-12.5rem)] sticky top-4 overflow-hidden transition-colors">
+                {{-- RIGHT COLUMN: KERANJANG PERMANEN (TINGGI PAS VIEWPORT LAYAR, CTA BAYAR TERKUNCI DI BAWAH) --}}
+                <div class="hidden md:flex md:col-span-5 xl:col-span-4 flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm md:h-[calc(100vh-14.5rem)] xl:h-[calc(100vh-13.8rem)] overflow-hidden transition-colors shrink-0 sticky top-4">
                     
                     {{-- Header Keranjang --}}
                     <div class="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/50 flex justify-between items-center shrink-0">
