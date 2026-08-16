@@ -244,8 +244,8 @@ class PosIndex extends Component
 
     public function loadProducts()
     {
-        // For Cafe Mode: display all menu items without hiding when stock reaches 0
-        $query = Product::with('category');
+        // For Cafe Mode: display all active menu items without hiding when stock reaches 0
+        $query = Product::where('is_active', true)->with('category');
 
         if ($this->selectedCategory) {
             $query->where('category_id', $this->selectedCategory);
@@ -269,8 +269,8 @@ class PosIndex extends Component
     {
         $product = Product::find($productId);
 
-        if (!$product) {
-            $this->notify('error', 'Menu tidak ditemukan.');
+        if (!$product || !$product->is_active) {
+            $this->notify('error', 'Menu sedang tidak tersedia atau dinonaktifkan.');
             return;
         }
 
@@ -312,14 +312,14 @@ class PosIndex extends Component
             return;
         }
 
-        $product = Product::where('barcode', $barcode)->first();
+        $product = Product::where('barcode', $barcode)->where('is_active', true)->first();
 
         if ($product) {
             $this->addToCart($product->id);
             $this->search = '';
             $this->loadProducts();
         } else {
-            $this->notify('info', 'Barcode tidak ditemukan. Lanjut cari nama menu.');
+            $this->notify('info', 'Barcode tidak ditemukan atau menu non-aktif. Lanjut cari nama menu.');
         }
     }
 
