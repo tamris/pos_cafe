@@ -159,7 +159,9 @@ class ShiftIndex extends Component
             ->orderBy('start_time', 'desc')
             ->paginate(10);
 
-        $cashiers = User::orderBy('name', 'asc')->get();
+        $cashiers = User::orderByRaw("CASE WHEN role = 'admin' THEN 1 ELSE 2 END")
+            ->orderBy('name', 'asc')
+            ->get();
 
         return view('livewire.reports.shift-index', [
             'shifts' => $shifts,
