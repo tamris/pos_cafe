@@ -13,7 +13,7 @@
     };
 
     $isMasterData = $isPath('products') || $isPath('categories') || $isPath('hpp') || $isPath('barcodes');
-    $isReports    = $isPath('stock-management') || $isPath('reports');
+    $isReports    = $isPath('stock-management') || $isPath('reports') || $isPath('shifts');
     $isSettings   = $isPath('users') || $isPath('settings');
 
     $activeGroup = $isMasterData ? 'master-data' : ($isReports ? 'reports' : ($isSettings ? 'settings' : ''));
@@ -148,6 +148,10 @@
                     <a href="{{ route('reports.index') }}" wire:navigate @click="if(window.innerWidth < 1280) sidebarOpen = false"
                         class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-colors {{ $isPath('reports') ? 'text-slate-900 font-semibold bg-slate-100 dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">
                         <span>Laporan Ringkasan</span>
+                    </a>
+                    <a href="{{ route('shifts.index') }}" wire:navigate @click="if(window.innerWidth < 1280) sidebarOpen = false"
+                        class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-colors {{ $isPath('shifts') ? 'text-slate-900 font-semibold bg-slate-100 dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">
+                        <span>Laporan Shift Kasir</span>
                     </a>
                 </div>
             </div>

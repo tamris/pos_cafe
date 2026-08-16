@@ -64,6 +64,58 @@
                 </div>
             </div>
 
+            {{-- SHIFT STATUS & MANAGEMENT BANNER --}}
+            <div class="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    @if ($activeShift)
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="relative flex h-2.5 w-2.5">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                            <span class="text-xs font-bold text-slate-800 dark:text-white">
+                                Shift Aktif (#SFT-{{ str_pad($activeShift->id, 5, '0', STR_PAD_LEFT) }})
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
+                            <span class="text-xs text-slate-600 dark:text-slate-300">
+                                Buka: <strong class="text-slate-800 dark:text-white">{{ $activeShift->start_time ? $activeShift->start_time->format('H:i') : '-' }}</strong>
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-500 hidden md:inline">•</span>
+                            <span class="text-xs text-slate-600 dark:text-slate-300 hidden md:inline">
+                                Modal Kas: <strong class="text-emerald-600 dark:text-emerald-400">Rp {{ number_format($activeShift->starting_cash, 0, ',', '.') }}</strong>
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-500 hidden lg:inline">•</span>
+                            <span class="text-xs text-slate-600 dark:text-slate-300 hidden lg:inline">
+                                Kas Laci Saat Ini: <strong class="text-slate-900 dark:text-white">Rp {{ number_format($activeShift->expected_cash, 0, ',', '.') }}</strong>
+                            </span>
+                        </div>
+                    @else
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-bold flex items-center gap-1">
+                                ⚠️ Shift Belum Dibuka
+                            </span>
+                            <span class="text-slate-500 dark:text-slate-400">Buka shift untuk mencatat modal kas awal & rekonsiliasi laci.</span>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    @if ($activeShift)
+                        <button type="button" wire:click="openEndShiftModal"
+                            class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            Tutup Shift & Rekap Kas
+                        </button>
+                    @else
+                        <button type="button" wire:click="openStartShiftModal"
+                            class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                            ⚡ Buka Shift Kasir
+                        </button>
+                    @endif
+                </div>
+            </div>
+
             {{-- MAIN LAYOUT: SPLIT SCREEN KIRI (PRODUK) & KANAN (KERANJANG MD+) --}}
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-start">
                 
@@ -481,6 +533,168 @@
         </div>
     @endif
 
+    {{-- MODAL BUKA SHIFT KASIR --}}
+    @if ($showStartShiftModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+                <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                            ⚡
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                                Buka Shift Kasir
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                Kasir: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ auth()->user()->name }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <button wire:click="closeStartShiftModal" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="p-5 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">
+                            Modal Kas Awal di Laci (Uang Kembalian):
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">Rp</span>
+                            <input type="text" wire:model.live="formattedStartingCash" placeholder="0" autofocus
+                                class="w-full pl-10 pr-4 py-2.5 text-lg font-extrabold border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                        </div>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Masukkan uang kas fisik di laci saat memulai shift.</p>
+                    </div>
+
+                    {{-- Quick Preset Chips --}}
+                    <div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">Pilihan Cepat Nominal:</span>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button type="button" wire:click="setStartingCashPreset(50000)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-200">
+                                50 Rb
+                            </button>
+                            <button type="button" wire:click="setStartingCashPreset(100000)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-200">
+                                100 Rb
+                            </button>
+                            <button type="button" wire:click="setStartingCashPreset(200000)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-200">
+                                200 Rb
+                            </button>
+                            <button type="button" wire:click="setStartingCashPreset(500000)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-200">
+                                500 Rb
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+                    <button type="button" wire:click="closeStartShiftModal" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                        Batal
+                    </button>
+                    <button type="button" wire:click="startShift" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                        ⚡ Mulai Buka Shift
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- MODAL TUTUP SHIFT & REKAP KASIR --}}
+    @if ($showEndShiftModal && $activeShift)
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+                <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                            🔒
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                                Tutup Shift & Rekonsiliasi Kas
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                Shift #SFT-{{ str_pad($activeShift->id, 5, '0', STR_PAD_LEFT) }} • Kasir: {{ $activeShift->user->name ?? auth()->user()->name }}
+                            </p>
+                        </div>
+                    </div>
+                    <button wire:click="closeEndShiftModal" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-thin">
+                    {{-- Rekap Ringkas Sistem --}}
+                    <div class="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>Modal Kas Awal:</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200">Rp {{ number_format($activeShift->starting_cash, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>(+) Penjualan Tunai:</span>
+                            <span class="font-bold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($activeShift->cash_sales, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-extrabold text-slate-900 dark:text-white text-sm">
+                            <span>(=) Total Kas Diharapkan di Laci:</span>
+                            <span class="text-orange-600 dark:text-orange-400">Rp {{ number_format($activeShift->expected_cash, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-500 pt-1 text-[11px]">
+                            <span>Penjualan Non-Tunai (QRIS & Transfer):</span>
+                            <span>Rp {{ number_format($activeShift->qris_sales + $activeShift->transfer_sales, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Input Uang Fisik Aktual --}}
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-1.5">
+                            Hitung Uang Fisik Aktual di Laci Kasir:
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">Rp</span>
+                            <input type="text" wire:model.live="formattedActualCash" placeholder="0" autofocus
+                                class="w-full pl-10 pr-4 py-2.5 text-lg font-extrabold border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-rose-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                        </div>
+                    </div>
+
+                    {{-- Status Selisih Real-time Preview --}}
+                    <div class="p-3.5 rounded-xl border {{ $shiftDifference == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : ($shiftDifference < 0 ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300' : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300') }}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider">Hasil Selisih Kas:</span>
+                            <span class="text-sm font-extrabold">
+                                @if ($shiftDifference == 0)
+                                    ✅ Sesuai / Pas (Rp 0)
+                                @elseif ($shiftDifference < 0)
+                                    ⚠️ Uang Kurang -Rp {{ number_format(abs($shiftDifference), 0, ',', '.') }}
+                                @else
+                                    💡 Uang Lebih +Rp {{ number_format($shiftDifference, 0, ',', '.') }}
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Catatan Penutupan Shift --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Catatan Shift (Opsional):
+                        </label>
+                        <textarea wire:model="shiftNotes" rows="2" placeholder="Contoh: Titipan uang receh aman, selisih pas..."
+                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+                    <button type="button" wire:click="closeEndShiftModal" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                        Batal
+                    </button>
+                    <button type="button" wire:click="endShift" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                        🔒 Tutup Shift & Cetak Rekap
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
 </div>
 
 @push('scripts')
@@ -502,6 +716,8 @@
             @this.call('closePaymentModal');
             @this.call('closeItemNotesModal');
             @this.call('closeMobileCart');
+            @this.call('closeStartShiftModal');
+            @this.call('closeEndShiftModal');
         }
     });
 
@@ -515,6 +731,12 @@
                 }
             });
         }
+
+        Livewire.on('open-print-shift-tab', (event) => {
+            if (event.url) {
+                window.open(event.url, '_blank');
+            }
+        });
     });
 
     function confirmResetCart() {

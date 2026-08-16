@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
+use App\Models\CashierShift;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -35,6 +36,17 @@ class PosIndex extends Component
     public $isCustomTable = false;
     public $customerName = '';
 
+    // Shift Management State
+    public $activeShift = null;
+    public $showStartShiftModal = false;
+    public $showEndShiftModal = false;
+    public $startingCash = 0;
+    public $formattedStartingCash = '0';
+    public $actualCash = 0;
+    public $formattedActualCash = '0';
+    public $shiftDifference = 0;
+    public $shiftNotes = '';
+
     // Item Customization State
     public $showItemNotesModal = false;
     public $editingItemIndex = null;
@@ -52,6 +64,122 @@ class PosIndex extends Component
     public function mount()
     {
         $this->loadProducts();
+        $this->checkActiveShift();
+    }
+
+    public function checkActiveShift()
+    {
+        $this->activeShift = CashierShift::where('user_id', auth()->id())
+            ->where('status', 'open')
+            ->latest()
+            ->first();
+
+        if ($this->activeShift) {
+            $this->activeShift->recalculateTotals();
+        }
+    }
+
+    public function openStartShiftModal()
+    {
+        $this->startingCash = 0;
+        $this->formattedStartingCash = '0';
+        $this->showStartShiftModal = true;
+    }
+
+    public function closeStartShiftModal()
+    {
+        $this->showStartShiftModal = false;
+    }
+
+    public function setStartingCashPreset($amount)
+    {
+        $this->startingCash = (float) $amount;
+        $this->formattedStartingCash = number_format($this->startingCash, 0, ',', '.');
+    }
+
+    public function updatedFormattedStartingCash()
+    {
+        $clean = preg_replace('/[^0-9]/', '', $this->formattedStartingCash);
+        $this->startingCash = (float) ($clean ?: 0);
+        $this->formattedStartingCash = number_format($this->startingCash, 0, ',', '.');
+    }
+
+    public function startShift()
+    {
+        if ($this->startingCash < 0) {
+            $this->notify('error', 'Modal awal tidak boleh negatif.');
+            return;
+        }
+
+        $shift = CashierShift::create([
+            'user_id' => auth()->id(),
+            'start_time' => now(),
+            'starting_cash' => (float) $this->startingCash,
+            'expected_cash' => (float) $this->startingCash,
+            'status' => 'open',
+        ]);
+
+        $this->activeShift = $shift;
+        $this->showStartShiftModal = false;
+        $this->notify('success', 'Shift kasir berhasil dibuka dengan modal Rp ' . number_format($this->startingCash, 0, ',', '.'));
+    }
+
+    public function openEndShiftModal()
+    {
+        $this->checkActiveShift();
+        if (!$this->activeShift) {
+            $this->notify('error', 'Tidak ada shift aktif yang perlu ditutup.');
+            return;
+        }
+
+        $this->actualCash = (float) $this->activeShift->expected_cash;
+        $this->formattedActualCash = number_format($this->actualCash, 0, ',', '.');
+        $this->calculateShiftDifference();
+        $this->shiftNotes = '';
+        $this->showEndShiftModal = true;
+    }
+
+    public function closeEndShiftModal()
+    {
+        $this->showEndShiftModal = false;
+    }
+
+    public function updatedFormattedActualCash()
+    {
+        $clean = preg_replace('/[^0-9]/', '', $this->formattedActualCash);
+        $this->actualCash = (float) ($clean ?: 0);
+        $this->formattedActualCash = number_format($this->actualCash, 0, ',', '.');
+        $this->calculateShiftDifference();
+    }
+
+    public function calculateShiftDifference()
+    {
+        if ($this->activeShift) {
+            $this->shiftDifference = (float) $this->actualCash - (float) $this->activeShift->expected_cash;
+        }
+    }
+
+    public function endShift()
+    {
+        $this->checkActiveShift();
+        if (!$this->activeShift) {
+            $this->notify('error', 'Tidak ada shift aktif yang perlu ditutup.');
+            return;
+        }
+
+        $this->activeShift->end_time = now();
+        $this->activeShift->actual_cash = (float) $this->actualCash;
+        $this->activeShift->difference = (float) $this->actualCash - (float) $this->activeShift->expected_cash;
+        $this->activeShift->notes = $this->shiftNotes;
+        $this->activeShift->status = 'closed';
+        $this->activeShift->save();
+
+        $closedShiftId = $this->activeShift->id;
+        $this->activeShift = null;
+        $this->showEndShiftModal = false;
+
+        $this->dispatch('open-print-shift-tab', url: route('print.shift', $closedShiftId));
+        $this->notify('success', 'Shift kasir berhasil ditutup dan direkap!');
     }
 
     // Helper Notifikasi Toast
@@ -403,8 +531,11 @@ class PosIndex extends Component
             $finalDiscountAmount = ($this->subtotal * $discountPercent) / 100;
             $finalTaxAmount = ($this->subtotal * $taxPercent) / 100;
 
+            $shiftId = $this->activeShift?->id;
+
             $transaction = Transaction::create([
                 'user_id' => auth()->id(),
+                'shift_id' => $shiftId,
                 'subtotal' => (float) $this->subtotal,
                 'discount' => $finalDiscountAmount,
                 'tax' => $finalTaxAmount,
@@ -444,6 +575,10 @@ class PosIndex extends Component
             }
 
             DB::commit();
+
+            if ($this->activeShift) {
+                $this->activeShift->recalculateTotals();
+            }
 
             $this->lastTransaction = Transaction::with(['details.product', 'user'])->find($transaction->id);
             $this->lastInvoice = $transaction->invoice_number ?? '';
