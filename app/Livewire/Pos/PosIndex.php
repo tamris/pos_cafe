@@ -297,7 +297,6 @@ class PosIndex extends Component
                 'harga_beli' => $product->harga_beli,
                 'quantity' => 1,
                 'subtotal' => $product->price,
-                'stock' => $product->stock,
                 'notes' => ''
             ];
             $this->calculateTotal();
@@ -562,15 +561,6 @@ class PosIndex extends Component
                     'subtotal' => $item['subtotal'],
                     'profit' => $profit,
                     'notes' => $item['notes'] ?? null,
-                ]);
-
-                Product::find($item['id'])->decrement('stock', $item['quantity']);
-
-                \App\Models\StockMovement::create([
-                    'product_id' => $item['id'],
-                    'quantity' => -$item['quantity'],
-                    'type' => 'out',
-                    'notes' => 'Penjualan POS: ' . $transaction->invoice_number
                 ]);
             }
 

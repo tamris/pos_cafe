@@ -375,7 +375,6 @@ class HppIndex extends Component
                 'harga_beli' => $totalHpp,
                 'operational_cost' => (float) $this->alokasi_biaya_tetap,
                 'price' => $sellingPrice,
-                'stock' => 999,
                 'description' => 'Menu racikan via Kalkulator HPP & AI Pricing Strategy',
             ]);
         } else {

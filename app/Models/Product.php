@@ -15,7 +15,6 @@ class Product extends Model
         'sku',
         'description',
         'price',
-        'stock',
         'barcode',
         'harga_beli',
         'operational_cost',

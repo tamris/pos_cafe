@@ -264,7 +264,6 @@ class AIChat extends Component
                 ->groupBy('order_type')
                 ->get();
 
-            $lowStockProducts = Product::where('stock', '<', 10)->get();
             $totalProducts = Product::count();
             $totalCategories = Category::count();
 
@@ -321,7 +320,6 @@ class AIChat extends Component
                     $context .= ($index + 1) . ". {$product->name} (Harga: Rp " . number_format($product->price, 0, ',', '.') . "):\n";
                     $context .= "   - Terjual: {$product->total_sold} cup/porsi\n";
                     $context .= "   - Total Omset: Rp " . number_format($product->total_revenue, 0, ',', '.') . "\n";
-                    $context .= "   - Sisa Stok Bahan/Menu: {$product->stock} unit\n";
                 }
                 $context .= "\n";
             }
@@ -332,13 +330,6 @@ class AIChat extends Component
                     $context .= "- " . strtoupper($method->payment_method) . ": {$method->count} transaksi (Rp " . number_format($method->total, 0, ',', '.') . ")\n";
                 }
                 $context .= "\n";
-            }
-
-            if ($lowStockProducts->count() > 0) {
-                $context .= "⚠️ PERINGATAN STOK MENU/BAHAN MENIPIS (<10):\n";
-                foreach ($lowStockProducts as $p) {
-                    $context .= "- {$p->name}: sisa {$p->stock} unit\n";
-                }
             }
 
             return $context;
@@ -352,17 +343,13 @@ class AIChat extends Component
     {
         try {
             $products = Product::with('category')->get();
-            $lowStockProducts = Product::where('stock', '<', 10)->get();
-            $outOfStockProducts = Product::where('stock', '=', 0)->get();
             $categories = Category::withCount('products')->get();
 
             $context = "=== DAFTAR MENU & KATALOG CAFE ===\n\n";
 
             $context .= "RINGKASAN MENU & KATEGORI:\n";
             $context .= "- Total Menu: " . $products->count() . " produk menu\n";
-            $context .= "- Total Kategori: " . $categories->count() . " kategori\n";
-            $context .= "- Menu Stok Menipis: " . $lowStockProducts->count() . "\n";
-            $context .= "- Menu Habis (Sold Out): " . $outOfStockProducts->count() . "\n\n";
+            $context .= "- Total Kategori: " . $categories->count() . " kategori\n\n";
 
             $context .= "KATEGORI MENU CAFE:\n";
             foreach ($categories as $category) {
@@ -370,7 +357,7 @@ class AIChat extends Component
                 $context .= "📁 Kategori {$category->name} ({$category->products_count} menu):\n";
                 foreach ($catProducts as $cp) {
                     $margin = $cp->price > 0 ? round((($cp->price - ($cp->harga_beli ?? 0)) / $cp->price) * 100, 1) : 0;
-                    $context .= "   - {$cp->name} | Jual: Rp " . number_format($cp->price, 0, ',', '.') . " | HPP: Rp " . number_format($cp->harga_beli ?? 0, 0, ',', '.') . " | Margin: {$margin}% | Stok: {$cp->stock}\n";
+                    $context .= "   - {$cp->name} | Jual: Rp " . number_format($cp->price, 0, ',', '.') . " | HPP: Rp " . number_format($cp->harga_beli ?? 0, 0, ',', '.') . " | Margin: {$margin}%\n";
                 }
             }
 

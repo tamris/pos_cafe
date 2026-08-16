@@ -25,7 +25,6 @@ class ProductIndex extends Component
     public $category_id = '';
     public $description = '';
     public $price = '';
-    public $stock = 999; // Default 999 for Cafe Unlimited Mode
     public $image;
     public $oldImage;
     public $barcode = '';
@@ -148,7 +147,6 @@ class ProductIndex extends Component
     public function resetForm()
     {
         $this->reset(['name', 'sku', 'category_id', 'description', 'price', 'harga_beli', 'image', 'oldImage', 'productId', 'isEdit', 'barcode']);
-        $this->stock = 999;
         $this->resetValidation();
     }
 
@@ -190,8 +188,6 @@ class ProductIndex extends Component
             $product->update($data);
             session()->flash('message', 'Menu cafe berhasil diupdate');
         } else {
-            $data['stock'] = 999;
-
             $product = Product::create($data);
             session()->flash('message', 'Menu cafe berhasil ditambahkan');
         }
@@ -210,7 +206,6 @@ class ProductIndex extends Component
         $this->description = $product->description;
         $this->price = $product->price;
         $this->harga_beli = $product->harga_beli;
-        $this->stock = $product->stock;
         $this->oldImage = $product->image;
         $this->isEdit = true;
         $this->showModal = true;
