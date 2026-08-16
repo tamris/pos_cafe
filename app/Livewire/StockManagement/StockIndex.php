@@ -74,6 +74,22 @@ class StockIndex extends Component
             $q->whereDate('created_at', today());
         })->distinct('product_id')->count('product_id');
 
+        // Komparasi Data Kemarin (vs kemarin)
+        $yesterday = now()->subDay();
+        $yesterdayDetails = TransactionDetail::whereHas('transaction', function ($q) use ($yesterday) {
+            $q->whereDate('created_at', $yesterday);
+        });
+
+        $totalCupsYesterday = (int) $yesterdayDetails->sum('quantity');
+        $totalRevenueYesterday = (float) $yesterdayDetails->sum('subtotal');
+        $uniqueMenuSoldYesterday = TransactionDetail::whereHas('transaction', function ($q) use ($yesterday) {
+            $q->whereDate('created_at', $yesterday);
+        })->distinct('product_id')->count('product_id');
+
+        $cupsGrowth = $this->calculateGrowth($totalCupsToday, $totalCupsYesterday);
+        $revenueGrowth = $this->calculateGrowth($totalRevenueToday, $totalRevenueYesterday);
+        $uniqueMenuGrowth = $this->calculateGrowth($uniqueMenuSoldToday, $uniqueMenuSoldYesterday);
+
         // 2. Query Daftar Produk dengan Agregat Penjualan Hari Ini & All Time
         $query = Product::query()
             ->with('category')
@@ -114,7 +130,18 @@ class StockIndex extends Component
             'totalRevenueToday' => $totalRevenueToday,
             'topSellerName' => $topSellerName,
             'topSellerQty' => $topSellerQty,
-            'uniqueMenuSoldToday' => $uniqueMenuSoldToday
+            'uniqueMenuSoldToday' => $uniqueMenuSoldToday,
+            'cupsGrowth' => $cupsGrowth,
+            'revenueGrowth' => $revenueGrowth,
+            'uniqueMenuGrowth' => $uniqueMenuGrowth,
         ]);
+    }
+
+    private function calculateGrowth($current, $previous)
+    {
+        if ($previous == 0) {
+            return $current > 0 ? 100 : 0;
+        }
+        return round((($current - $previous) / $previous) * 100);
     }
 }

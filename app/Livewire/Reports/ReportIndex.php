@@ -27,6 +27,13 @@ class ReportIndex extends Component
     public $totalRevenue = 0;
     public $totalProfit = 0;
     public $totalTransactions = 0;
+    public $profitMargin = 0;
+
+    // Growth summary
+    public $revenueGrowth = 0;
+    public $profitGrowth = 0;
+    public $transactionsGrowth = 0;
+    public $marginGrowth = 0;
 
     public function mount()
     {
@@ -69,6 +76,25 @@ class ReportIndex extends Component
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->sum('transaction_details.profit');
 
+        $this->profitMargin = $this->totalRevenue > 0 ? round(($this->totalProfit / $this->totalRevenue) * 100, 1) : 0;
+
+        // Komparasi Bulan Kemarin (Bulan Lalu)
+        $lastMonthStart = now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00');
+        $lastMonthEnd = now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59');
+
+        $lastMonthSummary = Transaction::whereBetween('created_at', [$lastMonthStart, $lastMonthEnd]);
+        $lastMonthRevenue = (float) (clone $lastMonthSummary)->sum('total');
+        $lastMonthTransactions = (clone $lastMonthSummary)->count();
+        $lastMonthProfit = (float) Transaction::whereBetween('transactions.created_at', [$lastMonthStart, $lastMonthEnd])
+            ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
+            ->sum('transaction_details.profit');
+        $lastMonthMargin = $lastMonthRevenue > 0 ? round(($lastMonthProfit / $lastMonthRevenue) * 100, 1) : 0;
+
+        $this->revenueGrowth = $this->calculateGrowth($this->totalRevenue, $lastMonthRevenue);
+        $this->profitGrowth = $this->calculateGrowth($this->totalProfit, $lastMonthProfit);
+        $this->transactionsGrowth = $this->calculateGrowth($this->totalTransactions, $lastMonthTransactions);
+        $this->marginGrowth = $this->calculateGrowth($this->profitMargin, $lastMonthMargin);
+
         $transactions = Transaction::with(['user', 'details'])
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->latest()
@@ -77,5 +103,13 @@ class ReportIndex extends Component
         return view('livewire.reports.report-index', [
             'transactions' => $transactions
         ]);
+    }
+
+    private function calculateGrowth($current, $previous)
+    {
+        if ($previous == 0) {
+            return $current > 0 ? 100 : 0;
+        }
+        return round((($current - $previous) / $previous) * 100);
     }
 }

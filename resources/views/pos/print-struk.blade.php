@@ -9,95 +9,118 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Courier New', Courier, monospace, 'Lucida Console';
             font-size: 11px;
             width: 58mm;
             background-color: #fff;
             color: #000;
-            line-height: 1.25;
-        }
-
-        .container {
-            padding: 8px 4px;
+            line-height: 1.45;
+            padding: 12px 6px;
+            margin: 0 auto;
         }
 
         .text-center { text-align: center; }
         .text-right { text-align: right; }
-        .font-bold { font-weight: bold; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: 900; }
         .uppercase { text-transform: uppercase; }
-        .mb-1 { margin-bottom: 4px; }
-        
-        .border-dashed {
+
+        /* GARIS PEMISAH DENGAN JARAK LEGA */
+        .divider {
             border-bottom: 1px dashed #000;
-            margin: 6px 0;
+            margin: 10px 0;
+            width: 100%;
         }
 
-        .cafe-logo {
-            font-size: 20px;
+        /* HEADER */
+        .cafe-header {
+            margin-bottom: 8px;
+        }
+        .cafe-header .title {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        .cafe-header .info {
+            font-size: 9.5px;
+            line-height: 1.35;
+        }
+
+        /* METADATA */
+        .meta-list {
+            font-size: 10px;
+            line-height: 1.6;
+            margin: 4px 0;
+        }
+        .meta-list .row {
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 2px;
         }
 
-        .order-badge {
-            border: 1.5px solid #000;
-            padding: 5px 2px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 12px;
-            margin: 8px 0;
-            letter-spacing: 0.5px;
+        /* DAFTAR ITEM PESANAN */
+        .item-table {
+            margin: 4px 0;
         }
-
-        .meta-table {
-            width: 100%;
-            font-size: 10px;
-            margin-bottom: 4px;
-        }
-        
         .item-block {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
-
-        .item-row {
+        .item-name {
+            font-weight: 900;
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+        .item-calc {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 10px;
         }
-
         .item-notes {
             font-size: 9px;
             font-style: italic;
-            margin-left: 6px;
-            color: #222;
+            padding-left: 6px;
+            color: #333;
+            margin-top: 2px;
         }
 
-        .total-row {
+        /* KALKULASI & TOTAL */
+        .calc-list {
+            font-size: 10.5px;
+            line-height: 1.6;
+            margin: 4px 0;
+        }
+        .calc-list .row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3px;
-            font-size: 11px;
+            margin-bottom: 2px;
         }
-
         .grand-total {
             display: flex;
             justify-content: space-between;
             font-size: 13px;
-            font-weight: bold;
-            padding: 4px 0;
+            font-weight: 900;
+            padding: 6px 0;
+            margin: 6px 0;
             border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            margin: 4px 0;
         }
 
-        .wifi-box {
-            border: 1px dashed #000;
-            padding: 6px 4px;
+        /* WIFI & FOOTER */
+        .wifi-inline {
+            font-size: 9.5px;
             margin: 8px 0;
-            font-size: 10px;
-            line-height: 1.3;
-            background-color: #fafafa;
+            line-height: 1.4;
+        }
+        .footer {
+            margin-top: 12px;
+            font-size: 9.5px;
+            line-height: 1.4;
         }
 
         @media print {
@@ -106,125 +129,146 @@
                 size: 58mm auto;
             }
             body {
-                margin: 0;
-            }
-            .wifi-box {
-                background-color: transparent;
+                width: 100%;
+                padding: 8px 4px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        {{-- HEADER CAFE --}}
-        <div class="text-center">
-            <div class="cafe-logo">☕</div>
-            <h2 class="font-bold uppercase" style="font-size: 15px;">{{ $setting->shop_name ?? 'CAFE & EATERY' }}</h2>
-            <p style="font-size: 9.5px; margin-top: 2px;">{{ $setting->address ?? 'Coffee & Eatery' }}</p>
-            <p style="font-size: 9.5px;">Telp: {{ $setting->phone ?? '-' }}</p>
+
+    {{-- 1. HEADER CAFE --}}
+    <div class="cafe-header text-center">
+        <div class="title uppercase">{{ $setting->shop_name ?? 'POS CAFE & ROASTERY' }}</div>
+        @if(!empty($setting->address))
+            <div class="info">{{ $setting->address }}</div>
+        @endif
+        @if(!empty($setting->phone))
+            <div class="info">Telp: {{ $setting->phone }}</div>
+        @endif
+    </div>
+
+    <div class="divider"></div>
+
+    {{-- 2. METADATA TRANSAKSI & TIPE PESANAN --}}
+    <div class="meta-list">
+        <div class="row">
+            <span>No. Inv</span>
+            <span class="font-bold">{{ $transaction->invoice_number }}</span>
         </div>
-
-        <div class="border-dashed"></div>
-
-        {{-- BADGE TIPE PESANAN --}}
-        <div class="order-badge uppercase">
-            [ {{ str_replace('_', ' ', $transaction->order_type) }}
-            @if($transaction->order_type === 'dine_in' && $transaction->table_number)
-                - MEJA {{ $transaction->table_number }}
-            @endif ]
+        <div class="row">
+            <span>Waktu</span>
+            <span>{{ date('d/m/Y H:i', strtotime($transaction->created_at)) }}</span>
         </div>
-
-        {{-- METADATA TRANSAKSI --}}
-        <div class="meta-table">
-            <div style="display: flex; justify-content: space-between;">
-                <span>No Inv: {{ $transaction->invoice_number }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Waktu : {{ date('d/m/Y H:i', strtotime($transaction->created_at)) }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Barista: {{ auth()->user()->name ?? 'Staff Cafe' }}</span>
-            </div>
-            @if($transaction->customer_name)
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Pelanggan: <strong>{{ $transaction->customer_name }}</strong></span>
-                </div>
-            @endif
+        <div class="row">
+            <span>Kasir</span>
+            <span>{{ $transaction->user->name ?? (auth()->user()->name ?? 'Staff') }}</span>
         </div>
+        <div class="row">
+            <span>Pesanan</span>
+            <span class="font-bold uppercase">
+                @if(($transaction->order_type ?? 'dine_in') === 'dine_in')
+                    DINE IN {{ $transaction->table_number ? '(MEJA '.$transaction->table_number.')' : '' }}
+                @elseif(($transaction->order_type ?? '') === 'take_away')
+                    TAKE AWAY
+                @else
+                    DELIVERY
+                @endif
+            </span>
+        </div>
+        @if($transaction->customer_name)
+            <div class="row">
+                <span>Pelanggan</span>
+                <span class="font-bold">{{ $transaction->customer_name }}</span>
+            </div>
+        @endif
+    </div>
 
-        <div class="border-dashed"></div>
+    <div class="divider"></div>
 
-        {{-- DETAIL PESANAN --}}
+    {{-- 3. DAFTAR MENU / DETAIL ITEMS --}}
+    <div class="item-table">
         @foreach($transaction->details as $detail)
             <div class="item-block">
-                <p class="font-bold">{{ $detail->product->name }}</p>
-                <div class="item-row">
+                <div class="item-name">{{ $detail->product->name }}</div>
+                <div class="item-calc">
                     <span>{{ $detail->quantity }} x {{ number_format($detail->price, 0, ',', '.') }}</span>
-                    <span>{{ number_format($detail->subtotal, 0, ',', '.') }}</span>
+                    <span class="font-bold">{{ number_format($detail->subtotal, 0, ',', '.') }}</span>
                 </div>
                 @if($detail->notes)
-                    <p class="item-notes">* {{ $detail->notes }}</p>
+                    <div class="item-notes">* {{ $detail->notes }}</div>
                 @endif
             </div>
         @endforeach
+    </div>
 
-        <div class="border-dashed"></div>
+    <div class="divider"></div>
 
-        {{-- PERHITUNGAN HARGA --}}
-        <div class="total-row">
-            <span>Subtotal:</span>
-            <span>Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
+    {{-- 4. PERHITUNGAN PEMBAYARAN --}}
+    <div class="calc-list">
+        <div class="row">
+            <span>Subtotal</span>
+            <span>{{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
         </div>
-        
+
         @if($transaction->discount > 0)
-        <div class="total-row">
-            <span>Diskon:</span>
-            <span>-Rp {{ number_format($transaction->discount, 0, ',', '.') }}</span>
-        </div>
+            @php
+                $discountNominal = ($transaction->discount <= 100) 
+                    ? ($transaction->subtotal * $transaction->discount / 100) 
+                    : $transaction->discount;
+            @endphp
+            <div class="row">
+                <span>Diskon {{ $transaction->discount <= 100 ? '('.$transaction->discount.'%)' : '' }}</span>
+                <span>-{{ number_format($discountNominal, 0, ',', '.') }}</span>
+            </div>
         @endif
 
         @if($transaction->tax > 0)
-        <div class="total-row">
-            <span>Pajak:</span>
-            <span>+Rp {{ number_format($transaction->tax, 0, ',', '.') }}</span>
-        </div>
-        @endif
-
-        <div class="grand-total">
-            <span>TOTAL:</span>
-            <span>Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
-        </div>
-        
-        <div class="total-row">
-            <span>Bayar ({{ strtoupper($transaction->payment_method) }}):</span>
-            <span>Rp {{ number_format($transaction->paid, 0, ',', '.') }}</span>
-        </div>
-        <div class="total-row">
-            <span>Kembali:</span>
-            <span>Rp {{ number_format($transaction->change, 0, ',', '.') }}</span>
-        </div>
-
-        {{-- SECTION WIFI CAFE --}}
-        @if(!empty($setting->wifi_name) || !empty($setting->wifi_password))
-            <div class="wifi-box text-center">
-                <p class="font-bold" style="letter-spacing: 0.5px;">📶 FREE WIFI CAFE</p>
-                @if(!empty($setting->wifi_name))
-                    <p>SSID: <span class="font-bold">{{ $setting->wifi_name }}</span></p>
-                @endif
-                @if(!empty($setting->wifi_password))
-                    <p>PASS: <span class="font-bold">{{ $setting->wifi_password }}</span></p>
-                @endif
+            @php
+                $taxNominal = ($transaction->tax <= 100) 
+                    ? ($transaction->subtotal * $transaction->tax / 100) 
+                    : $transaction->tax;
+            @endphp
+            <div class="row">
+                <span>Pajak {{ $transaction->tax <= 100 ? '('.$transaction->tax.'%)' : '' }}</span>
+                <span>+{{ number_format($taxNominal, 0, ',', '.') }}</span>
             </div>
-        @else
-            <div class="border-dashed"></div>
         @endif
+    </div>
 
-        {{-- FOOTER STRUK --}}
-        <div class="text-center" style="margin-top: 6px;">
-            <p class="font-bold uppercase" style="font-size: 11px;">{{ $setting->shop_name ?? 'CAFE & EATERY' }}</p>
-            <p style="font-size: 9.5px; margin-top: 2px; white-space: pre-line;">{{ $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungan Anda!' }}</p>
-            <p style="font-size: 8.5px; margin-top: 6px; letter-spacing: 0.5px;">-- PAUSED TO REFRESH & ENJOY --</p>
+    <div class="grand-total">
+        <span>TOTAL</span>
+        <span>Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
+    </div>
+
+    <div class="calc-list">
+        <div class="row">
+            <span>Bayar ({{ strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS')) }})</span>
+            <span>{{ number_format($transaction->paid, 0, ',', '.') }}</span>
         </div>
+        <div class="row font-bold">
+            <span>Kembali</span>
+            <span>{{ number_format($transaction->change, 0, ',', '.') }}</span>
+        </div>
+    </div>
+
+    {{-- 5. WIFI CAFE (JIKA ADA) --}}
+    @if(!empty($setting->wifi_name) || !empty($setting->wifi_password))
+        <div class="divider"></div>
+        <div class="wifi-inline text-center">
+            <span>WiFi: <strong>{{ $setting->wifi_name ?? '-' }}</strong></span>
+            @if(!empty($setting->wifi_password))
+                <span> | Pass: <strong>{{ $setting->wifi_password }}</strong></span>
+            @endif
+        </div>
+    @endif
+
+    <div class="divider"></div>
+
+    {{-- 6. FOOTER --}}
+    <div class="footer text-center">
+        <div>{{ $setting->receipt_footer ?? 'Terima kasih atas kunjungannya!' }}</div>
+        <div style="font-size: 8px; color: #555; margin-top: 4px; letter-spacing: 0.5px;">-- Have a Good Coffee Day --</div>
     </div>
 
     <script>

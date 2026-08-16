@@ -228,10 +228,10 @@ class PosIndex extends Component
         $categoryName = strtolower($this->cart[$this->editingItemIndex]['category_name'] ?? '');
         if (str_contains($categoryName, 'coffee') || str_contains($categoryName, 'tea') || str_contains($categoryName, 'minuman')) {
             if ($this->tempSugarLevel !== 'Normal') {
-                $notesParts[] = "Sugar: " . $this->tempSugarLevel;
+                $notesParts[] = $this->tempSugarLevel;
             }
             if ($this->tempIceLevel !== 'Normal') {
-                $notesParts[] = "Ice: " . $this->tempIceLevel;
+                $notesParts[] = $this->tempIceLevel;
             }
         }
 

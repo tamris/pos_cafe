@@ -1,25 +1,28 @@
-<header class="sticky top-0 z-40 flex items-center justify-between h-16 px-6 bg-white border-b border-slate-200 dark:bg-slate-800 dark:border-slate-700 transition-colors duration-300">
+<header class="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 bg-white border-b border-slate-200 dark:bg-slate-800 dark:border-slate-700 transition-colors duration-300">
     
-    <div class="flex items-center space-x-4">
-        <button @click="sidebarOpen = !sidebarOpen"
-            class="lg:hidden text-slate-600 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-colors mr-2">
+    <div class="flex items-center space-x-3">
+        {{-- TOMBOL BURGER MENU --}}
+        <button @click.stop="sidebarOpen = !sidebarOpen"
+            type="button"
+            class="xl:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700 transition-colors focus:outline-none"
+            aria-label="Toggle Sidebar">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
 
         <div>
-            <h1 class="text-lg font-semibold text-slate-900 dark:text-white">{{ $title ?? 'Page' }}</h1>
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">{{ $title ?? 'Page' }}</h1>
             @if(isset($subtitle))
-                <p class="text-sm text-slate-500 dark:text-slate-400">{{ $subtitle }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">{{ $subtitle }}</p>
             @endif
         </div>
     </div>
 
-    <div class="flex items-center space-x-3">
-        
-        {{-- TOMBOL SAKLAR DARK MODE --}}
+    <div class="flex items-center space-x-2 sm:space-x-3">
+        {{-- TOMBOL TEMA --}}
         <button @click="toggleTheme()" 
+                type="button"
                 class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors focus:outline-none"
                 title="Ganti Tema">
             
@@ -33,7 +36,7 @@
         </button>
 
         {{-- JAM --}}
-        <span class="hidden md:inline-block text-sm text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg dark:bg-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-600">
+        <span class="hidden md:inline-block text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg dark:bg-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-600">
             {{ now()->format('d M Y, H:i')}}
         </span>
     </div>
