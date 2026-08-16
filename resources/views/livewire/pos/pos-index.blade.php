@@ -151,13 +151,13 @@
                 </div>
 
                 {{-- RIGHT COLUMN: DESKTOP & TABLET ORDER CART (col-span-1) --}}
-                <div class="hidden lg:flex flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow h-[calc(100vh-8rem)] sticky top-24 overflow-hidden transition-colors">
-                    <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 flex justify-between items-center">
+                <div class="hidden lg:flex flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 card-shadow h-[calc(100vh-10.5rem)] sticky top-4 overflow-hidden transition-colors">
+                    <div class="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 flex justify-between items-center shrink-0">
                         <div>
-                            <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
+                            <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
                                 🛒 Pesanan Menu
                             </h3>
-                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                            <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
                                 Mode: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} 
                                 @if($orderType === 'dine_in')
                                     ({{ $tableNumber ?: 'Belum isi meja' }})
@@ -169,12 +169,12 @@
                         @endif
                     </div>
 
-                    <div class="p-4 flex-1 overflow-y-auto space-y-3 scrollbar-thin dark:scrollbar-thumb-slate-700">
+                    <div class="p-3 flex-1 overflow-y-auto space-y-2 scrollbar-thin dark:scrollbar-thumb-slate-700 min-h-0">
                         @include('livewire.pos.partials.cart-items')
                     </div>
 
                     @if (!empty($cart))
-                        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        <div class="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                             @include('livewire.pos.partials.cart-summary')
                         </div>
                     @endif
