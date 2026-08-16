@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.app')]
-#[Title('Cetak Barcode - Toko Kendali')]
+#[Title('Cetak Barcode - POS Cafe')]
 class BarcodeIndex extends Component
 {
     public $search = '';

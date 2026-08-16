@@ -61,8 +61,9 @@ class StockReportExport implements
         $formattedStart = Carbon::parse(explode(' ', $this->dateFrom)[0])->translatedFormat('d F Y');
         $formattedEnd = Carbon::parse(explode(' ', $this->dateTo)[0])->translatedFormat('d F Y');
 
+        $shopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe';
         return [
-            ['LAPORAN STOK Toko Kendali'], 
+            ['LAPORAN STOK ' . strtoupper($shopName)], 
             ['Periode: ' . $formattedStart . ' - ' . $formattedEnd], 
             [''], 
             [     
