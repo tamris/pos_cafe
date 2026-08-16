@@ -329,7 +329,7 @@
                     </div>
 
                     {{-- Tombol AI CTA --}}
-                    <div class="mb-6 sm:mb-8">
+                    <!-- <div class="mb-6 sm:mb-8">
                         <button type="button" wire:click="analyzeWithAI" wire:loading.attr="disabled" wire:target="analyzeWithAI" class="relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-85 disabled:cursor-not-allowed text-white font-bold rounded-xl py-3 px-4 sm:px-6 w-full text-xs sm:text-sm transition-all duration-200 shadow-sm flex justify-center items-center min-h-[46px]">
                             <div wire:loading.remove wire:target="analyzeWithAI" class="flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -344,7 +344,7 @@
                                 <span class="font-medium tracking-wide">Menganalisis Takaran Resep Terbaik...</span>
                             </div>
                         </button>
-                    </div>
+                    </div> -->
 
                     {{-- List Biaya Bahan Baku --}}
                     <div>

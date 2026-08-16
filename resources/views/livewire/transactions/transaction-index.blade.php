@@ -7,7 +7,7 @@
     <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
         @include('livewire.includes.header', [
             'title' => 'Transaksi',
-            'subtitle' => 'Riwayat semua transaksi',
+            'subtitle' => auth()->user()->role === 'admin' ? 'Riwayat seluruh transaksi cafe' : 'Riwayat transaksi saya (' . auth()->user()->name . ')',
         ])
 
         <main class="p-4 sm:p-6 space-y-6 flex-1">

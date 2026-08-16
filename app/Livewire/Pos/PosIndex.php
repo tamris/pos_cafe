@@ -441,11 +441,6 @@ class PosIndex extends Component
     {
         if (empty($this->cart)) return;
 
-        if ($this->orderType === 'dine_in' && empty(trim($this->tableNumber))) {
-            $this->notify('error', 'Silakan masukkan Nomor Meja untuk Dine In!');
-            return;
-        }
-
         $this->showPaymentModal = true;
         if ($this->paymentMethod !== 'cash') {
             $this->paid = $this->total;

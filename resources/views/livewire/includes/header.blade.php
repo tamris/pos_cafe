@@ -35,9 +35,24 @@
             </svg>
         </button>
 
-        {{-- JAM --}}
-        <span class="hidden md:inline-block text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg dark:bg-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-600">
-            {{ now()->format('d M Y, H:i')}}
+        {{-- JAM DIGITAL REALTIME (AUTO-UPDATE OTOMATIS) --}}
+        <span x-data="{ 
+                dateTime: '',
+                updateClock() {
+                    const now = new Date();
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const month = months[now.getMonth()];
+                    const year = now.getFullYear();
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    this.dateTime = `${day} ${month} ${year}, ${hours}:${minutes}`;
+                }
+              }" 
+              x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+              class="hidden md:inline-flex items-center gap-2 text-xs font-medium text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg dark:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 font-mono tracking-tight shadow-2xs">
+            <!-- <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> -->
+            <span x-text="dateTime">{{ now()->format('d M Y, H:i') }}</span>
         </span>
     </div>
 </header>

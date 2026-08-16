@@ -37,8 +37,14 @@ class TransactionIndex extends Component
 
     public function viewDetail($id)
     {
-        $this->selectedTransaction = Transaction::with(['details.product', 'user'])->find($id);
-        $this->showDetailModal = true;
+        $query = Transaction::with(['details.product', 'user']);
+        if (auth()->check() && auth()->user()->role !== 'admin') {
+            $query->where('user_id', auth()->id());
+        }
+        $this->selectedTransaction = $query->find($id);
+        if ($this->selectedTransaction) {
+            $this->showDetailModal = true;
+        }
     }
 
     public function closeDetailModal()
@@ -49,7 +55,15 @@ class TransactionIndex extends Component
 
     public function render()
     {
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+        $userId = auth()->id();
+
         $query = Transaction::with('user')->latest();
+
+        // Jika bukan admin (kasir), hanya tampilkan transaksi kasir yang bersangkutan
+        if (!$isAdmin) {
+            $query->where('user_id', $userId);
+        }
 
         if ($this->search) {
             $query->where('invoice_number', 'like', '%' . $this->search . '%');
@@ -68,14 +82,20 @@ class TransactionIndex extends Component
         $filteredCount = (clone $query)->count();
         $averageTransaction = $filteredCount > 0 ? round($filteredTotal / $filteredCount) : 0;
 
-        // Omset Hari ini & Kemarin
+        // Omset Hari ini & Kemarin (disesuaikan berdasarkan kasir jika non-admin)
         $todayQuery = Transaction::whereDate('created_at', today());
+        if (!$isAdmin) {
+            $todayQuery->where('user_id', $userId);
+        }
         if ($this->paymentMethodFilter) {
             $todayQuery->where('payment_method', $this->paymentMethodFilter);
         }
         $todayOmset = $todayQuery->sum('total');
 
         $yesterdayQuery = Transaction::whereDate('created_at', now()->subDay());
+        if (!$isAdmin) {
+            $yesterdayQuery->where('user_id', $userId);
+        }
         if ($this->paymentMethodFilter) {
             $yesterdayQuery->where('payment_method', $this->paymentMethodFilter);
         }
@@ -87,6 +107,9 @@ class TransactionIndex extends Component
         $lastMonthEnd = now()->subMonth()->endOfMonth();
 
         $lastMonthQuery = Transaction::whereBetween('created_at', [$lastMonthStart, $lastMonthEnd]);
+        if (!$isAdmin) {
+            $lastMonthQuery->where('user_id', $userId);
+        }
         if ($this->paymentMethodFilter) {
             $lastMonthQuery->where('payment_method', $this->paymentMethodFilter);
         }
@@ -112,6 +135,7 @@ class TransactionIndex extends Component
             'revenueGrowth' => $revenueGrowth,
             'countGrowth' => $countGrowth,
             'averageGrowth' => $averageGrowth,
+            'isAdmin' => $isAdmin,
         ]);
     }
 
