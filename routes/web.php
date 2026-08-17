@@ -80,12 +80,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/print-struk/{invoice}', [PosController::class, 'printStruk'])->name('print.struk');
     Route::get('/print-shift/{id}', [PosController::class, 'printShift'])->name('print.shift');
     Route::get('/transactions', TransactionIndex::class)->name('transactions.index');
+    Route::get('/shifts', \App\Livewire\Reports\ShiftIndex::class)->name('shifts.index');
 
     Route::post('/logout', function () {
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-        return redirect('/');
+        return redirect('/')->with('success', 'Anda telah berhasil keluar dari sistem POS.');
     })->name('logout');
 
     Route::middleware(IsAdmin::class)->group(function () {
@@ -96,7 +97,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/stock-management', StockIndex::class)->name('stock-management.index');
         Route::get('/hpp-management', \App\Livewire\Hpp\HppIndex::class)->name('hpp.index');
         Route::get('/reports', ReportIndex::class)->name('reports.index');
-        Route::get('/shifts', \App\Livewire\Reports\ShiftIndex::class)->name('shifts.index');
         Route::get('/settings', \App\Livewire\Settings\SettingIndex::class)->name('settings.index');
         Route::get('/users', \App\Livewire\Users\UserIndex::class)->name('users.index');
         Route::get('/barcodes', \App\Livewire\Products\BarcodeIndex::class)->name('barcodes.index');

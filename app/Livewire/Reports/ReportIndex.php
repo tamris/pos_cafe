@@ -22,6 +22,7 @@ class ReportIndex extends Component
     public $dateFrom;
     public $dateTo;
     public $activeTab = 'penjualan';
+    public $activeQuickDate = 'this_month';
 
     // Properti summary
     public $totalRevenue = 0;
@@ -39,6 +40,7 @@ class ReportIndex extends Component
     {
         $this->dateFrom = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->dateTo = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $this->activeQuickDate = 'this_month';
     }
 
     public function updatedActiveTab()
@@ -48,12 +50,60 @@ class ReportIndex extends Component
 
     public function updatedDateFrom()
     {
+        $this->checkQuickDateMatch();
         $this->resetPage('penjualanPage');
     }
 
     public function updatedDateTo()
     {
+        $this->checkQuickDateMatch();
         $this->resetPage('penjualanPage');
+    }
+
+    public function setQuickDate($range)
+    {
+        $this->activeQuickDate = $range;
+
+        switch ($range) {
+            case 'today':
+                $this->dateFrom = Carbon::today()->format('Y-m-d');
+                $this->dateTo = Carbon::today()->format('Y-m-d');
+                break;
+            case 'yesterday':
+                $this->dateFrom = Carbon::yesterday()->format('Y-m-d');
+                $this->dateTo = Carbon::yesterday()->format('Y-m-d');
+                break;
+            case 'this_week':
+                $this->dateFrom = Carbon::now()->startOfWeek()->format('Y-m-d');
+                $this->dateTo = Carbon::now()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'this_month':
+                $this->dateFrom = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $this->dateTo = Carbon::now()->endOfMonth()->format('Y-m-d');
+                break;
+            case 'last_month':
+                $this->dateFrom = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
+                $this->dateTo = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+                break;
+        }
+        $this->resetPage('penjualanPage');
+    }
+
+    private function checkQuickDateMatch()
+    {
+        if ($this->dateFrom === Carbon::today()->format('Y-m-d') && $this->dateTo === Carbon::today()->format('Y-m-d')) {
+            $this->activeQuickDate = 'today';
+        } elseif ($this->dateFrom === Carbon::yesterday()->format('Y-m-d') && $this->dateTo === Carbon::yesterday()->format('Y-m-d')) {
+            $this->activeQuickDate = 'yesterday';
+        } elseif ($this->dateFrom === Carbon::now()->startOfWeek()->format('Y-m-d') && $this->dateTo === Carbon::now()->endOfWeek()->format('Y-m-d')) {
+            $this->activeQuickDate = 'this_week';
+        } elseif ($this->dateFrom === Carbon::now()->startOfMonth()->format('Y-m-d') && $this->dateTo === Carbon::now()->endOfMonth()->format('Y-m-d')) {
+            $this->activeQuickDate = 'this_month';
+        } elseif ($this->dateFrom === Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d') && $this->dateTo === Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')) {
+            $this->activeQuickDate = 'last_month';
+        } else {
+            $this->activeQuickDate = '';
+        }
     }
 
     public function exportExcel()
