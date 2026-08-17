@@ -164,23 +164,25 @@
             <span>Kasir</span>
             <span>{{ $transaction->user->name ?? (auth()->user()->name ?? 'Staff') }}</span>
         </div>
-        <div class="row">
-            <span>Pesanan</span>
-            <span class="font-bold uppercase">
-                @if(($transaction->order_type ?? 'dine_in') === 'dine_in')
-                    DINE IN {{ $transaction->table_number ? '(MEJA '.$transaction->table_number.')' : '' }}
-                @elseif(($transaction->order_type ?? '') === 'take_away')
-                    TAKE AWAY
-                @else
-                    DELIVERY
-                @endif
-            </span>
-        </div>
-        @if($transaction->customer_name)
+        @if(!empty($transaction->table_number) || !empty($transaction->customer_name))
             <div class="row">
-                <span>Pelanggan</span>
-                <span class="font-bold">{{ $transaction->customer_name }}</span>
+                <span>Pesanan</span>
+                <span class="font-bold uppercase">
+                    @if(($transaction->order_type ?? 'dine_in') === 'dine_in')
+                        DINE IN {{ $transaction->table_number ? '(MEJA '.$transaction->table_number.')' : '' }}
+                    @elseif(($transaction->order_type ?? '') === 'take_away')
+                        TAKE AWAY
+                    @else
+                        DELIVERY
+                    @endif
+                </span>
             </div>
+            @if(!empty($transaction->customer_name))
+                <div class="row">
+                    <span>Pelanggan</span>
+                    <span class="font-bold">{{ $transaction->customer_name }}</span>
+                </div>
+            @endif
         @endif
     </div>
 
