@@ -12,10 +12,92 @@
 
         <main class="p-4 sm:p-6 space-y-6 flex-1">
             
+<<<<<<< HEAD
             {{-- ========================================================================= --}}
             {{-- TAMPILAN KHUSUS KASIR (FOKUS OPERASIONAL SHIFT BERJALAN & LOG TERAKHIR)  --}}
             {{-- ========================================================================= --}}
             @if (!$isAdmin)
+=======
+            {{-- FILTER & CONTROLS SECTION --}}
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-4 sm:p-6 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            🕒 Filter Laporan Shift
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Filter riwayat shift berdasarkan tanggal, kasir, dan status shift
+                        </p>
+                    </div>
+
+                    {{-- Quick Date Buttons Tabs --}}
+                    <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                        <button type="button" wire:click="setQuickDate('today')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'today' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Hari Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('yesterday')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'yesterday' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Kemarin
+                        </button>
+                        <button type="button" wire:click="setQuickDate('this_week')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'this_week' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Minggu Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('this_month')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'this_month' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Bulan Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('last_month')" 
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'last_month' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Bulan Lalu
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {{-- Date From --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Dari Tanggal:</label>
+                        <input type="date" wire:model.live="dateFrom"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs cursor-pointer [color-scheme:light] dark:[color-scheme:dark]">
+                    </div>
+
+                    {{-- Date To --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Sampai Tanggal:</label>
+                        <input type="date" wire:model.live="dateTo"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs cursor-pointer [color-scheme:light] dark:[color-scheme:dark]">
+                    </div>
+
+                    {{-- Filter Kasir --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Pilih Kasir:</label>
+                        <select wire:model.live="selectedUserId"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs">
+                            <option value="">Semua Kasir</option>
+                            @foreach ($cashiers as $cashier)
+                                <option value="{{ $cashier->id }}">{{ $cashier->name }} ({{ ucfirst($cashier->role ?? 'Kasir') }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Filter Status --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Status Shift:</label>
+                        <select wire:model.live="selectedStatus"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs">
+                            <option value="">Semua Status</option>
+                            <option value="open">🟢 Shift Aktif (Belum Ditutup)</option>
+                            <option value="closed">🔒 Shift Selesai (Ditutup)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- SUMMARY KPI CARDS --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+>>>>>>> 37d2847cb47b72473567c6017937c9028048fba6
                 
                 {{-- 1. CARD STATUS SHIFT BERJALAN --}}
                 @if ($activeShift)

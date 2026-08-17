@@ -12,7 +12,7 @@
 
         <main class="p-4 sm:p-6 space-y-6 flex-1">
             
-            {{-- Flash Message --}}
+            {{-- Flash Message Success --}}
             @if (session()->has('message'))
                 <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 animate-fade-in">
                     <div class="flex items-center space-x-3">
@@ -20,6 +20,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <p class="text-emerald-800 dark:text-emerald-300 font-medium text-xs sm:text-sm">{{ session('message') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Flash Message Error --}}
+            @if (session()->has('error'))
+                <div class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 animate-fade-in">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <p class="text-rose-800 dark:text-rose-300 font-medium text-xs sm:text-sm">{{ session('error') }}</p>
                     </div>
                 </div>
             @endif
@@ -32,7 +44,7 @@
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
                             <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Daftar Menu Produk</h2>
-                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Kelola data menu, harga jual, HPP, serta kode barcode</p>
+                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Kelola data menu, ketersediaan di POS, HPP, serta kode barcode</p>
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
@@ -48,7 +60,7 @@
                             {{-- Search Input --}}
                             <div class="relative w-full sm:w-60">
                                 <input type="text" wire:model.live.debounce.300ms="search"
-                                    placeholder="Cari produk..."
+                                    placeholder="Cari produk / SKU / barcode..."
                                     class="w-full pl-10 pr-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                                 <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5 sm:top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -65,23 +77,57 @@
                             </button>
                         </div>
                     </div>
+
+                    {{-- Status Filter Tabs (Semua, Aktif, Non-aktif, Arsip) --}}
+                    <div class="flex items-center gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/60 overflow-x-auto scrollbar-none text-xs">
+                        <button wire:click="setStatusFilter('all')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'all' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600' }}">
+                            <span>Semua Menu</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200' }}">{{ $countAll }}</span>
+                        </button>
+
+                        <button wire:click="setStatusFilter('active')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/60 dark:border-emerald-800/40' }}">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Aktif di POS</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'active' ? 'bg-white/20 text-white' : 'bg-emerald-200/70 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200' }}">{{ $countActive }}</span>
+                        </button>
+
+                        <button wire:click="setStatusFilter('inactive')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'inactive' ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200/60 dark:border-amber-800/40' }}">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                            <span>Non-Aktif</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-amber-200/70 dark:bg-amber-800 text-amber-800 dark:text-amber-200' }}">{{ $countInactive }}</span>
+                        </button>
+
+                        <button wire:click="setStatusFilter('trashed')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'trashed' ? 'bg-rose-700 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30' }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <span>Arsip</span>
+                            @if($countTrashed > 0)
+                                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'trashed' ? 'bg-white/20 text-white' : 'bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200' }}">{{ $countTrashed }}</span>
+                            @endif
+                        </button>
+                    </div>
                 </div>
 
                 {{-- Table Area --}}
                 <div class="overflow-x-auto scrollbar-thin">
-                    <table class="w-full text-left border-collapse min-w-[700px]">
+                    <table class="w-full text-left border-collapse min-w-[760px]">
                         <thead class="bg-slate-50 dark:bg-slate-700/50 text-[11px] uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
                             <tr>
                                 <th class="px-5 sm:px-6 py-3.5">Produk</th>
                                 <th class="px-5 sm:px-6 py-3.5">SKU / Barcode</th>
                                 <th class="px-5 sm:px-6 py-3.5">Kategori</th>
                                 <th class="px-5 sm:px-6 py-3.5">Harga Jual</th>
+                                <th class="px-5 sm:px-6 py-3.5 text-center">Status POS</th>
                                 <th class="px-5 sm:px-6 py-3.5 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-xs sm:text-sm">
                             @forelse($products as $product)
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors group">
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors group {{ $product->trashed() ? 'opacity-70 bg-rose-50/20 dark:bg-rose-950/10' : '' }}">
+                                    {{-- Produk Info --}}
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap">
                                         <div class="flex items-center space-x-3">
                                             <div class="shrink-0 h-11 w-11">
@@ -94,45 +140,100 @@
                                                 @endif
                                             </div>
                                             <div class="min-w-0">
-                                                <div class="font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{{ $product->name }}</div>
-                                                <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px]">{{ Str::limit($product->description, 35) }}</div>
+                                                <div class="font-bold text-slate-900 dark:text-white truncate max-w-[200px] flex items-center gap-1.5">
+                                                    <span>{{ $product->name }}</span>
+                                                    @if($product->trashed())
+                                                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-semibold">Terhapus</span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
+                                                    {{ Str::limit($product->description, 35) ?: 'HPP: Rp ' . number_format($product->harga_beli, 0, ',', '.') }}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
+
+                                    {{-- SKU & Barcode --}}
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap">
                                         <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">{{ $product->sku }}</span>
                                         @if($product->barcode)
                                             <span class="block text-[10px] font-mono text-slate-400 dark:text-slate-500">{{ $product->barcode }}</span>
                                         @endif
                                     </td>
+
+                                    {{-- Kategori --}}
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                                             {{ $product->category->name ?? '-' }}
                                         </span>
                                     </td>
+
+                                    {{-- Harga Jual --}}
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400">
                                         Rp {{ number_format($product->price, 0, ',', '.') }}
                                     </td>
+
+                                    {{-- Status POS (Toggle Switch) --}}
+                                    <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap text-center">
+                                        @if($product->trashed())
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                                Diarsipkan
+                                            </span>
+                                        @else
+                                            <button wire:click="toggleStatus({{ $product->id }})" 
+                                                title="Klik untuk ubah status ketersediaan di Kasir POS"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer border {{ $product->is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 hover:bg-slate-200' }}">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $product->is_active ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
+                                                <span>{{ $product->is_active ? 'Aktif' : 'Non-Aktif' }}</span>
+                                                <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                                            </button>
+                                        @endif
+                                    </td>
+
+                                    {{-- Aksi --}}
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap text-right space-x-1.5 shrink-0">
-                                        <button wire:click="edit({{ $product->id }})"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95">
-                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                            Edit
-                                        </button>
-                                        
-                                        <button onclick="confirmDelete({{ $product->id }}, '{{ $product->name }}')"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-rose-300 dark:border-rose-800/60 text-xs font-medium rounded-lg text-rose-700 dark:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors active:scale-95">
-                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                            Hapus
-                                        </button>
+                                        @if($product->trashed())
+                                            {{-- Pulihkan (Restore) --}}
+                                            <button onclick="confirmRestore({{ $product->id }}, '{{ $product->name }}')"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-emerald-300 dark:border-emerald-800 text-xs font-medium rounded-lg text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors active:scale-95">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                                Pulihkan
+                                            </button>
+
+                                            {{-- Hapus Permanen --}}
+                                            <button onclick="confirmForceDelete({{ $product->id }}, '{{ $product->name }}')"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-rose-300 dark:border-rose-800 text-xs font-medium rounded-lg text-rose-700 dark:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors active:scale-95">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                Hapus Permanen
+                                            </button>
+                                        @else
+                                            <button wire:click="edit({{ $product->id }})"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                Edit
+                                            </button>
+                                            
+                                            <button onclick="confirmDelete({{ $product->id }}, '{{ $product->name }}')"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-rose-300 dark:border-rose-800/60 text-xs font-medium rounded-lg text-rose-700 dark:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors active:scale-95"
+                                                title="Arsipkan / Hapus Menu">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                Hapus
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center">
+                                    <td colspan="6" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                                            <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">Tidak ada produk ditemukan</p>
+                                            <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">
+                                                @if($statusFilter === 'trashed')
+                                                    Arsip kosong. Tidak ada menu yang diarsipkan.
+                                                @else
+                                                    Tidak ada produk menu ditemukan.
+                                                @endif
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
@@ -220,6 +321,18 @@
                                     @error('harga_beli') <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                                 </div>
 
+                                {{-- Status Menu (is_active) --}}
+                                <div class="sm:col-span-2 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block">Status Ketersediaan Menu</span>
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400">Aktifkan agar menu dapat dipilih dan dijual oleh kasir di POS</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" wire:model="is_active" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                                    </label>
+                                </div>
+
                                 {{-- KALKULATOR ESTIMASI MARGIN PROFIT --}}
                                 @php
                                     $pPrice = is_numeric($price) ? (float)$price : 0;
@@ -298,13 +411,16 @@
 <script>
     function confirmDelete(id, name) {
         Swal.fire({
-            title: 'Hapus Produk?',
-            text: "Anda akan menghapus produk: " + name,
+            title: 'Arsipkan Menu?',
+            html: `<div class="text-left text-xs space-y-2">
+                    <p class="font-semibold text-sm text-slate-800 dark:text-slate-200">Menu: <span class="text-rose-600">${name}</span></p>
+                    <p class="text-slate-600 dark:text-slate-400">Menu akan disembunyikan dari POS Kasir dan diarsipkan (Soft Delete). <b>Semua riwayat transaksi & omset masa lalu tetap 100% aman tersimpan.</b></p>
+                   </div>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#e11d48',
             cancelButtonColor: '#475569',
-            confirmButtonText: 'Ya, Hapus!',
+            confirmButtonText: 'Ya, Arsipkan',
             cancelButtonText: 'Batal',
             reverseButtons: true,
             background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
@@ -312,6 +428,46 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 @this.call('delete', id);
+            }
+        });
+    }
+
+    function confirmRestore(id, name) {
+        Swal.fire({
+            title: 'Pulihkan Menu?',
+            text: "Menu '" + name + "' akan dikembalikan ke daftar menu aktif.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'Ya, Pulihkan',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.call('restore', id);
+            }
+        });
+    }
+
+    function confirmForceDelete(id, name) {
+        Swal.fire({
+            title: 'Hapus Permanen?',
+            text: "Menu '" + name + "' akan dihapus selamanya dari database. Pastikan menu ini belum pernah memiliki riwayat transaksi.",
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'Hapus Permanen',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.call('forceDelete', id);
             }
         });
     }

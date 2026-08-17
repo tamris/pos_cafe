@@ -242,6 +242,54 @@
                 Toast.fire({ icon: type, title: message });
             });
         });
+
+        // Global SweetAlert Logout Confirmation
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Konfirmasi Keluar',
+                text: 'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Ya, Keluar',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+                color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Sedang Keluar...',
+                        text: 'Mengamankan sesi Anda...',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                        background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+                        color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+                    });
+
+                    const form = document.getElementById('logout-form');
+                    if (form) {
+                        form.submit();
+                    } else {
+                        const dynamicForm = document.createElement('form');
+                        dynamicForm.method = 'POST';
+                        dynamicForm.action = "{{ route('logout') }}";
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = "{{ csrf_token() }}";
+                        dynamicForm.appendChild(csrfInput);
+                        document.body.appendChild(dynamicForm);
+                        dynamicForm.submit();
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
