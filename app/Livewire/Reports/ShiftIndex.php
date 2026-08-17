@@ -23,7 +23,7 @@ class ShiftIndex extends Component
     public $selectedUserId = '';
     public $selectedStatus = '';
     public $search = '';
-    public $activeQuickDate = 'this_month';
+    
 
     // Summary Cards (Admin)
     public $totalShifts = 0;
@@ -55,7 +55,6 @@ class ShiftIndex extends Component
         $this->dateFrom = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->dateTo = Carbon::now()->endOfMonth()->format('Y-m-d');
         $this->activeQuickDate = 'this_month';
-<<<<<<< HEAD
 
         $this->checkActiveShift();
     }
@@ -193,20 +192,6 @@ class ShiftIndex extends Component
     {
         $this->checkQuickDateMatch();
         $this->resetPage();
-=======
-    }
-
-    public function updatedDateFrom() 
-    { 
-        $this->checkQuickDateMatch();
-        $this->resetPage(); 
-    }
-
-    public function updatedDateTo() 
-    { 
-        $this->checkQuickDateMatch();
-        $this->resetPage(); 
->>>>>>> 37d2847cb47b72473567c6017937c9028048fba6
     }
 
     public function updatedSelectedUserId() { $this->resetPage(); }
@@ -245,7 +230,6 @@ class ShiftIndex extends Component
 
     private function checkQuickDateMatch()
     {
-<<<<<<< HEAD
         if ($this->dateFrom === Carbon::today()->format('Y-m-d') && $this->dateTo === Carbon::today()->format('Y-m-d')) {
             $this->activeQuickDate = 'today';
         } elseif ($this->dateFrom === Carbon::yesterday()->format('Y-m-d') && $this->dateTo === Carbon::yesterday()->format('Y-m-d')) {
@@ -258,29 +242,6 @@ class ShiftIndex extends Component
             $this->activeQuickDate = 'last_month';
         } else {
             $this->activeQuickDate = '';
-=======
-        $today = Carbon::today()->format('Y-m-d');
-        $yesterday = Carbon::yesterday()->format('Y-m-d');
-        $startOfWeek = Carbon::now()->startOfWeek()->format('Y-m-d');
-        $endOfWeek = Carbon::now()->endOfWeek()->format('Y-m-d');
-        $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $endOfMonth = Carbon::now()->endOfMonth()->format('Y-m-d');
-        $startLastMonth = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
-        $endLastMonth = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-
-        if ($this->dateFrom === $today && $this->dateTo === $today) {
-            $this->activeQuickDate = 'today';
-        } elseif ($this->dateFrom === $yesterday && $this->dateTo === $yesterday) {
-            $this->activeQuickDate = 'yesterday';
-        } elseif ($this->dateFrom === $startOfWeek && $this->dateTo === $endOfWeek) {
-            $this->activeQuickDate = 'this_week';
-        } elseif ($this->dateFrom === $startOfMonth && $this->dateTo === $endOfMonth) {
-            $this->activeQuickDate = 'this_month';
-        } elseif ($this->dateFrom === $startLastMonth && $this->dateTo === $endLastMonth) {
-            $this->activeQuickDate = 'last_month';
-        } else {
-            $this->activeQuickDate = 'custom';
->>>>>>> 37d2847cb47b72473567c6017937c9028048fba6
         }
     }
 
