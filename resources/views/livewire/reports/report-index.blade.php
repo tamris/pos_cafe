@@ -96,7 +96,7 @@
                                 0%
                             </span>
                         @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs bulan lalu</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs periode sebelumnya</span>
                     </div>
                 </div>
 
@@ -131,7 +131,7 @@
                                 0%
                             </span>
                         @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs bulan lalu</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs periode sebelumnya</span>
                     </div>
                 </div>
 
@@ -166,7 +166,7 @@
                                 0%
                             </span>
                         @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs bulan lalu</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs periode sebelumnya</span>
                     </div>
                 </div>
 
@@ -201,7 +201,7 @@
                                 0%
                             </span>
                         @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs bulan lalu</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs periode sebelumnya</span>
                     </div>
                 </div>
             </div>

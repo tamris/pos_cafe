@@ -102,24 +102,28 @@ class TransactionIndex extends Component
         $yesterdayOmset = $yesterdayQuery->sum('total');
         $todayOmsetGrowth = $this->calculateGrowth($todayOmset, $yesterdayOmset);
 
-        // Komparasi Bulan Lalu (Bulan Kemarin)
-        $lastMonthStart = now()->subMonth()->startOfMonth();
-        $lastMonthEnd = now()->subMonth()->endOfMonth();
+        // Komparasi Periode Sebelumnya yang Sama Panjang (Dynamic Previous Period)
+        $from = $this->dateFrom ? \Carbon\Carbon::parse($this->dateFrom)->startOfDay() : now()->startOfMonth()->startOfDay();
+        $to = $this->dateTo ? \Carbon\Carbon::parse($this->dateTo)->endOfDay() : now()->endOfMonth()->endOfDay();
+        
+        $diffInDays = max(1, $from->diffInDays($to) + 1);
+        $prevTo = $from->copy()->subDay()->endOfDay();
+        $prevFrom = $prevTo->copy()->subDays($diffInDays - 1)->startOfDay();
 
-        $lastMonthQuery = Transaction::whereBetween('created_at', [$lastMonthStart, $lastMonthEnd]);
+        $prevQuery = Transaction::whereBetween('created_at', [$prevFrom, $prevTo]);
         if (!$isAdmin) {
-            $lastMonthQuery->where('user_id', $userId);
+            $prevQuery->where('user_id', $userId);
         }
         if ($this->paymentMethodFilter) {
-            $lastMonthQuery->where('payment_method', $this->paymentMethodFilter);
+            $prevQuery->where('payment_method', $this->paymentMethodFilter);
         }
-        $lastMonthTotal = (clone $lastMonthQuery)->sum('total');
-        $lastMonthCount = (clone $lastMonthQuery)->count();
-        $lastMonthAverage = $lastMonthCount > 0 ? round($lastMonthTotal / $lastMonthCount) : 0;
+        $prevTotal = (clone $prevQuery)->sum('total');
+        $prevCount = (clone $prevQuery)->count();
+        $prevAverage = $prevCount > 0 ? round($prevTotal / $prevCount) : 0;
 
-        $revenueGrowth = $this->calculateGrowth($filteredTotal, $lastMonthTotal);
-        $countGrowth = $this->calculateGrowth($filteredCount, $lastMonthCount);
-        $averageGrowth = $this->calculateGrowth($averageTransaction, $lastMonthAverage);
+        $revenueGrowth = $this->calculateGrowth($filteredTotal, $prevTotal);
+        $countGrowth = $this->calculateGrowth($filteredCount, $prevCount);
+        $averageGrowth = $this->calculateGrowth($averageTransaction, $prevAverage);
 
         // --------------------------------
 

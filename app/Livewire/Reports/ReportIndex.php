@@ -128,22 +128,26 @@ class ReportIndex extends Component
 
         $this->profitMargin = $this->totalRevenue > 0 ? round(($this->totalProfit / $this->totalRevenue) * 100, 1) : 0;
 
-        // Komparasi Bulan Kemarin (Bulan Lalu)
-        $lastMonthStart = now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00');
-        $lastMonthEnd = now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59');
+        // Komparasi Periode Sebelumnya yang Sama Panjang (Dynamic Previous Period)
+        $from = $this->dateFrom ? Carbon::parse($this->dateFrom)->startOfDay() : Carbon::now()->startOfMonth()->startOfDay();
+        $to = $this->dateTo ? Carbon::parse($this->dateTo)->endOfDay() : Carbon::now()->endOfMonth()->endOfDay();
 
-        $lastMonthSummary = Transaction::whereBetween('created_at', [$lastMonthStart, $lastMonthEnd]);
-        $lastMonthRevenue = (float) (clone $lastMonthSummary)->sum('total');
-        $lastMonthTransactions = (clone $lastMonthSummary)->count();
-        $lastMonthProfit = (float) Transaction::whereBetween('transactions.created_at', [$lastMonthStart, $lastMonthEnd])
+        $diffInDays = max(1, $from->diffInDays($to) + 1);
+        $prevTo = $from->copy()->subDay()->endOfDay();
+        $prevFrom = $prevTo->copy()->subDays($diffInDays - 1)->startOfDay();
+
+        $prevSummary = Transaction::whereBetween('created_at', [$prevFrom, $prevTo]);
+        $prevRevenue = (float) (clone $prevSummary)->sum('total');
+        $prevTransactions = (clone $prevSummary)->count();
+        $prevProfit = (float) Transaction::whereBetween('transactions.created_at', [$prevFrom, $prevTo])
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->sum('transaction_details.profit');
-        $lastMonthMargin = $lastMonthRevenue > 0 ? round(($lastMonthProfit / $lastMonthRevenue) * 100, 1) : 0;
+        $prevMargin = $prevRevenue > 0 ? round(($prevProfit / $prevRevenue) * 100, 1) : 0;
 
-        $this->revenueGrowth = $this->calculateGrowth($this->totalRevenue, $lastMonthRevenue);
-        $this->profitGrowth = $this->calculateGrowth($this->totalProfit, $lastMonthProfit);
-        $this->transactionsGrowth = $this->calculateGrowth($this->totalTransactions, $lastMonthTransactions);
-        $this->marginGrowth = $this->calculateGrowth($this->profitMargin, $lastMonthMargin);
+        $this->revenueGrowth = $this->calculateGrowth($this->totalRevenue, $prevRevenue);
+        $this->profitGrowth = $this->calculateGrowth($this->totalProfit, $prevProfit);
+        $this->transactionsGrowth = $this->calculateGrowth($this->totalTransactions, $prevTransactions);
+        $this->marginGrowth = $this->calculateGrowth($this->profitMargin, $prevMargin);
 
         $transactions = Transaction::with(['user', 'details'])
             ->whereBetween('created_at', [$dateFrom, $dateTo])
