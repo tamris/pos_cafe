@@ -1,37 +1,42 @@
 <div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300"
      x-data="{ sidebarOpen: window.innerWidth >= 1280 }"
-     @resize.window="if (window.innerWidth >= 1280) { sidebarOpen = true } else { sidebarOpen = false }">
+     @resize.window="sidebarOpen = window.innerWidth >= 1280">
     
     @include('livewire.includes.sidebar')
 
     <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
         @include('livewire.includes.header', [
             'title' => 'POS Kasir Cafe', 
-            'subtitle' => 'Sistem Pemesanan & Kasir Cafe'
+            'subtitle' => 'Sistem Pemesanan & Transaksi Kasir'
         ])
 
         <main class="p-3 sm:p-4 lg:p-5 space-y-3 flex-1 flex flex-col min-h-0">
             
-            {{-- TOP BAR: ORDER TYPE & TABLE NUMBER SELECTION --}}
+            {{-- ========================================================================= --}}
+            {{-- 1. TOP BAR: ORDER TYPE & TABLE NUMBER SELECTION                           --}}
+            {{-- ========================================================================= --}}
             <div class="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-3.5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
                 
                 {{-- Order Type Switcher --}}
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Tipe Pesanan:
                     </span>
-                    <div class="inline-flex flex-wrap rounded-lg p-1 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 gap-1">
+                    <div class="inline-flex flex-wrap rounded-xl p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 gap-1">
                         <button type="button" wire:click="setOrderType('dine_in')"
-                            class="px-3 sm:px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 {{ $orderType === 'dine_in' ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                            🍽️ Makan di Tempat (Meja)
+                            class="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 {{ $orderType === 'dine_in' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"></path></svg>
+                            <span>Dine In (Meja)</span>
                         </button>
                         <button type="button" wire:click="setOrderType('take_away')"
-                            class="px-3 sm:px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 {{ $orderType === 'take_away' ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                            🛍️ Bawa Pulang (Take Away)
+                            class="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 {{ $orderType === 'take_away' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path></svg>
+                            <span>Take Away</span>
                         </button>
                         <button type="button" wire:click="setOrderType('delivery')"
-                            class="px-3 sm:px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 {{ $orderType === 'delivery' ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                            🚚 Pesan Antar (Delivery)
+                            class="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 {{ $orderType === 'delivery' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V14.25m0 0h3.75m-3.75 0v3.75m-9-6.75h5.25a1.5 1.5 0 011.5 1.5v1.5"></path></svg>
+                            <span>Delivery</span>
                         </button>
                     </div>
                 </div>
@@ -40,31 +45,33 @@
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     @if($orderType === 'dine_in')
                         <div class="flex flex-wrap items-center gap-2" wire:key="input-container-table">
-                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Pilih Meja:</label>
-                            <select wire:model.live="selectedTable" class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-36 sm:w-40">
+                            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Pilih Meja:</label>
+                            <select wire:model.live="selectedTable" class="px-3 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-36 sm:w-40">
                                 <option value="">-- Pilih Meja --</option>
                                 @for ($i = 1; $i <= 20; $i++)
-                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                    <option value="{{ sprintf('%02d', $i) }}">Meja {{ sprintf('%02d', $i) }}</option>
                                 @endfor
-                                <option value="custom">✏️ Ketik Manual...</option>
+                                <option value="custom">Ketik Meja Manual...</option>
                             </select>
 
                             @if($isCustomTable)
-                                <input type="text" wire:model.live="customTableNumber" placeholder="Contoh: Meja 04+05" autofocus
-                                    class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-36">
+                                <input type="text" wire:model.live="customTableNumber" placeholder="Contoh: Meja VIP 01" autofocus
+                                    class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-36">
                             @endif
                         </div>
                     @else
                         <div class="flex items-center gap-2" wire:key="input-container-customer">
-                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Nama Pelanggan:</label>
+                            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nama Pelanggan:</label>
                             <input type="text" wire:model.live="customerName" wire:key="input-customer-name" placeholder="Nama Pelanggan"
-                                class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-44 sm:w-48">
+                                class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-44 sm:w-48">
                         </div>
                     @endif
                 </div>
             </div>
 
-            {{-- SHIFT STATUS & MANAGEMENT BANNER --}}
+            {{-- ========================================================================= --}}
+            {{-- 2. SHIFT STATUS & MANAGEMENT BANNER                                       --}}
+            {{-- ========================================================================= --}}
             <div class="bg-white dark:bg-slate-800 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-2.5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
                 <div class="flex items-center gap-3">
                     @if ($activeShift)
@@ -73,28 +80,29 @@
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                             </span>
-                            <span class="text-xs font-bold text-slate-800 dark:text-white">
+                            <span class="text-xs font-extrabold text-slate-900 dark:text-white">
                                 Shift Aktif (#SFT-{{ str_pad($activeShift->id, 5, '0', STR_PAD_LEFT) }})
                             </span>
                             <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
                             <span class="text-xs text-slate-600 dark:text-slate-300">
-                                Buka: <strong class="text-slate-800 dark:text-white">{{ $activeShift->start_time ? $activeShift->start_time->format('H:i') : '-' }}</strong>
+                                Buka: <strong class="text-slate-900 dark:text-white">{{ $activeShift->start_time ? $activeShift->start_time->format('H:i') : '-' }}</strong>
                             </span>
                             <span class="text-xs text-slate-400 dark:text-slate-500 hidden md:inline">•</span>
                             <span class="text-xs text-slate-600 dark:text-slate-300 hidden md:inline">
-                                Modal Kas: <strong class="text-emerald-600 dark:text-emerald-400">Rp {{ number_format($activeShift->starting_cash, 0, ',', '.') }}</strong>
+                                Modal Awal: <strong class="text-slate-900 dark:text-white">Rp {{ number_format($activeShift->starting_cash, 0, ',', '.') }}</strong>
                             </span>
                             <span class="text-xs text-slate-400 dark:text-slate-500 hidden lg:inline">•</span>
                             <span class="text-xs text-slate-600 dark:text-slate-300 hidden lg:inline">
-                                Kas Laci Saat Ini: <strong class="text-slate-900 dark:text-white">Rp {{ number_format($activeShift->expected_cash, 0, ',', '.') }}</strong>
+                                Kas Laci Saat Ini: <strong class="text-emerald-600 dark:text-emerald-400 font-bold">Rp {{ number_format($activeShift->expected_cash, 0, ',', '.') }}</strong>
                             </span>
                         </div>
                     @else
                         <div class="flex items-center gap-2 text-xs">
-                            <span class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-bold flex items-center gap-1">
-                                ⚠️ Shift Belum Dibuka
+                            <span class="px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path></svg>
+                                <span>Shift Belum Dibuka</span>
                             </span>
-                            <span class="text-slate-500 dark:text-slate-400">Buka shift untuk mencatat modal kas awal & rekonsiliasi laci.</span>
+                            <span class="text-slate-500 dark:text-slate-400">Buka shift kasir untuk mencatat uang modal awal di laci.</span>
                         </div>
                     @endif
                 </div>
@@ -102,46 +110,48 @@
                 <div class="flex items-center gap-2 shrink-0">
                     @if ($activeShift)
                         <button type="button" wire:click="openEndShiftModal"
-                            class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                            Tutup Shift & Rekap Kas
+                            class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
+                            <span>Tutup Shift & Rekap Kas</span>
                         </button>
                     @else
                         <button type="button" wire:click="openStartShiftModal"
-                            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
-                            ⚡ Buka Shift Kasir
+                            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"></path></svg>
+                            <span>Buka Shift Kasir</span>
                         </button>
                     @endif
                 </div>
             </div>
 
-            {{-- MAIN LAYOUT: SPLIT SCREEN KIRI (PRODUK SCROLL MANDIRI) & KANAN (KERANJANG MD+ TETAP PAS DI LAYAR) --}}
+            {{-- ========================================================================= --}}
+            {{-- 3. MAIN LAYOUT: PRODUK (KIRI) & KERANJANG (KANAN)                        --}}
+            {{-- ========================================================================= --}}
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-4 lg:gap-5 items-start flex-1 min-h-0">
                 
-                {{-- LEFT COLUMN: SEARCH & SCROLLABLE COMPACT PRODUCTS --}}
+                {{-- LEFT COLUMN: SEARCH & SCROLLABLE PRODUCTS --}}
                 <div class="md:col-span-7 xl:col-span-8 flex flex-col md:h-[calc(100vh-14.5rem)] xl:h-[calc(100vh-13.8rem)] space-y-3 min-h-0">
                     
-                    {{-- SEARCH & CATEGORY SELECTOR (TETAP DI ATAS) --}}
+                    {{-- SEARCH & CATEGORY SELECTOR --}}
                     <div class="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-3.5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors shrink-0">
                         <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
                             <div class="flex-1 relative">
                                 <input type="text" wire:model.live="search"
                                     id="searchInput"
                                     placeholder="Cari menu / scan barcode..."
-                                    class="w-full pl-10 pr-10 py-2 sm:py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 text-xs"
+                                    class="w-full pl-9 pr-9 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 text-xs"
                                     autocomplete="off">
-                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 absolute left-3 top-2 sm:top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
                                 @if(!empty($search))
                                     <button type="button" wire:click="clearSearch"
-                                        class="absolute right-3 top-1.5 sm:top-2 text-slate-400 hover:text-slate-600 p-1 rounded-md"
+                                        class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded"
                                         title="Hapus pencarian">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
                                 @endif
                             </div>
-                            <select wire:model.live="selectedCategory" class="px-3 sm:px-4 py-2 sm:py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs font-medium w-full sm:w-56">
-                                <option value="">Semua Menu ({{ $categories->sum('products_count') }})</option>
+                            <select wire:model.live="selectedCategory" class="px-3 sm:px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs font-semibold w-full sm:w-56">
+                                <option value="">Semua Kategori ({{ $categories->sum('products_count') }})</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }} ({{ $category->products_count }})</option>
                                 @endforeach
@@ -149,7 +159,7 @@
                         </div>
                     </div>
 
-                    {{-- Products Grid: Scroll Mandiri Di Dalam Area Ini Saja --}}
+                    {{-- Products Grid: Scroll Mandiri Di Dalam Area Ini --}}
                     <div class="flex-1 overflow-y-auto pr-1 sm:pr-1.5 pb-6 scrollbar-thin dark:scrollbar-thumb-slate-700 min-h-0">
                         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3 xl:gap-3.5">
                             @forelse($products as $product)
@@ -157,37 +167,27 @@
                                     $inCartQty = $this->getCartQuantity($product->id);
                                 @endphp
                                 <div wire:click="addToCart({{ $product->id }})"
-                                    class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3.5 border {{ $inCartQty > 0 ? 'border-slate-900 dark:border-blue-500 ring-2 ring-slate-900/10 dark:ring-blue-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.96] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
+                                    class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-500 transition-all active:scale-[0.97] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
                                     
                                     {{-- In-Cart Badge Indicator --}}
                                     @if($inCartQty > 0)
-                                        <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-slate-900 dark:bg-blue-600 text-white text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
+                                        <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-emerald-600 text-white text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
                                             {{ $inCartQty }}x
                                         </div>
                                     @endif
 
                                     <div>
-                                        {{-- Frame Gambar --}}
-                                        <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2.5 overflow-hidden bg-slate-100 dark:bg-slate-700 relative flex items-center justify-center">
+                                        {{-- Frame Gambar Produk --}}
+                                        <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2 overflow-hidden bg-slate-100 dark:bg-slate-700/50 relative flex items-center justify-center border border-slate-100 dark:border-slate-700/60">
                                             @if ($product->image)
                                                 <img src="{{ Storage::url($product->image) }}" 
                                                      alt="{{ $product->name }}" 
                                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                                             @else
-                                                <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-700/60 group-hover:bg-slate-200/60 transition-colors">
-                                                    <span class="text-2xl sm:text-3xl">
-                                                        @if(str_contains(strtolower($product->name), 'coffee') || str_contains(strtolower($product->name), 'latte') || str_contains(strtolower($product->name), 'americano') || str_contains(strtolower($product->name), 'v60'))
-                                                            ☕
-                                                        @elseif(str_contains(strtolower($product->name), 'tea') || str_contains(strtolower($product->name), 'matcha') || str_contains(strtolower($product->name), 'chocolate'))
-                                                            🍵
-                                                        @elseif(str_contains(strtolower($product->name), 'croissant') || str_contains(strtolower($product->name), 'brownies'))
-                                                            🥐
-                                                        @elseif(str_contains(strtolower($product->name), 'nasi') || str_contains(strtolower($product->name), 'spaghetti') || str_contains(strtolower($product->name), 'katsu'))
-                                                            🍝
-                                                        @else
-                                                            🍟
-                                                        @endif
-                                                    </span>
+                                                <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                                    <svg class="w-7 h-7 sm:w-8 sm:h-8 opacity-75" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
+                                                    </svg>
                                                 </div>
                                             @endif
                                         </div>
@@ -197,25 +197,30 @@
                                             {{ $product->name }}
                                         </h3>
                                         
-                                        {{-- Deskripsi (Desktop XL Only) --}}
-                                        <p class="hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-2 mt-0.5">
-                                            {{ $product->description }}
-                                        </p>
+                                        {{-- Deskripsi (Desktop Only) --}}
+                                        @if($product->description)
+                                            <p class="hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-1 mt-0.5">
+                                                {{ $product->description }}
+                                            </p>
+                                        @endif
                                     </div>
                                     
-                                    {{-- Harga & Plus Button (Desktop XL Only) --}}
-                                    <div class="hidden xl:flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-1">
+                                    {{-- Harga & Plus Button --}}
+                                    <div class="hidden xl:flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-700/60 mt-1">
                                         <p class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                                        <span class="text-xs bg-slate-900 dark:bg-blue-600 text-white rounded-lg p-1.5 group-hover:bg-slate-800 dark:group-hover:bg-blue-700 transition-colors shadow-xs">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        <span class="text-xs bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400 dark:group-hover:bg-emerald-600 dark:group-hover:text-white rounded-lg p-1 transition-colors">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
                                         </span>
                                     </div>
                                 </div>
                             @empty
                                 <div class="col-span-full text-center py-12">
-                                    <div class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 border-dashed">
-                                        <span class="text-4xl block mb-2">☕</span>
-                                        <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">Tidak ada menu cafe ditemukan</p>
+                                    <div class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 border-dashed max-w-sm mx-auto">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-400 flex items-center justify-center mx-auto mb-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+                                        </div>
+                                        <p class="text-slate-600 dark:text-slate-300 font-bold text-xs sm:text-sm">Tidak ada menu cafe ditemukan</p>
+                                        <p class="text-slate-400 text-xs mt-0.5">Coba kata kunci lain atau pilih kategori</p>
                                     </div>
                                 </div>
                             @endforelse
@@ -223,35 +228,36 @@
                     </div>
                 </div>
 
-                {{-- RIGHT COLUMN: KERANJANG PERMANEN (TINGGI PAS VIEWPORT LAYAR, CTA BAYAR TERKUNCI DI BAWAH) --}}
+                {{-- RIGHT COLUMN: KERANJANG PERMANEN (DESKTOP MD+) --}}
                 <div class="hidden md:flex md:col-span-5 xl:col-span-4 flex-col bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm md:h-[calc(100vh-14.5rem)] xl:h-[calc(100vh-13.8rem)] overflow-hidden transition-colors shrink-0 sticky top-4">
                     
                     {{-- Header Keranjang --}}
-                    <div class="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/50 flex justify-between items-center shrink-0">
+                    <div class="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/40 flex justify-between items-center shrink-0">
                         <div>
                             <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs sm:text-sm">
-                                🛒 Pesanan Menu
+                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path></svg>
+                                <span>Daftar Pesanan</span>
                             </h3>
-                            <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase">
-                                Mode: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} 
+                            <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase mt-0.5">
+                                Mode: {{ $orderType === 'dine_in' ? 'Dine In' : ($orderType === 'take_away' ? 'Take Away' : 'Delivery') }} 
                                 @if($orderType === 'dine_in' && $tableNumber)
-                                    (MEJA {{ $tableNumber }})
+                                    (Meja {{ $tableNumber }})
                                 @endif
                             </p>
                         </div>
                         @if(count($cart) > 0)
-                            <button onclick="confirmResetCart()" class="text-xs text-rose-500 hover:underline font-semibold">Kosongkan</button>
+                            <button onclick="confirmResetCart()" class="text-xs text-rose-500 hover:underline font-bold">Kosongkan</button>
                         @endif
                     </div>
 
-                    {{-- Daftar Item Pesanan (Scroll Mandiri di Dalam Box) --}}
+                    {{-- Daftar Item Pesanan (Scroll Mandiri) --}}
                     <div class="p-2.5 sm:p-3 flex-1 overflow-y-auto space-y-2 scrollbar-thin dark:scrollbar-thumb-slate-700 min-h-0">
                         @include('livewire.pos.partials.cart-items')
                     </div>
 
-                    {{-- Summary & CTA Bayar Terkunci Pas di Bawah --}}
+                    {{-- Summary & CTA Bayar --}}
                     @if (!empty($cart))
-                        <div class="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        <div class="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.03)]">
                             @include('livewire.pos.partials.cart-summary')
                         </div>
                     @endif
@@ -261,16 +267,16 @@
         </main>
     </div>
 
-    {{-- FLOATING CART BAR KHUSUS SMARTPHONE KECIL (< MD) --}}
+    {{-- FLOATING CART BAR KHUSUS SMARTPHONE (< MD) --}}
     @if(count($cart) > 0)
     <div class="fixed bottom-0 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-3.5 shadow-2xl md:hidden z-40 flex justify-between items-center gap-4 transition-colors">
         <div class="flex flex-col">
-            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ count($cart) }} Menu di keranjang</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ count($cart) }} Item di keranjang</span>
             <span class="text-base font-bold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
         </div>
-        <button wire:click="openMobileCart" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            Lihat Pesanan
+        <button wire:click="openMobileCart" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path></svg>
+            <span>Lihat Pesanan</span>
         </button>
     </div>
     @endif
@@ -281,13 +287,13 @@
         <div class="flex items-end justify-center min-h-screen text-center">
             <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" wire:click="closeMobileCart"></div>
             <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-t-2xl text-left overflow-hidden shadow-xl transform transition-all w-full h-[88vh] flex flex-col border-t border-slate-200 dark:border-slate-700">
-                <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
+                <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                     <div>
                         <h3 class="font-bold text-slate-900 dark:text-white text-base">Rincian Pesanan</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Mode: {{ $orderType === 'dine_in' ? 'Makan di Tempat' : ($orderType === 'take_away' ? 'Bawa Pulang' : 'Pesan Antar') }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Mode: {{ $orderType === 'dine_in' ? 'Dine In' : ($orderType === 'take_away' ? 'Take Away' : 'Delivery') }}</p>
                     </div>
-                    <button wire:click="closeMobileCart" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white p-2 bg-white dark:bg-slate-700 rounded-full shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button wire:click="closeMobileCart" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 <div class="p-4 flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 space-y-3">
@@ -301,18 +307,25 @@
     </div>
     @endif
 
-    {{-- ITEM CUSTOMIZATION / NOTES MODAL --}}
+    {{-- ========================================================================= --}}
+    {{-- 4. MODAL: ITEM CUSTOMIZATION / NOTES                                      --}}
+    {{-- ========================================================================= --}}
     @if ($showItemNotesModal)
     <div class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 text-center">
             <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" wire:click="closeItemNotesModal"></div>
-            <div class="inline-block bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-700">
+            <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-700">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
-                    <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
-                        📝 Catatan & Pilihan Pesanan
-                    </h3>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"></path></svg>
+                        </div>
+                        <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
+                            Catatan & Opsi Menu
+                        </h3>
+                    </div>
                     <button wire:click="closeItemNotesModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -323,13 +336,13 @@
 
                 <div class="space-y-4">
                     @if($isDrink)
-                        {{-- Sugar Level (Grid 3 Kolom Seimbang) --}}
+                        {{-- Sugar Level --}}
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Sugar Level:</label>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Sugar Level:</label>
                             <div class="grid grid-cols-3 gap-2">
                                 @foreach(['Normal', 'Less Sugar', 'No Sugar'] as $sugar)
                                     <button type="button" wire:click="$set('tempSugarLevel', '{{ $sugar }}')"
-                                        class="w-full py-2 px-2 text-xs font-semibold rounded-lg border transition-all text-center {{ $tempSugarLevel === $sugar ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white border-slate-900 dark:border-blue-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
+                                        class="w-full py-2 px-2 text-xs font-bold rounded-lg border transition-all text-center {{ $tempSugarLevel === $sugar ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
                                         {{ $sugar }}
                                     </button>
                                 @endforeach
@@ -338,11 +351,11 @@
 
                         {{-- Ice Level --}}
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Ice Level:</label>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Ice Level:</label>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 @foreach(['Normal', 'Less Ice', 'No Ice', 'Hot'] as $ice)
                                     <button type="button" wire:click="$set('tempIceLevel', '{{ $ice }}')"
-                                        class="py-2 px-1 text-[11px] font-semibold rounded-lg border transition-all text-center {{ $tempIceLevel === $ice ? 'bg-slate-900 text-white dark:bg-blue-600 dark:text-white border-slate-900 dark:border-blue-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
+                                        class="py-2 px-1 text-xs font-bold rounded-lg border transition-all text-center {{ $tempIceLevel === $ice ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
                                         {{ $ice }}
                                     </button>
                                 @endforeach
@@ -352,54 +365,70 @@
 
                     {{-- Free Text Notes --}}
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Catatan Tambahan (Dapur/Barista):</label>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase tracking-wider">Catatan Tambahan (Dapur / Barista):</label>
                         <textarea wire:model="tempItemNotes" rows="3" placeholder="Contoh: Pisahkan saus, extra whipped cream, pedas manis..."
-                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500"></textarea>
+                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"></textarea>
                     </div>
                 </div>
 
                 <div class="mt-6 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <button wire:click="closeItemNotesModal" class="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Batal</button>
-                    <button wire:click="saveItemNotes" class="px-4 py-2 text-xs font-medium bg-slate-900 dark:bg-blue-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors shadow-sm">Simpan Catatan</button>
+                    <button wire:click="closeItemNotesModal" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Batal</button>
+                    <button wire:click="saveItemNotes" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-xs">Simpan Catatan</button>
                 </div>
             </div>
         </div>
     </div>
     @endif
 
-    {{-- PAYMENT MODAL --}}
+    {{-- ========================================================================= --}}
+    {{-- 5. MODAL: PAYMENT / PEMBAYARAN                                            --}}
+    {{-- ========================================================================= --}}
     @if ($showPaymentModal)
         <div class="fixed inset-0 z-50 overflow-y-auto">
             <div class="flex items-center justify-center min-h-screen px-4 text-center">
                 <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" wire:click="closePaymentModal"></div>
-                <div class="inline-block bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all max-w-xl w-full border border-slate-200 dark:border-slate-700">
+                <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all max-w-xl w-full border border-slate-200 dark:border-slate-700">
                     <form wire:submit.prevent="processPayment">
                         {{-- Header --}}
-                        <div class="bg-slate-900 dark:bg-slate-700 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800 dark:border-slate-600">
+                        <div class="bg-slate-900 dark:bg-slate-850 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800">
                             <div>
                                 <h3 class="text-base font-bold">Pembayaran Pesanan</h3>
-                                <p class="text-xs opacity-90 font-medium">Tipe: {{ $orderType === 'dine_in' ? 'MAKAN DI TEMPAT' : ($orderType === 'take_away' ? 'BAWA PULANG' : 'PESAN ANTAR') }} {{ $orderType === 'dine_in' ? ($tableNumber ? '| Meja: '.$tableNumber : '') : ($customerName ? '| Pelanggan: '.$customerName : '') }}</p>
+                                <p class="text-xs text-slate-400 font-medium mt-0.5">Tipe: {{ $orderType === 'dine_in' ? 'Dine In' : ($orderType === 'take_away' ? 'Take Away' : 'Delivery') }} {{ $orderType === 'dine_in' ? ($tableNumber ? '| Meja: '.$tableNumber : '') : ($customerName ? '| Pelanggan: '.$customerName : '') }}</p>
                             </div>
-                            <button type="button" wire:click="closePaymentModal" class="text-white hover:opacity-80"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                            <button type="button" wire:click="closePaymentModal" class="text-slate-400 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         </div>
                         
-                        <div class="bg-white dark:bg-slate-800 px-6 py-4 space-y-4">
+                        <div class="bg-white dark:bg-slate-800 px-6 py-5 space-y-4">
                             {{-- TOTAL TAGIHAN --}}
-                            <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl text-center border border-slate-200 dark:border-slate-700">
-                                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1 uppercase tracking-wider">TOTAL TAGIHAN</p>
-                                <p class="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($total, 0, ',', '.') }}</p>
+                            <div class="bg-emerald-50/70 dark:bg-emerald-950/30 p-4 rounded-xl text-center border border-emerald-200/80 dark:border-emerald-800/60">
+                                <p class="text-xs text-emerald-800 dark:text-emerald-300 font-bold mb-1 uppercase tracking-wider">TOTAL TAGIHAN</p>
+                                <p class="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-300">Rp {{ number_format($total, 0, ',', '.') }}</p>
                             </div>
                             
                             {{-- METODE PEMBAYARAN --}}
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">Metode Pembayaran</label>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Metode Pembayaran</label>
                                 <div class="grid grid-cols-3 gap-2.5">
-                                    @foreach(['cash' => '💵 Tunai', 'qris' => '📱 QRIS', 'transfer' => '🏦 Transfer'] as $val => $label)
-                                    <button type="button" wire:click="setPaymentMethod('{{$val}}')"
-                                        class="p-2.5 border rounded-lg text-center transition-all font-bold text-xs {{ $paymentMethod === $val ? 'border-slate-900 bg-slate-900 text-white dark:border-blue-600 dark:bg-blue-600 dark:text-white shadow-sm' : 'border-slate-300 hover:border-slate-400 text-slate-700 dark:border-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900' }}">
-                                        <span>{{ $label }}</span>
+                                    {{-- Cash --}}
+                                    <button type="button" wire:click="setPaymentMethod('cash')"
+                                        class="p-2.5 border rounded-xl text-center transition-all font-bold text-xs flex flex-col items-center gap-1.5 {{ $paymentMethod === 'cash' ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs' : 'border-slate-200 hover:border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900' }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"></path></svg>
+                                        <span>Tunai (Cash)</span>
                                     </button>
-                                    @endforeach
+                                    
+                                    {{-- QRIS --}}
+                                    <button type="button" wire:click="setPaymentMethod('qris')"
+                                        class="p-2.5 border rounded-xl text-center transition-all font-bold text-xs flex flex-col items-center gap-1.5 {{ $paymentMethod === 'qris' ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs' : 'border-slate-200 hover:border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900' }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5zM13.5 13.5h2.25v2.25H13.5V13.5zm3.75 0h3v3h-3v-3zm0 3.75h3v3h-3v-3zm-3.75 0h2.25v3H13.5v-3z"></path></svg>
+                                        <span>QRIS</span>
+                                    </button>
+
+                                    {{-- Transfer --}}
+                                    <button type="button" wire:click="setPaymentMethod('transfer')"
+                                        class="p-2.5 border rounded-xl text-center transition-all font-bold text-xs flex flex-col items-center gap-1.5 {{ $paymentMethod === 'transfer' ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs' : 'border-slate-200 hover:border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900' }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5m-15 0V21m0 0h18"></path></svg>
+                                        <span>Transfer Bank</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -407,24 +436,25 @@
                                 {{-- CASH PAYMENT: INPUT & PRESET PECAHAN --}}
                                 <div class="space-y-3 pt-1">
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 uppercase">Uang Diterima (Rp)</label>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase tracking-wider">Uang Diterima (Rp)</label>
                                         <input type="number" wire:model.live="paid" id="paidInput" autofocus
-                                            class="block w-full px-3.5 py-2.5 text-lg font-bold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                                            class="block w-full px-3.5 py-2.5 text-lg font-extrabold border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                                             placeholder="0">
                                     </div>
 
                                     {{-- Pecahan Cepat --}}
                                     <div>
-                                        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Pilihan Cepat Pecahan:</label>
+                                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Pilihan Cepat Pecahan:</label>
                                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                             <button type="button" wire:click="setExactPaid"
-                                                class="px-2 py-2 text-xs font-bold border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-100 transition-colors">
-                                                ⚡ Uang Pas
+                                                class="px-2 py-2 text-xs font-bold border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path></svg>
+                                                <span>Uang Pas</span>
                                             </button>
                                             @foreach ([20000, 50000, 100000, 150000, 200000, 300000, 500000] as $amount)
                                                 @if($amount >= $total)
                                                     <button type="button" wire:click="setPaidAmount({{ $amount }})"
-                                                        class="px-2 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                                        class="px-2 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                                         Rp {{ number_format($amount, 0, ',', '.') }}
                                                     </button>
                                                 @endif
@@ -435,8 +465,8 @@
                                     {{-- KEMBALIAN BOX --}}
                                     @if ($change > 0)
                                         <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 flex justify-between items-center">
-                                            <p class="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase">Kembalian Konsumen</p>
-                                            <p class="text-xl font-bold text-emerald-800 dark:text-emerald-300">Rp {{ number_format($change, 0, ',', '.') }}</p>
+                                            <p class="text-xs text-emerald-800 dark:text-emerald-300 font-bold uppercase tracking-wider">Kembalian Konsumen</p>
+                                            <p class="text-xl font-extrabold text-emerald-800 dark:text-emerald-300">Rp {{ number_format($change, 0, ',', '.') }}</p>
                                         </div>
                                     @elseif($paid > 0 && $paid < $total)
                                         <div class="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-xl border border-rose-200 dark:border-rose-800 flex justify-between items-center">
@@ -448,21 +478,21 @@
                             @else
                                 {{-- NON-CASH PAYMENT --}}
                                 <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-center space-y-1">
-                                    <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5">
-                                        <span>🔒</span>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"></path></svg>
                                         <span>Pembayaran Non-Tunai ({{ strtoupper($paymentMethod) }})</span>
                                     </p>
-                                    <p class="text-xs text-slate-400 dark:text-slate-500">
-                                        Nominal otomatis uang pas sebesar <strong class="text-slate-800 dark:text-slate-200">Rp {{ number_format($total, 0, ',', '.') }}</strong> tanpa kembalian.
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                                        Nominal otomatis uang pas sebesar <strong class="text-emerald-700 dark:text-emerald-400">Rp {{ number_format($total, 0, ',', '.') }}</strong> tanpa kembalian.
                                     </p>
                                 </div>
                             @endif
                         </div>
                         
                         {{-- Action buttons --}}
-                        <div class="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
-                            <button type="button" wire:click="closePaymentModal" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 font-medium text-xs hover:bg-white dark:hover:bg-slate-700 transition-colors">Batal</button>
-                            <button type="submit" class="px-5 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-sm transition-all active:scale-95" {{ $paid < $total ? 'disabled' : '' }}>Selesaikan Transaksi</button>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
+                            <button type="button" wire:click="closePaymentModal" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-white dark:hover:bg-slate-700 transition-colors">Batal</button>
+                            <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-xs transition-all active:scale-[0.99]" {{ $paid < $total ? 'disabled' : '' }}>Selesaikan Transaksi</button>
                         </div>
                     </form>
                 </div>
@@ -470,15 +500,17 @@
         </div>
     @endif
 
-    {{-- SUCCESS & PRINT RECEIPT MODAL --}}
+    {{-- ========================================================================= --}}
+    {{-- 6. MODAL: SUCCESS & PRINT RECEIPT                                         --}}
+    {{-- ========================================================================= --}}
     @if ($showSuccessModal)
         <div class="fixed inset-0 z-50 overflow-y-auto">
             <div class="flex items-center justify-center min-h-screen px-4 text-center">
                 <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs"></div>
-                <div class="inline-block bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
+                <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-3 animate-bounce text-emerald-600 dark:text-emerald-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path></svg>
                         </div>
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-1">Pesanan Berhasil Disimpan!</h3>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Transaksi telah tercatat di sistem POS</p>
@@ -489,10 +521,10 @@
                                 <span class="text-xs font-mono font-bold text-slate-900 dark:text-white">{{ $lastInvoice }}</span>
                             </div>
                             @if($lastTransaction)
-                                <div class="text-xs space-y-1 text-slate-700 dark:text-slate-300">
+                                <div class="text-xs space-y-1.5 text-slate-700 dark:text-slate-300">
                                     <div class="flex justify-between">
                                         <span>Tipe Pesanan:</span>
-                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 uppercase">{{ $lastTransaction->order_type === 'dine_in' ? 'Makan di Tempat' : ($lastTransaction->order_type === 'take_away' ? 'Bawa Pulang' : 'Pesan Antar') }}</span>
+                                        <span class="font-bold text-slate-900 dark:text-white uppercase">{{ $lastTransaction->order_type === 'dine_in' ? 'Dine In' : ($lastTransaction->order_type === 'take_away' ? 'Take Away' : 'Delivery') }}</span>
                                     </div>
                                     @if($lastTransaction->order_type === 'dine_in' && $lastTransaction->table_number)
                                         <div class="flex justify-between">
@@ -506,9 +538,9 @@
                                             <span class="font-bold text-slate-900 dark:text-white">{{ $lastTransaction->customer_name }}</span>
                                         </div>
                                     @endif
-                                    <div class="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-1 mt-1">
+                                    <div class="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-1.5 mt-1.5">
                                         <span class="font-bold">Total:</span>
-                                        <span class="font-bold text-slate-900 dark:text-white">Rp {{ number_format($lastTransaction->total, 0, ',', '.') }}</span>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($lastTransaction->total, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span>Bayar:</span>
@@ -523,10 +555,10 @@
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
-                            <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-lg font-bold hover:bg-slate-200 transition-colors text-xs">Transaksi Baru</button>
-                            <a href="{{ route('print.struk', $lastInvoice) }}" target="_blank" class="w-full bg-slate-900 dark:bg-blue-600 text-white py-2.5 rounded-lg font-bold flex justify-center items-center gap-1.5 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all text-xs shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                Cetak Struk
+                            <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-xl font-bold hover:bg-slate-200 transition-colors text-xs">Transaksi Baru</button>
+                            <a href="{{ route('print.struk', $lastInvoice) }}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.077-.32-2.146-.32-3.149 0-4.418 3.582-8 8-8s8 3.582 8 8c0 1.003-.08 2.072-.32 3.149m-15.36 0A10.024 10.024 0 0012 21.75c3.27 0 6.182-1.564 8.04-3.921m-15.36 0c.24 1.077.32 2.146.32 3.149M6.72 13.829h10.56M6.72 13.829H3.75A2.25 2.25 0 001.5 16.079v3.421a2.25 2.25 0 002.25 2.25h16.5a2.25 2.25 0 002.25-2.25v-3.421a2.25 2.25 0 00-2.25-2.25H17.28"></path></svg>
+                                <span>Cetak Struk</span>
                             </a>
                         </div>
                     </div>
@@ -535,14 +567,16 @@
         </div>
     @endif
 
-    {{-- MODAL BUKA SHIFT KASIR --}}
+    {{-- ========================================================================= --}}
+    {{-- 7. MODAL: BUKA SHIFT KASIR                                                --}}
+    {{-- ========================================================================= --}}
     @if ($showStartShiftModal)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
                 <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                            ⚡
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"></path></svg>
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-slate-900 dark:text-white">
@@ -553,27 +587,27 @@
                             </p>
                         </div>
                     </div>
-                    <button wire:click="closeStartShiftModal" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button wire:click="closeStartShiftModal" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 <div class="p-5 space-y-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
                             Modal Kas Awal di Laci (Uang Kembalian):
                         </label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">Rp</span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-bold text-slate-400">Rp</span>
                             <input type="text" wire:model.live="formattedStartingCash" placeholder="0" autofocus
-                                class="w-full pl-10 pr-4 py-2.5 text-lg font-extrabold border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                class="w-full pl-11 pr-4 py-2.5 text-lg font-black border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                         </div>
-                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Masukkan uang kas fisik di laci saat memulai shift.</p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">Masukkan uang kas fisik yang ada di laci kasir saat memulai shift.</p>
                     </div>
 
                     {{-- Quick Preset Chips --}}
                     <div>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">Pilihan Cepat Nominal:</span>
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1.5 uppercase tracking-wider">Pilihan Cepat:</span>
                         <div class="grid grid-cols-4 gap-2">
                             <button type="button" wire:click="setStartingCashPreset(50000)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-200">
                                 50 Rb
@@ -595,22 +629,24 @@
                     <button type="button" wire:click="closeStartShiftModal" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                         Batal
                     </button>
-                    <button type="button" wire:click="startShift" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                        ⚡ Mulai Buka Shift
+                    <button type="button" wire:click="startShift" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                        <span>Mulai Buka Shift</span>
                     </button>
                 </div>
             </div>
         </div>
     @endif
 
-    {{-- MODAL TUTUP SHIFT & REKAP KASIR --}}
+    {{-- ========================================================================= --}}
+    {{-- 8. MODAL: TUTUP SHIFT & REKAP KASIR                                       --}}
+    {{-- ========================================================================= --}}
     @if ($showEndShiftModal && $activeShift)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
                 <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                            🔒
+                        <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-slate-900 dark:text-white">
@@ -621,8 +657,8 @@
                             </p>
                         </div>
                     </div>
-                    <button wire:click="closeEndShiftModal" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button wire:click="closeEndShiftModal" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -639,7 +675,7 @@
                         </div>
                         <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-extrabold text-slate-900 dark:text-white text-sm">
                             <span>(=) Total Kas Diharapkan di Laci:</span>
-                            <span class="text-orange-600 dark:text-orange-400">Rp {{ number_format($activeShift->expected_cash, 0, ',', '.') }}</span>
+                            <span class="text-emerald-600 dark:text-emerald-400">Rp {{ number_format($activeShift->expected_cash, 0, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between text-slate-500 pt-1 text-[11px]">
                             <span>Penjualan Non-Tunai (QRIS & Transfer):</span>
@@ -653,9 +689,9 @@
                             Hitung Uang Fisik Aktual di Laci Kasir:
                         </label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">Rp</span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-bold text-slate-400">Rp</span>
                             <input type="text" wire:model.live="formattedActualCash" placeholder="0" autofocus
-                                class="w-full pl-10 pr-4 py-2.5 text-lg font-extrabold border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-rose-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                class="w-full pl-11 pr-4 py-2.5 text-lg font-black border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-rose-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                         </div>
                     </div>
 
@@ -663,13 +699,16 @@
                     <div class="p-3.5 rounded-xl border {{ $shiftDifference == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : ($shiftDifference < 0 ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300' : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300') }}">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold uppercase tracking-wider">Hasil Selisih Kas:</span>
-                            <span class="text-sm font-extrabold">
+                            <span class="text-sm font-extrabold flex items-center gap-1.5">
                                 @if ($shiftDifference == 0)
-                                    ✅ Sesuai / Pas (Rp 0)
+                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path></svg>
+                                    <span>Sesuai / Pas (Rp 0)</span>
                                 @elseif ($shiftDifference < 0)
-                                    ⚠️ Uang Kurang -Rp {{ number_format(abs($shiftDifference), 0, ',', '.') }}
+                                    <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path></svg>
+                                    <span>Selisih Kurang: -Rp {{ number_format(abs($shiftDifference), 0, ',', '.') }}</span>
                                 @else
-                                    💡 Uang Lebih +Rp {{ number_format($shiftDifference, 0, ',', '.') }}
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                                    <span>Selisih Lebih: +Rp {{ number_format($shiftDifference, 0, ',', '.') }}</span>
                                 @endif
                             </span>
                         </div>
@@ -677,11 +716,11 @@
 
                     {{-- Catatan Penutupan Shift --}}
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                             Catatan Shift (Opsional):
                         </label>
                         <textarea wire:model="shiftNotes" rows="2" placeholder="Contoh: Titipan uang receh aman, selisih pas..."
-                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
+                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
                     </div>
                 </div>
 
@@ -689,8 +728,9 @@
                     <button type="button" wire:click="closeEndShiftModal" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                         Batal
                     </button>
-                    <button type="button" wire:click="endShift" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                        🔒 Tutup Shift & Cetak Rekap
+                    <button type="button" wire:click="endShift" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
+                        <span>Tutup Shift & Cetak Rekap</span>
                     </button>
                 </div>
             </div>
@@ -747,7 +787,7 @@
             text: "Semua daftar pesanan akan dibatalkan!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d97706',
+            confirmButtonColor: '#059669',
             cancelButtonColor: '#475569',
             confirmButtonText: 'Ya, Batalkan',
             cancelButtonText: 'Batal',

@@ -65,7 +65,7 @@
                 @if($logoPath)
                     <img src="{{ $logoPath }}" alt="{{ $currentShopName }}" class="w-9 h-9 rounded-xl object-contain bg-white dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
                 @else
-                    <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-center shadow-2xs shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-center shadow-2xs shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
                         </svg>
@@ -73,7 +73,7 @@
                 @endif
                 <div class="min-w-0 flex-1">
                     <span class="text-sm font-extrabold text-slate-900 dark:text-white block leading-tight truncate" title="{{ $currentShopName }}">{{ $currentShopName }}</span>
-                    <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold block uppercase tracking-wider mt-0.5">POS & Management</span>
+                    <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block uppercase tracking-wider mt-0.5">POS & Management</span>
                 </div>
             </div>
 
