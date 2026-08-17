@@ -48,17 +48,32 @@
         }">
 
         {{-- BRAND HEADER --}}
-        <div class="flex items-center justify-between h-16 px-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
-            <div class="flex items-center space-x-3">
-                <div class="flex items-center justify-center w-10 h-10 bg-amber-600 dark:bg-amber-700 rounded-xl shadow-md">
-                    <span class="text-xl">☕</span>
-                </div>
-                @php
-                    $currentShopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe';
-                @endphp
-                <div>
-                    <span class="text-lg font-extrabold text-slate-900 dark:text-white block leading-tight truncate max-w-[130px]" title="{{ $currentShopName }}">{{ $currentShopName }}</span>
-                    <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block uppercase tracking-wider">POS & Inventory</span>
+        <div class="flex items-center justify-between h-16 px-5 border-b border-slate-200 dark:border-slate-700 shrink-0">
+            @php
+                $setting = \App\Models\Setting::first();
+                $currentShopName = $setting?->shop_name ?? 'POS Cafe';
+                $logoPath = null;
+                if (file_exists(public_path('images/logo.png'))) {
+                    $logoPath = asset('images/logo.png');
+                } elseif (file_exists(public_path('images/logo.svg'))) {
+                    $logoPath = asset('images/logo.svg');
+                } elseif (file_exists(public_path('images/logo.jpg'))) {
+                    $logoPath = asset('images/logo.jpg');
+                }
+            @endphp
+            <div class="flex items-center space-x-3 min-w-0">
+                @if($logoPath)
+                    <img src="{{ $logoPath }}" alt="{{ $currentShopName }}" class="w-9 h-9 rounded-xl object-contain bg-white dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
+                @else
+                    <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-center shadow-2xs shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
+                        </svg>
+                    </div>
+                @endif
+                <div class="min-w-0 flex-1">
+                    <span class="text-sm font-extrabold text-slate-900 dark:text-white block leading-tight truncate" title="{{ $currentShopName }}">{{ $currentShopName }}</span>
+                    <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold block uppercase tracking-wider mt-0.5">POS & Management</span>
                 </div>
             </div>
 

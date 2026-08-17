@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\Category;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 
 #[Layout('components.layouts.app')]
@@ -27,7 +28,8 @@ class Dashboard extends Component
     public $revenueGrowth;
     public $profitGrowth;
 
-    public function mount()
+    #[On('transaction-created')]
+    public function refreshDashboard()
     {
         $this->loadDashboardData();
     }
@@ -36,11 +38,13 @@ class Dashboard extends Component
     {
         $this->totalCategories = Category::count();
         $this->todayTransactions = Transaction::whereDate('created_at', today())->count();
-        $this->todayRevenue = Transaction::whereDate('created_at', today())->sum('total');
-        $this->todayItemsSold = Transaction::whereDate('transactions.created_at', today())
+        $this->todayRevenue = (float) Transaction::whereDate('created_at', today())->sum('total');
+        
+        $this->todayItemsSold = (int) Transaction::whereDate('transactions.created_at', today())
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.quantity');
-        $this->todayProfit = Transaction::whereDate('transactions.created_at', today())
+
+        $this->todayProfit = (float) Transaction::whereDate('transactions.created_at', today())
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.profit');
 
@@ -75,7 +79,8 @@ class Dashboard extends Component
         $this->paymentMethodStats = Transaction::whereDate('created_at', today())
             ->select('payment_method', DB::raw('count(*) as count'))
             ->groupBy('payment_method')
-            ->get();
+            ->get()
+            ->toArray();
     }
 
     private function calculateGrowth($today, $yesterday)
@@ -88,26 +93,21 @@ class Dashboard extends Component
 
     public function render()
     {
+        // Selalu load data terbaru setiap kali render/navigasi
+        $this->loadDashboardData();
+
         $chartLabels = [];
         $chartData = [];
 
         // Loop 7 hari ke belakang
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            
-            // Label: "Senin, 20 Nov" (Format Indonesia)
             $chartLabels[] = $date->translatedFormat('D, d M');
-            
-            // Data: Total penjualan pada tanggal tersebut
-            $total = Transaction::whereDate('created_at', $date->format('Y-m-d'))->sum('total');
+            $total = (float) Transaction::whereDate('created_at', $date->format('Y-m-d'))->sum('total');
             $chartData[] = $total;
         }
-        // ------------------------------------------------
 
         return view('livewire.dashboard', [
-            // ... (variable lama: totalProducts, todayTransactions, dll) ...
-            
-            // Kirim data grafik ke view
             'chartLabels' => $chartLabels,
             'chartData' => $chartData,
         ]);
