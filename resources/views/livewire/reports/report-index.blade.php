@@ -13,23 +13,49 @@
         <main class="p-4 sm:p-6 space-y-6 flex-1">
             
             {{-- FILTER PERIODE SECTION --}}
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        📅 Filter Periode Laporan
-                    </h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih tanggal awal dan akhir transaksi yang ingin diringkas</p>
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm transition-colors p-4 sm:p-6 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            📅 Filter Periode Laporan
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih tanggal awal dan akhir transaksi yang ingin diringkas</p>
+                    </div>
+
+                    {{-- Quick Date Buttons --}}
+                    <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                        <button type="button" wire:click="setQuickDate('today')"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'today' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Hari Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('yesterday')"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'yesterday' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Kemarin
+                        </button>
+                        <button type="button" wire:click="setQuickDate('this_week')"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'this_week' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Minggu Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('this_month')"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'this_month' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Bulan Ini
+                        </button>
+                        <button type="button" wire:click="setQuickDate('last_month')"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all {{ $activeQuickDate === 'last_month' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800' }}">
+                            Bulan Lalu
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label for="dateFrom" class="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">Dari:</label>
+                        <label for="dateFrom" class="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">Dari Tanggal:</label>
                         <input type="date" wire:model.live="dateFrom" id="dateFrom"
                             class="w-full sm:w-auto px-3 sm:px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs cursor-pointer [color-scheme:light] dark:[color-scheme:dark]">
                     </div>
 
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label for="dateTo" class="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">Sampai:</label>
+                        <label for="dateTo" class="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">Sampai Tanggal:</label>
                         <input type="date" wire:model.live="dateTo" id="dateTo"
                             class="w-full sm:w-auto px-3 sm:px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs cursor-pointer [color-scheme:light] dark:[color-scheme:dark]">
                     </div>

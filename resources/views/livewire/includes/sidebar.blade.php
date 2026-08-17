@@ -127,6 +127,16 @@
                 <span class="font-medium text-sm">Transaksi</span>
             </a>
 
+            {{-- Riwayat Shift (Kasir Non-Admin) --}}
+            @if(auth()->user()->role !== 'admin')
+            <a href="{{ route('shifts.index') }}" wire:navigate @click="if(window.innerWidth < 1280) sidebarOpen = false"
+                class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                {{ $isPath('shifts') ? 'text-slate-900 bg-slate-100 dark:bg-slate-800 dark:text-white font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="font-medium text-sm">Riwayat Shift</span>
+            </a>
+            @endif
+
             {{-- Laporan (Dropdown - Admin Only) --}}
             @if(auth()->user()->role === 'admin')
             <div>
