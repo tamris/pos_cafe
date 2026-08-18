@@ -78,11 +78,6 @@
           toggleTheme() {
               this.darkMode = !this.darkMode;
               localStorage.setItem('darkMode', this.darkMode);
-              if (this.darkMode) {
-                  document.documentElement.classList.add('dark');
-              } else {
-                  document.documentElement.classList.remove('dark');
-              }
           }
       }"
       x-init="

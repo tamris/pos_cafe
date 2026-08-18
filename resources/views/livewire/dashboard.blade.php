@@ -490,9 +490,46 @@
                     paymentChartInstance.render();
                 }
             } else {
-                destroyDashboardCharts();
+                if (paymentChartInstance) {
+                    try { paymentChartInstance.destroy(); } catch (e) {}
+                    paymentChartInstance = null;
+                }
                 paymentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-xs sm:text-sm">Belum ada transaksi hari ini</div>';
             }
+        }
+    }
+
+    // UPDATE WARNA TEMA SECARA HALUS TANPA MERELOAD ATAU MENGULANG ANIMASI
+    function updateChartsThemeSmoothly() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const theme = getChartThemeOptions(isDark);
+
+        if (salesChartInstance) {
+            salesChartInstance.updateOptions({
+                tooltip: { theme: isDark ? 'dark' : 'light' },
+                xaxis: { labels: { style: { colors: theme.textColor } } },
+                yaxis: { labels: { style: { colors: theme.textColor } } },
+                grid: { borderColor: theme.gridColor }
+            }, false, false);
+        }
+
+        if (paymentChartInstance) {
+            paymentChartInstance.updateOptions({
+                tooltip: { theme: isDark ? 'dark' : 'light' },
+                stroke: { colors: [theme.strokeColor] },
+                legend: { labels: { colors: theme.textColor } },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                name: { color: theme.textColor },
+                                value: { color: theme.totalTextColor },
+                                total: { color: theme.textColor }
+                            }
+                        }
+                    }
+                }
+            }, false, false);
         }
     }
 
@@ -513,12 +550,14 @@
     }
 
     if (!window.dashboardThemeObserverRegistered) {
+        let themeTimeout = null;
         const themeObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.attributeName === 'class') {
-                    if (document.querySelector("#salesChart") || document.querySelector("#paymentChart")) {
-                        initDashboardCharts();
-                    }
+                    clearTimeout(themeTimeout);
+                    themeTimeout = setTimeout(() => {
+                        updateChartsThemeSmoothly();
+                    }, 10);
                 }
             });
         });
