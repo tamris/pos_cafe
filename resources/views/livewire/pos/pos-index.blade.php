@@ -618,7 +618,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-xl font-bold hover:bg-slate-200 transition-colors text-xs">Transaksi Baru</button>
                             <a href="{{ route('print.struk', $lastInvoice) }}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.077-.32-2.146-.32-3.149 0-4.418 3.582-8 8-8s8 3.582 8 8c0 1.003-.08 2.072-.32 3.149m-15.36 0A10.024 10.024 0 0012 21.75c3.27 0 6.182-1.564 8.04-3.921m-15.36 0c.24 1.077.32 2.146.32 3.149M6.72 13.829h10.56M6.72 13.829H3.75A2.25 2.25 0 001.5 16.079v3.421a2.25 2.25 0 002.25 2.25h16.5a2.25 2.25 0 002.25-2.25v-3.421a2.25 2.25 0 00-2.25-2.25H17.28"></path></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                 <span>Cetak Struk</span>
                             </a>
                         </div>
