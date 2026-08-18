@@ -329,7 +329,7 @@
                     </div>
 
                     {{-- Tombol AI CTA --}}
-                    <!-- <div class="mb-6 sm:mb-8">
+                    <div class="mb-6 sm:mb-8">
                         <button type="button" wire:click="analyzeWithAI" wire:loading.attr="disabled" wire:target="analyzeWithAI" class="relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-85 disabled:cursor-not-allowed text-white font-bold rounded-xl py-3 px-4 sm:px-6 w-full text-xs sm:text-sm transition-all duration-200 shadow-sm flex justify-center items-center min-h-[46px]">
                             <div wire:loading.remove wire:target="analyzeWithAI" class="flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -344,7 +344,7 @@
                                 <span class="font-medium tracking-wide">Menganalisis Takaran Resep Terbaik...</span>
                             </div>
                         </button>
-                    </div> -->
+                    </div>
 
                     {{-- List Biaya Bahan Baku --}}
                     <div>
@@ -607,14 +607,14 @@
                     </div>
                 </div>
 
-                {{-- CARD 3: REKOMENDASI STRATEGI HARGA JUAL AI (STYLE ASLI/LAMA) --}}
+                {{-- CARD 3: REKOMENDASI STRATEGI HARGA JUAL --}}
                 @php $tiers = $this->pricingTiers; @endphp
                 @if(!empty($tiers))
                 <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 card-shadow p-5 sm:p-7 lg:p-8 relative overflow-hidden transition-colors" x-data="{ expanded: true }">
                     <div class="flex justify-between items-center cursor-pointer mb-2" @click="expanded = !expanded">
                         <div>
                             <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                                Rekomendasi Strategi Harga Jual <span class="ml-2.5 px-2.5 py-1 text-[10px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold uppercase tracking-wider shadow-xs">✨ Didukung oleh AI</span>
+                                Rekomendasi Strategi Harga Jual
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Saran penetapan harga jual untuk menu: <span class="font-bold text-slate-700 dark:text-slate-300">{{ $nama_produk ?: 'Menu Baru' }}</span></p>
                         </div>

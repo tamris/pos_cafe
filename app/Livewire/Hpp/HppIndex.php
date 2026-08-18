@@ -233,28 +233,48 @@ class HppIndex extends Component
         ]);
 
         try {
-            $service = app(\App\Services\GeminiAIService::class);
-            $prompt = "Buatkan estimasi takaran bahan standar cafe untuk menu: {$this->nama_produk}. 
-            Kembalikan HANYA dalam format JSON array yang valid, tanpa markdown, tanpa penjelasan lain.
-            Gunakan satuan standar cafe:
-            - Satuan takaran porsi: 'gram', 'ml', 'pcs', atau 'sachet'.
-            - Satuan pembelian: 'kg', 'liter', 'pack', 'pcs', 'botol', atau 'kaleng'.
-            Struktur JSON array:
-            [
-                {\"nama\": \"Bahan A\", \"takaran\": 15, \"satuan_takaran\": \"gram\", \"harga_beli\": 85000, \"jumlah_beli\": 1, \"satuan_beli\": \"kg\"}
-            ]";
-            
-            $response = $service->generateResponse($prompt);
-            
-            // Bersihkan markdown jika AI mengembalikan markdown format (misal ```json ... ```)
-            $response = preg_replace('/```json|```/', '', $response);
-            $response = trim($response);
+            \Illuminate\Support\Facades\Log::info('=== [HPP AI DEBUG] START ANALISIS RESEP ===', [
+                'nama_produk' => $this->nama_produk,
+                'timestamp' => now()->toDateTimeString()
+            ]);
 
-            $data = json_decode($response, true);
+            $service = app(\App\Services\GeminiAIService::class);
+            $prompt = "Buatkan estimasi takaran bahan standar cafe untuk menu: {$this->nama_produk}.
+            ATURAN SATUAN & JUMLAH BELI:
+            1. Bahan per butir/lembar/pcs (Paper Filter, Cup, Tutup, Sedotan, Drip Bag, dll):
+               - Wajib gunakan 'satuan_takaran': 'pcs'
+               - Wajib gunakan 'satuan_beli': 'pcs'
+               - Pada 'jumlah_beli': Wajib isi dengan TOTAL ISI PCS dalam 1 kemasan beli (Contoh: Paper Filter 1 pack isi 100 lembar harga 45000 -> harga_beli: 45000, jumlah_beli: 100, satuan_beli: 'pcs'. Cup 1 pack isi 50 pcs harga 30000 -> harga_beli: 30000, jumlah_beli: 50, satuan_beli: 'pcs').
+            2. Bahan bubuk/kopi/gula/es:
+               - 'satuan_takaran': 'gram'
+               - 'satuan_beli': 'kg' (atau 'gram'), 'jumlah_beli': 1 (jika kg) atau 1000 (jika gram)
+            3. Bahan cair/susu/sirup/air:
+               - 'satuan_takaran': 'ml'
+               - 'satuan_beli': 'liter' (atau 'ml'), 'jumlah_beli': 1 (jika liter) atau 1000 (jika ml). Jika air galon 19L harga 20000 -> harga_beli: 20000, jumlah_beli: 19, satuan_beli: 'liter'.
+
+            Gunakan format JSON array dengan keys:
+            - nama: nama bahan baku (string)
+            - takaran: angka takaran per porsi (number)
+            - satuan_takaran: salah satu dari 'gram', 'ml', 'pcs', 'sachet'
+            - harga_beli: estimasi harga beli pasaran dalam Rupiah (number)
+            - jumlah_beli: total isi kemasan yang dibeli sesuai satuan_beli (number)
+            - satuan_beli: salah satu dari 'kg', 'liter', 'gram', 'ml', 'pcs', 'sachet'";
+            
+            \Illuminate\Support\Facades\Log::info('[HPP AI DEBUG] Mengirim prompt ke Gemini...');
+            $startTime = microtime(true);
+            
+            $data = $service->generateJson($prompt);
+            $duration = round(microtime(true) - $startTime, 2);
+
+            \Illuminate\Support\Facades\Log::info('[HPP AI DEBUG] Respons AI diterima!', [
+                'durasi_detik' => $duration,
+                'jumlah_bahan' => is_array($data) ? count($data) : 0,
+                'data_mentah' => $data
+            ]);
 
             if (is_array($data) && count($data) > 0) {
                 $this->bahan_baku = [];
-                foreach ($data as $item) {
+                foreach ($data as $idx => $item) {
                     $item['subtotal'] = 0;
                     $item['takaran'] = !empty($item['takaran']) ? $item['takaran'] : '';
                     $item['harga_beli'] = !empty($item['harga_beli']) ? $item['harga_beli'] : '';
@@ -262,12 +282,22 @@ class HppIndex extends Component
                     $this->calculateSubtotal(count($this->bahan_baku) - 1);
                 }
                 $this->syncSelectedTier();
-                $this->notify('success', 'Berhasil mendapatkan rekomendasi resep AI untuk ' . $this->nama_produk);
+
+                \Illuminate\Support\Facades\Log::info('=== [HPP AI DEBUG] BERHASIL DIMUAT KE FORM ===', [
+                    'total_bahan' => count($this->bahan_baku)
+                ]);
+
+                $this->notify('success', 'Berhasil! ' . count($this->bahan_baku) . ' bahan baku dimuat untuk ' . $this->nama_produk . ' (waktu: ' . $duration . 's)');
             } else {
-                $this->notify('error', 'Gagal mem-parsing respons AI. Pastikan nama produk spesifik (misal: "Kopi Susu Gula Aren").');
+                \Illuminate\Support\Facades\Log::warning('[HPP AI DEBUG] Data array kosong / format tidak sesuai');
+                $this->notify('error', 'Resep AI kosong. Pastikan nama produk spesifik (misal: "Kopi Susu Gula Aren").');
             }
         } catch (\Exception $e) {
-            $this->notify('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('=== [HPP AI DEBUG] ERROR TERJADI ===', [
+                'pesan_error' => $e->getMessage(),
+                'file' => $e->getFile() . ':' . $e->getLine()
+            ]);
+            $this->notify('error', 'Gagal memproses AI: ' . $e->getMessage());
         }
     }
 
