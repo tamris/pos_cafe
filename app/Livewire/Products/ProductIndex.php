@@ -30,7 +30,7 @@ class ProductIndex extends Component
     public $image;
     public $oldImage;
     public $barcode = '';
-    public $harga_beli = 0;
+    public $harga_beli = '';
     public $is_active = true;
     public $isEdit = false;
     public $showModal = false;
@@ -154,6 +154,8 @@ class ProductIndex extends Component
     public function resetForm()
     {
         $this->reset(['name', 'sku', 'category_id', 'description', 'price', 'harga_beli', 'image', 'oldImage', 'productId', 'isEdit', 'barcode']);
+        $this->price = '';
+        $this->harga_beli = '';
         $this->is_active = true;
         $this->resetValidation();
     }
@@ -178,6 +180,14 @@ class ProductIndex extends Component
 
         if (empty(trim($this->sku))) {
             $this->sku = $this->generateSku($this->category_id);
+        }
+
+        // Parse format numerik
+        if ($this->price !== '' && !is_numeric($this->price)) {
+            $this->price = (float) preg_replace('/[^\d.]/', '', (string)$this->price);
+        }
+        if ($this->harga_beli !== '' && !is_numeric($this->harga_beli)) {
+            $this->harga_beli = (float) preg_replace('/[^\d.]/', '', (string)$this->harga_beli);
         }
 
         $skuRule = Rule::unique('products', 'sku')->whereNull('deleted_at');
@@ -250,8 +260,8 @@ class ProductIndex extends Component
         $this->barcode = $product->barcode;
         $this->category_id = $product->category_id;
         $this->description = $product->description;
-        $this->price = $product->price;
-        $this->harga_beli = $product->harga_beli;
+        $this->price = (int) $product->price;
+        $this->harga_beli = (int) $product->harga_beli;
         $this->is_active = (bool) $product->is_active;
         $this->oldImage = $product->image;
         $this->isEdit = true;

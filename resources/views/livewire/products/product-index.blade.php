@@ -309,17 +309,83 @@
                                     @error('sku') <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                                 </div>
 
-                                {{-- Harga Jual --}}
-                                <div>
-                                    <label for="price" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">Harga Jual (Rp) <span class="text-rose-500">*</span></label>
-                                    <input type="number" id="price" wire:model.live="price" class="block w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" placeholder="25000">
+                                {{-- Harga Jual dengan Auto Format Rupiah --}}
+                                <div x-data="{
+                                    rawPrice: @entangle('price').live,
+                                    displayPrice: '',
+                                    formatPrice(val) {
+                                        let clean = String(val).replace(/\D/g, '');
+                                        this.displayPrice = clean ? new Intl.NumberFormat('id-ID').format(clean) : '';
+                                        this.rawPrice = clean ? parseInt(clean, 10) : '';
+                                    },
+                                    init() {
+                                        if (this.rawPrice && this.rawPrice > 0) {
+                                            this.displayPrice = new Intl.NumberFormat('id-ID').format(this.rawPrice);
+                                        }
+                                        this.$watch('rawPrice', (newVal) => {
+                                            if (newVal !== undefined && newVal !== null && newVal !== '') {
+                                                let clean = String(newVal).replace(/\D/g, '');
+                                                let formatted = clean ? new Intl.NumberFormat('id-ID').format(clean) : '';
+                                                if (this.displayPrice !== formatted) {
+                                                    this.displayPrice = formatted;
+                                                }
+                                            } else if (newVal === '' || newVal === null || newVal === 0) {
+                                                if (!newVal) this.displayPrice = '';
+                                            }
+                                        });
+                                    }
+                                }">
+                                    <label for="price" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">
+                                        Harga Jual (Rp) <span class="text-rose-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-bold text-slate-400">Rp</span>
+                                        <input type="text" id="price" 
+                                            x-model="displayPrice"
+                                            @input="formatPrice($event.target.value)"
+                                            class="block w-full pl-9 pr-3 py-2 text-xs sm:text-sm font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400"
+                                            placeholder="Contoh: 25.000">
+                                    </div>
                                     @error('price') <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                                 </div>
 
-                                {{-- Harga Beli / HPP --}}
-                                <div>
-                                    <label for="harga_beli" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">Harga Modal / HPP (Rp) <span class="text-rose-500">*</span></label>
-                                    <input type="number" id="harga_beli" wire:model.live="harga_beli" class="block w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" placeholder="12000">
+                                {{-- Harga Beli / HPP dengan Auto Format Rupiah --}}
+                                <div x-data="{
+                                    rawHpp: @entangle('harga_beli').live,
+                                    displayHpp: '',
+                                    formatHpp(val) {
+                                        let clean = String(val).replace(/\D/g, '');
+                                        this.displayHpp = clean ? new Intl.NumberFormat('id-ID').format(clean) : '';
+                                        this.rawHpp = clean ? parseInt(clean, 10) : '';
+                                    },
+                                    init() {
+                                        if (this.rawHpp && this.rawHpp > 0) {
+                                            this.displayHpp = new Intl.NumberFormat('id-ID').format(this.rawHpp);
+                                        }
+                                        this.$watch('rawHpp', (newVal) => {
+                                            if (newVal !== undefined && newVal !== null && newVal !== '') {
+                                                let clean = String(newVal).replace(/\D/g, '');
+                                                let formatted = clean ? new Intl.NumberFormat('id-ID').format(clean) : '';
+                                                if (this.displayHpp !== formatted) {
+                                                    this.displayHpp = formatted;
+                                                }
+                                            } else if (newVal === '' || newVal === null || newVal === 0) {
+                                                if (!newVal) this.displayHpp = '';
+                                            }
+                                        });
+                                    }
+                                }">
+                                    <label for="harga_beli" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">
+                                        Harga Modal / HPP (Rp) <span class="text-rose-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-bold text-slate-400">Rp</span>
+                                        <input type="text" id="harga_beli" 
+                                            x-model="displayHpp"
+                                            @input="formatHpp($event.target.value)"
+                                            class="block w-full pl-9 pr-3 py-2 text-xs sm:text-sm font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400"
+                                            placeholder="Contoh: 12.000">
+                                    </div>
                                     @error('harga_beli') <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                                 </div>
 

@@ -310,15 +310,23 @@
         };
     }
 
-    function destroyDashboardCharts() {
+    function destroySalesChart() {
         if (salesChartInstance) {
             try { salesChartInstance.destroy(); } catch (e) {}
             salesChartInstance = null;
         }
+    }
+
+    function destroyPaymentChart() {
         if (paymentChartInstance) {
             try { paymentChartInstance.destroy(); } catch (e) {}
             paymentChartInstance = null;
         }
+    }
+
+    function destroyDashboardCharts() {
+        destroySalesChart();
+        destroyPaymentChart();
     }
 
     function initDashboardCharts() {
@@ -332,7 +340,7 @@
         const isDark = document.documentElement.classList.contains('dark');
         const theme = getChartThemeOptions(isDark);
 
-        // 1. BAR CHART: TREN PENJUALAN (CEPAT & SMOOTH)
+        // 1. BAR CHART: TREN PENJUALAN
         if (salesElement && salesWrapper) {
             let labels = [];
             let data = [];
@@ -353,7 +361,7 @@
                     animations: {
                         enabled: true,
                         easing: 'easeinout',
-                        speed: 400, // Cepat dan tidak delay
+                        speed: 400,
                         animateGradually: {
                             enabled: true,
                             delay: 40
@@ -379,14 +387,15 @@
                     axisTicks: { show: false }
                 },
                 yaxis: {
+                    min: 0,
+                    tickAmount: 5,
+                    forceNiceScale: true,
                     labels: {
                         formatter: function (value) {
                             return "Rp " + new Intl.NumberFormat('id-ID').format(value / 1000) + "k";
                         },
                         style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 }
-                    },
-                    min: 0,
-                    tickAmount: 5
+                    }
                 },
                 grid: {
                     borderColor: theme.gridColor,
@@ -413,7 +422,7 @@
             }
         }
 
-        // 2. DONUT / PIE CHART: METODE PEMBAYARAN (SNAP-SMOOTH)
+        // 2. DONUT / PIE CHART: METODE PEMBAYARAN
         if (paymentElement && paymentWrapper) {
             let paymentData = [];
             try {
@@ -435,7 +444,7 @@
                         animations: {
                             enabled: true,
                             easing: 'easeinout',
-                            speed: 350, // Durasi pas, langsung terbentuk rapi
+                            speed: 350,
                             dynamicAnimation: {
                                 enabled: true,
                                 speed: 200
@@ -445,7 +454,7 @@
                     colors: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6'],
                     plotOptions: {
                         pie: {
-                            expandOnClick: false, // Mencegah glitch layout saat render awal
+                            expandOnClick: false,
                             donut: {
                                 size: '72%',
                                 labels: {
@@ -490,25 +499,41 @@
                     paymentChartInstance.render();
                 }
             } else {
-                if (paymentChartInstance) {
-                    try { paymentChartInstance.destroy(); } catch (e) {}
-                    paymentChartInstance = null;
-                }
+                destroyPaymentChart();
                 paymentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-xs sm:text-sm">Belum ada transaksi hari ini</div>';
             }
         }
     }
 
-    // UPDATE WARNA TEMA SECARA HALUS TANPA MERELOAD ATAU MENGULANG ANIMASI
+    // UPDATE WARNA TEMA DENGAN FORMATTER & SKALA TETAP TERKUNCI (5000k)
     function updateChartsThemeSmoothly() {
         const isDark = document.documentElement.classList.contains('dark');
         const theme = getChartThemeOptions(isDark);
 
         if (salesChartInstance) {
             salesChartInstance.updateOptions({
-                tooltip: { theme: isDark ? 'dark' : 'light' },
-                xaxis: { labels: { style: { colors: theme.textColor } } },
-                yaxis: { labels: { style: { colors: theme.textColor } } },
+                tooltip: { 
+                    theme: isDark ? 'dark' : 'light',
+                    y: {
+                        formatter: function (val) {
+                            return "Rp " + new Intl.NumberFormat('id-ID').format(val);
+                        }
+                    }
+                },
+                xaxis: { 
+                    labels: { style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 } } 
+                },
+                yaxis: { 
+                    min: 0,
+                    tickAmount: 5,
+                    forceNiceScale: true,
+                    labels: { 
+                        formatter: function (value) {
+                            return "Rp " + new Intl.NumberFormat('id-ID').format(value / 1000) + "k";
+                        },
+                        style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 } 
+                    } 
+                },
                 grid: { borderColor: theme.gridColor }
             }, false, false);
         }
