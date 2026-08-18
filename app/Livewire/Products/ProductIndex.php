@@ -136,6 +136,10 @@ class ProductIndex extends Component
 
     public function openModal()
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menambah menu baru.');
+            return;
+        }
         $this->resetForm();
         $this->sku = $this->generateSku();
         $this->showModal = true;
@@ -167,6 +171,11 @@ class ProductIndex extends Component
 
     public function save()
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses ditolak. Hanya Administrator yang dapat menyimpan perubahan menu.');
+            return;
+        }
+
         if (empty(trim($this->sku))) {
             $this->sku = $this->generateSku($this->category_id);
         }
@@ -227,6 +236,11 @@ class ProductIndex extends Component
 
     public function edit($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat mengedit data menu.');
+            return;
+        }
+
         $product = Product::withTrashed()->find($id);
         if (!$product) return;
 
@@ -246,6 +260,11 @@ class ProductIndex extends Component
 
     public function delete($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menghapus menu.');
+            return;
+        }
+
         $product = Product::find($id);
         if (!$product) return;
 
@@ -263,6 +282,11 @@ class ProductIndex extends Component
 
     public function restore($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat memulihkan menu.');
+            return;
+        }
+
         $product = Product::onlyTrashed()->find($id);
         if ($product) {
             $product->restore();
@@ -272,6 +296,11 @@ class ProductIndex extends Component
 
     public function forceDelete($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menghapus menu permanen.');
+            return;
+        }
+
         $product = Product::onlyTrashed()->find($id);
         if (!$product) return;
 

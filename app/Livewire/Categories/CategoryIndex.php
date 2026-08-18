@@ -64,6 +64,10 @@ class CategoryIndex extends Component
 
     public function openModal()
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menambah kategori.');
+            return;
+        }
         $this->resetForm();
         $this->showModal = true;
     }
@@ -83,6 +87,11 @@ class CategoryIndex extends Component
 
     public function save()
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses ditolak. Hanya Administrator yang dapat menyimpan kategori.');
+            return;
+        }
+
         $this->validate();
 
         $data = [
@@ -107,6 +116,11 @@ class CategoryIndex extends Component
 
     public function edit($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat mengedit kategori.');
+            return;
+        }
+
         $category = Category::withTrashed()->find($id);
         if (!$category) return;
 
@@ -120,6 +134,11 @@ class CategoryIndex extends Component
 
     public function delete($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menghapus kategori.');
+            return;
+        }
+
         $category = Category::find($id);
         if (!$category) return;
 
@@ -136,6 +155,11 @@ class CategoryIndex extends Component
 
     public function restore($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat memulihkan kategori.');
+            return;
+        }
+
         $category = Category::onlyTrashed()->find($id);
         if ($category) {
             $category->restore();
@@ -145,6 +169,11 @@ class CategoryIndex extends Component
 
     public function forceDelete($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menghapus kategori permanen.');
+            return;
+        }
+
         $category = Category::onlyTrashed()->find($id);
         if (!$category) return;
 

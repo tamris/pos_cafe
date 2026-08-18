@@ -58,6 +58,12 @@ class PosIndex extends Component
     public $showPaymentModal = false;
     public $showSuccessModal = false;
     public $showMobileCart = false;
+
+    // Quick Menu & Category Availability Modal State (Item 86)
+    public $showAvailabilityModal = false;
+    public $availabilityTab = 'products'; // 'products' or 'categories'
+    public $availabilitySearch = '';
+    public $availabilityCategoryFilter = '';
     public $lastInvoice = '';
     public $lastTransaction = null;
 
@@ -597,12 +603,72 @@ class PosIndex extends Component
         }
     }
 
+    public function openAvailabilityModal()
+    {
+        $this->showAvailabilityModal = true;
+        $this->availabilitySearch = '';
+        $this->availabilityCategoryFilter = '';
+    }
+
+    public function closeAvailabilityModal()
+    {
+        $this->showAvailabilityModal = false;
+        $this->loadProducts();
+    }
+
+    public function setAvailabilityTab($tab)
+    {
+        $this->availabilityTab = $tab;
+    }
+
+    public function toggleProductAvailability($productId)
+    {
+        $product = Product::find($productId);
+        if ($product) {
+            $product->is_active = !$product->is_active;
+            $product->save();
+            $this->loadProducts();
+            $statusLabel = $product->is_active ? 'Diaktifkan (Tersedia di Kasir)' : 'Dinonaktifkan (Habis / Kosong)';
+            $this->notify($product->is_active ? 'success' : 'info', "Menu '{$product->name}' berhasil {$statusLabel}.");
+        }
+    }
+
+    public function toggleCategoryAvailability($categoryId)
+    {
+        $category = Category::find($categoryId);
+        if ($category) {
+            $category->is_active = !$category->is_active;
+            $category->save();
+            $this->loadProducts();
+            $statusLabel = $category->is_active ? 'Diaktifkan (Tersedia di Kasir)' : 'Dinonaktifkan (Disembunyikan dari POS)';
+            $this->notify($category->is_active ? 'success' : 'info', "Kategori '{$category->name}' berhasil {$statusLabel}.");
+        }
+    }
+
     public function render()
     {
         $categories = Category::where('is_active', true)->withCount('products')->orderBy('name', 'asc')->get();
+        $allCategories = Category::withCount('products')->orderBy('name', 'asc')->get();
+
+        $availabilityProducts = [];
+        if ($this->showAvailabilityModal) {
+            $query = Product::with('category')->latest();
+            if ($this->availabilitySearch) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', '%' . $this->availabilitySearch . '%')
+                      ->orWhere('sku', 'like', '%' . $this->availabilitySearch . '%');
+                });
+            }
+            if ($this->availabilityCategoryFilter) {
+                $query->where('category_id', $this->availabilityCategoryFilter);
+            }
+            $availabilityProducts = $query->get();
+        }
 
         return view('livewire.pos.pos-index', [
             'categories' => $categories,
+            'allCategories' => $allCategories,
+            'availabilityProducts' => $availabilityProducts,
         ]);
     }
 }

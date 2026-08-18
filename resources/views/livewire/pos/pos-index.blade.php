@@ -108,6 +108,16 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
+                    {{-- Quick Availability / Item 86 Toggle Button --}}
+                    <button type="button" wire:click="openAvailabilityModal"
+                        class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+                        title="Atur ketersediaan menu / kategori yang habis (Item 86)">
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"></path>
+                        </svg>
+                        <span>Ketersediaan Menu</span>
+                    </button>
+
                     @if ($activeShift)
                         <button type="button" wire:click="openEndShiftModal"
                             class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
@@ -782,6 +792,153 @@
                     <button type="button" wire:click="endShift" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
                         <span>Tutup Shift & Cetak Rekap</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ========================================================================= --}}
+    {{-- MODAL QUICK KETERSEDIAAN MENU & KATEGORI                                  --}}
+    {{-- ========================================================================= --}}
+    @if ($showAvailabilityModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[88vh] animate-scale-up">
+                
+                {{-- Header Modal --}}
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Kontrol Ketersediaan Menu</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Aktifkan atau nonaktifkan menu & kategori yang habis secara instan</p>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="closeAvailabilityModal" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                {{-- Tab Pilihan: Produk vs Kategori --}}
+                <div class="px-4 sm:px-5 pt-3 border-b border-slate-200 dark:border-slate-700 flex gap-2">
+                    <button type="button" wire:click="setAvailabilityTab('products')"
+                        class="pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer {{ $availabilityTab === 'products' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300' }}">
+                        <span>Menu Produk</span>
+                        <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $availabilityTab === 'products' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400' }}">
+                            {{ count($availabilityProducts) }}
+                        </span>
+                    </button>
+                    <button type="button" wire:click="setAvailabilityTab('categories')"
+                        class="pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer {{ $availabilityTab === 'categories' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300' }}">
+                        <span>Kategori Menu</span>
+                        <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $availabilityTab === 'categories' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400' }}">
+                            {{ count($allCategories) }}
+                        </span>
+                    </button>
+                </div>
+
+                {{-- Filter & Search di dalam Modal --}}
+                <div class="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1">
+                        <input type="text" wire:model.live.debounce.250ms="availabilitySearch"
+                            placeholder="Cari nama menu / SKU..."
+                            class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+
+                    @if($availabilityTab === 'products')
+                        <select wire:model.live="availabilityCategoryFilter"
+                            class="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-full sm:w-44">
+                            <option value="">Semua Kategori</option>
+                            @foreach ($allCategories as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    @endif
+                </div>
+
+                {{-- Daftar Item (Scrollable) --}}
+                <div class="flex-1 overflow-y-auto p-4 space-y-2.5 min-h-[250px] max-h-[420px] scrollbar-thin">
+                    @if($availabilityTab === 'products')
+                        @forelse($availabilityProducts as $prod)
+                            <div class="flex items-center justify-between p-2.5 sm:p-3 rounded-xl border {{ $prod->is_active ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700' : 'bg-slate-100/70 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-700' }} transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 flex items-center justify-center border border-slate-200 dark:border-slate-600">
+                                        @if($prod->image)
+                                            <img src="{{ Storage::url($prod->image) }}" alt="{{ $prod->name }}" class="w-full h-full object-cover">
+                                        @else
+                                            <span class="text-sm">☕</span>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white {{ !$prod->is_active ? 'line-through text-slate-400 dark:text-slate-500' : '' }}">
+                                            {{ $prod->name }}
+                                        </h4>
+                                        <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                            <span>{{ $prod->category->name ?? '-' }}</span>
+                                            <span>•</span>
+                                            <span class="font-semibold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($prod->price, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Toggle Switch --}}
+                                <div class="flex items-center gap-2.5 shrink-0">
+                                    <span class="text-[11px] font-bold {{ $prod->is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                        {{ $prod->is_active ? 'Tersedia' : 'Habis / Kosong' }}
+                                    </span>
+                                    <button type="button" wire:click="toggleProductAvailability({{ $prod->id }})"
+                                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden {{ $prod->is_active ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-600' }}">
+                                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out {{ $prod->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-8 text-slate-400 text-xs">
+                                Tidak ada menu ditemukan.
+                            </div>
+                        @endforelse
+                    @else
+                        @forelse($allCategories as $cat)
+                            <div class="flex items-center justify-between p-3 rounded-xl border {{ $cat->is_active ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700' : 'bg-slate-100/70 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-700' }} transition-colors">
+                                <div>
+                                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white {{ !$cat->is_active ? 'line-through text-slate-400 dark:text-slate-500' : '' }}">
+                                        {{ $cat->name }}
+                                    </h4>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {{ $cat->products_count }} Menu Produk Terkait
+                                    </p>
+                                </div>
+
+                                {{-- Toggle Switch --}}
+                                <div class="flex items-center gap-2.5 shrink-0">
+                                    <span class="text-[11px] font-bold {{ $cat->is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                        {{ $cat->is_active ? 'Aktif di POS' : 'Non-Aktif (Hidden)' }}
+                                    </span>
+                                    <button type="button" wire:click="toggleCategoryAvailability({{ $cat->id }})"
+                                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden {{ $cat->is_active ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-600' }}">
+                                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out {{ $cat->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-8 text-slate-400 text-xs">
+                                Tidak ada kategori ditemukan.
+                            </div>
+                        @endforelse
+                    @endif
+                </div>
+
+                {{-- Footer Modal --}}
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Perubahan ketersediaan langsung diterapkan secara real-time.</p>
+                    <button type="button" wire:click="closeAvailabilityModal"
+                        class="px-4 py-2 bg-slate-900 dark:bg-emerald-600 text-white rounded-lg font-bold shadow-xs hover:bg-slate-800 dark:hover:bg-emerald-700 transition cursor-pointer">
+                        Selesai
                     </button>
                 </div>
             </div>

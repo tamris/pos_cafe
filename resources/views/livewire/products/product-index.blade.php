@@ -67,7 +67,8 @@
                                 </svg>
                             </div>
 
-                            {{-- Tombol Tambah Produk --}}
+                            {{-- Tombol Tambah Produk (Admin Only) --}}
+                            @if(auth()->user()->role === 'admin')
                             <button wire:click="openModal"
                                 class="bg-slate-900 dark:bg-blue-600 text-white px-4 py-2 sm:py-2.5 rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 font-semibold text-xs sm:text-sm w-full sm:w-auto shadow-sm active:scale-95 shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,6 +76,7 @@
                                 </svg>
                                 <span>Tambah Menu</span>
                             </button>
+                            @endif
                         </div>
                     </div>
 
