@@ -166,53 +166,104 @@
                                 @php
                                     $inCartQty = $this->getCartQuantity($product->id);
                                 @endphp
-                                <div wire:click="addToCart({{ $product->id }})"
-                                    class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-500 transition-all active:scale-[0.97] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
-                                    
-                                    {{-- In-Cart Badge Indicator --}}
-                                    @if($inCartQty > 0)
-                                        <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-emerald-600 text-white text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
-                                            {{ $inCartQty }}x
-                                        </div>
-                                    @endif
+                                @if($product->is_active)
+                                    {{-- 1. KARTU MENU AKTIF (KLIK UNTUK ORDER) --}}
+                                    <div wire:click="addToCart({{ $product->id }})"
+                                        class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-500 transition-all active:scale-[0.97] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
+                                        
+                                        {{-- In-Cart Badge Indicator --}}
+                                        @if($inCartQty > 0)
+                                            <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-emerald-600 text-white text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
+                                                {{ $inCartQty }}x
+                                            </div>
+                                        @endif
 
-                                    <div>
-                                        {{-- Frame Gambar Produk --}}
-                                        <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2 overflow-hidden bg-slate-100 dark:bg-slate-700/50 relative flex items-center justify-center border border-slate-100 dark:border-slate-700/60">
-                                            @if ($product->image)
-                                                <img src="{{ Storage::url($product->image) }}" 
-                                                     alt="{{ $product->name }}" 
-                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
-                                            @else
-                                                <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                                    <svg class="w-7 h-7 sm:w-8 sm:h-8 opacity-75" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
-                                                    </svg>
-                                                </div>
+                                        <div>
+                                            {{-- Frame Gambar Produk --}}
+                                            <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2 overflow-hidden bg-slate-100 dark:bg-slate-700/50 relative flex items-center justify-center border border-slate-100 dark:border-slate-700/60">
+                                                @if ($product->image)
+                                                    <img src="{{ Storage::url($product->image) }}" 
+                                                         alt="{{ $product->name }}" 
+                                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                                        <svg class="w-7 h-7 sm:w-8 sm:h-8 opacity-75" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
+                                                        </svg>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            
+                                            {{-- Judul Menu --}}
+                                            <h3 class="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-center xl:text-left">
+                                                {{ $product->name }}
+                                            </h3>
+                                            
+                                            {{-- Deskripsi (Desktop Only) --}}
+                                            @if($product->description)
+                                                <p class="hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-1 mt-0.5">
+                                                    {{ $product->description }}
+                                                </p>
                                             @endif
                                         </div>
                                         
-                                        {{-- Judul Menu --}}
-                                        <h3 class="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-center xl:text-left">
-                                            {{ $product->name }}
-                                        </h3>
+                                        {{-- Harga & Plus Button --}}
+                                        <div class="hidden xl:flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-700/60 mt-1">
+                                            <p class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                                            <span class="text-xs bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400 dark:group-hover:bg-emerald-600 dark:group-hover:text-white rounded-lg p-1 transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                @else
+                                    {{-- 2. KARTU MENU NON-AKTIF (GRAYED OUT & DISABLED DI PALING BAWAH) --}}
+                                    <div wire:click="addToCart({{ $product->id }})"
+                                        class="bg-slate-100/80 dark:bg-slate-900/60 rounded-xl p-2 sm:p-2.5 xl:p-3 border border-dashed border-slate-300 dark:border-slate-700 opacity-60 grayscale hover:opacity-75 transition-all flex flex-col justify-between h-full relative overflow-hidden cursor-not-allowed select-none group">
                                         
-                                        {{-- Deskripsi (Desktop Only) --}}
-                                        @if($product->description)
-                                            <p class="hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-1 mt-0.5">
-                                                {{ $product->description }}
-                                            </p>
-                                        @endif
+                                        {{-- Badge Tidak Tersedia --}}
+                                        <div class="absolute top-1.5 right-1.5 xl:top-2 xl:right-2 z-10 bg-amber-500/95 dark:bg-amber-600/95 text-white text-[8px] xl:text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs uppercase tracking-wider flex items-center gap-1">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                            <span>Tidak Tersedia</span>
+                                        </div>
+
+                                        <div>
+                                            {{-- Frame Gambar Produk --}}
+                                            <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2 overflow-hidden bg-slate-200/70 dark:bg-slate-800 relative flex items-center justify-center border border-slate-200 dark:border-slate-700/60">
+                                                @if ($product->image)
+                                                    <img src="{{ Storage::url($product->image) }}" 
+                                                         alt="{{ $product->name }}" 
+                                                         class="w-full h-full object-cover">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                                        <svg class="w-7 h-7 sm:w-8 sm:h-8 opacity-50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
+                                                        </svg>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            
+                                            {{-- Judul Menu --}}
+                                            <h3 class="font-semibold text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight text-center xl:text-left line-through decoration-slate-400">
+                                                {{ $product->name }}
+                                            </h3>
+                                            
+                                            {{-- Deskripsi (Desktop Only) --}}
+                                            @if($product->description)
+                                                <p class="hidden xl:block text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1 mb-1 mt-0.5">
+                                                    {{ $product->description }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                        
+                                        {{-- Harga Muted & Badge Non-Aktif --}}
+                                        <div class="hidden xl:flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-slate-700/60 mt-1">
+                                            <p class="font-semibold text-slate-400 dark:text-slate-500 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                                            <span class="text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/60">
+                                                Non-Aktif
+                                            </span>
+                                        </div>
                                     </div>
-                                    
-                                    {{-- Harga & Plus Button --}}
-                                    <div class="hidden xl:flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-700/60 mt-1">
-                                        <p class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                                        <span class="text-xs bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400 dark:group-hover:bg-emerald-600 dark:group-hover:text-white rounded-lg p-1 transition-colors">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
-                                        </span>
-                                    </div>
-                                </div>
+                                @endif
                             @empty
                                 <div class="col-span-full text-center py-12">
                                     <div class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 border-dashed max-w-sm mx-auto">

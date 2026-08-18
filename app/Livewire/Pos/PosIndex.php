@@ -244,8 +244,12 @@ class PosIndex extends Component
 
     public function loadProducts()
     {
-        // For Cafe Mode: display all active menu items without hiding when stock reaches 0
-        $query = Product::where('is_active', true)->with('category');
+        // For Cafe Mode: display all menu items from active categories.
+        // Active products are sorted first, inactive products sink to the bottom.
+        $query = Product::whereHas('category', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->with('category');
 
         if ($this->selectedCategory) {
             $query->where('category_id', $this->selectedCategory);
@@ -259,6 +263,7 @@ class PosIndex extends Component
         }
 
         $query->withSum('transactionDetails as total_sold', 'quantity')
+            ->orderByDesc('is_active')
             ->orderByDesc('total_sold')
             ->orderBy('name', 'asc');
 
@@ -267,10 +272,15 @@ class PosIndex extends Component
 
     public function addToCart($productId)
     {
-        $product = Product::find($productId);
+        $product = Product::with('category')->find($productId);
 
-        if (!$product || !$product->is_active) {
-            $this->notify('error', 'Menu sedang tidak tersedia atau dinonaktifkan.');
+        if (!$product || !$product->category || !$product->category->is_active) {
+            $this->notify('error', 'Kategori menu ini sedang tidak aktif di POS.');
+            return;
+        }
+
+        if (!$product->is_active) {
+            $this->notify('error', "Menu '{$product->name}' sedang tidak tersedia (Non-Aktif).");
             return;
         }
 
@@ -312,14 +322,22 @@ class PosIndex extends Component
             return;
         }
 
-        $product = Product::where('barcode', $barcode)->where('is_active', true)->first();
+        $product = Product::where('barcode', $barcode)
+            ->whereHas('category', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->first();
 
         if ($product) {
+            if (!$product->is_active) {
+                $this->notify('error', "Menu '{$product->name}' ditemukan tetapi berstatus Non-Aktif / Tidak Tersedia.");
+                return;
+            }
             $this->addToCart($product->id);
             $this->search = '';
             $this->loadProducts();
         } else {
-            $this->notify('info', 'Barcode tidak ditemukan atau menu non-aktif. Lanjut cari nama menu.');
+            $this->notify('info', 'Barcode tidak ditemukan pada daftar menu.');
         }
     }
 
@@ -581,7 +599,7 @@ class PosIndex extends Component
 
     public function render()
     {
-        $categories = Category::withCount('products')->orderBy('name', 'asc')->get();
+        $categories = Category::where('is_active', true)->withCount('products')->orderBy('name', 'asc')->get();
 
         return view('livewire.pos.pos-index', [
             'categories' => $categories,

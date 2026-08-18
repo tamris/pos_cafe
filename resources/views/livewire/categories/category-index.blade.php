@@ -67,6 +67,38 @@
                             </button>
                         </div>
                     </div>
+
+                    {{-- Status Filter Tabs (Semua, Aktif, Non-aktif, Arsip) --}}
+                    <div class="flex items-center gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/60 overflow-x-auto scrollbar-none text-xs">
+                        <button wire:click="setStatusFilter('all')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'all' ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600' }}">
+                            <span>Semua Kategori</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200' }}">{{ $countAll }}</span>
+                        </button>
+
+                        <button wire:click="setStatusFilter('active')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/60 dark:border-emerald-800/40' }}">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Aktif di POS</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'active' ? 'bg-white/20 text-white' : 'bg-emerald-200/70 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200' }}">{{ $countActive }}</span>
+                        </button>
+
+                        <button wire:click="setStatusFilter('inactive')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'inactive' ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200/60 dark:border-amber-800/40' }}">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                            <span>Non-Aktif</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-amber-200/70 dark:bg-amber-800 text-amber-800 dark:text-amber-200' }}">{{ $countInactive }}</span>
+                        </button>
+
+                        <button wire:click="setStatusFilter('trashed')"
+                            class="px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap {{ $statusFilter === 'trashed' ? 'bg-rose-700 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30' }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <span>Arsip / Tong Sampah</span>
+                            @if($countTrashed > 0)
+                                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold {{ $statusFilter === 'trashed' ? 'bg-white/20 text-white' : 'bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200' }}">{{ $countTrashed }}</span>
+                            @endif
+                        </button>
+                    </div>
                 </div>
 
                 {{-- Table Area --}}
@@ -78,12 +110,13 @@
                                 <th class="px-5 sm:px-6 py-3.5">Nama Kategori</th>
                                 <th class="px-5 sm:px-6 py-3.5">Deskripsi</th>
                                 <th class="px-5 sm:px-6 py-3.5">Jumlah Produk</th>
+                                <th class="px-5 sm:px-6 py-3.5 text-center">Status POS</th>
                                 <th class="px-5 sm:px-6 py-3.5 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-xs sm:text-sm">
                             @forelse($categories as $index => $category)
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors {{ $category->trashed() ? 'opacity-70 bg-rose-50/20 dark:bg-rose-950/10' : '' }}">
                                     <td class="px-5 sm:px-6 py-3.5 text-slate-500 dark:text-slate-400 font-mono">
                                         {{ $categories->firstItem() + $index }}
                                     </td>
@@ -94,36 +127,78 @@
                                         <div class="truncate max-w-[260px]">{{ $category->description ?: '-' }}</div>
                                     </td>
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold {{ $category->products_count > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' }}">
                                             {{ $category->products_count }} Produk
                                         </span>
                                     </td>
+                                    
+                                    {{-- Status POS (Interactive Toggle Button) --}}
+                                    <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap text-center">
+                                        @if($category->trashed())
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60">
+                                                <svg class="w-3 h-3 text-rose-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                <span>Diarsipkan</span>
+                                            </span>
+                                        @else
+                                            <button wire:click="toggleStatus({{ $category->id }})" title="Klik untuk mengubah ketersediaan kategori di kasir POS"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 {{ $category->is_active ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/40' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/40' }}">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $category->is_active ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500' }}"></span>
+                                                <span>{{ $category->is_active ? 'Aktif di POS' : 'Non-Aktif' }}</span>
+                                            </button>
+                                        @endif
+                                    </td>
+
                                     <td class="px-5 sm:px-6 py-3.5 whitespace-nowrap text-right space-x-1.5 shrink-0">
-                                        <button wire:click="edit({{ $category->id }})"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95">
-                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                            Edit
-                                        </button>
-                                        
-                                        <button onclick="confirmDeleteCategory({{ $category->id }}, '{{ $category->name }}')"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-rose-300 dark:border-rose-800/60 text-xs font-medium rounded-lg text-rose-700 dark:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors active:scale-95">
-                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                            Hapus
-                                        </button>
+                                        @if($category->trashed())
+                                            {{-- Pulihkan (Restore) --}}
+                                            <button onclick="confirmRestoreCategory({{ $category->id }}, '{{ $category->name }}')"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-emerald-300 dark:border-emerald-800 text-xs font-medium rounded-lg text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors active:scale-95">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                                Pulihkan
+                                            </button>
+
+                                            {{-- Hapus Permanen --}}
+                                            <button onclick="confirmForceDeleteCategory({{ $category->id }}, '{{ $category->name }}')"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-rose-300 dark:border-rose-800 text-xs font-medium rounded-lg text-rose-700 dark:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors active:scale-95">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                Hapus Permanen
+                                            </button>
+                                        @else
+                                            <button wire:click="edit({{ $category->id }})"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                Edit
+                                            </button>
+                                            
+                                            <button onclick="confirmDeleteCategory({{ $category->id }}, '{{ $category->name }}', {{ $category->products_count }})"
+                                                class="inline-flex items-center px-2.5 py-1.5 border border-rose-300 dark:border-rose-800/60 text-xs font-medium rounded-lg text-rose-700 dark:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors active:scale-95"
+                                                title="Arsipkan Kategori">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                Hapus
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center">
+                                    <td colspan="6" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                                             </svg>
-                                            <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">Tidak ada kategori ditemukan</p>
+                                            <p class="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">
+                                                @if($statusFilter === 'trashed')
+                                                    Arsip kosong. Tidak ada kategori yang diarsipkan.
+                                                @elseif($statusFilter === 'inactive')
+                                                    Tidak ada kategori yang berstatus non-aktif.
+                                                @else
+                                                    Tidak ada kategori ditemukan
+                                                @endif
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
@@ -183,6 +258,17 @@
                                     class="block w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400"
                                     placeholder="Penjelasan singkat mengenai kategori menu..."></textarea>
                             </div>
+
+                            {{-- Status Aktif Checkbox --}}
+                            <div class="pt-2">
+                                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                                    <input type="checkbox" wire:model="is_active"
+                                        class="w-4 h-4 text-emerald-600 border-slate-300 dark:border-slate-600 rounded-sm focus:ring-emerald-500 bg-white dark:bg-slate-900">
+                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        Aktifkan Kategori (Tersedia & Muncul di Kasir POS)
+                                    </span>
+                                </label>
+                            </div>
                         </div>
 
                         {{-- Modal Footer --}}
@@ -212,15 +298,28 @@
 
 @push('scripts')
 <script>
-    function confirmDeleteCategory(id, name) {
+    function confirmDeleteCategory(id, name, productsCount) {
+        if (productsCount > 0) {
+            Swal.fire({
+                title: 'Tidak Dapat Mengarsipkan',
+                text: "Kategori '" + name + "' masih memiliki " + productsCount + " produk aktif. Pindahkan atau nonaktifkan produk terlebih dahulu.",
+                icon: 'warning',
+                confirmButtonColor: '#0f172a',
+                confirmButtonText: 'Mengerti',
+                background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+                color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+            });
+            return;
+        }
+
         Swal.fire({
-            title: 'Hapus Kategori?',
-            text: "Anda akan menghapus kategori: " + name,
+            title: 'Arsipkan Kategori?',
+            text: "Kategori '" + name + "' akan dipindahkan ke Arsip / Tong Sampah.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#e11d48',
             cancelButtonColor: '#475569', 
-            confirmButtonText: 'Ya, Hapus!',
+            confirmButtonText: 'Ya, Arsipkan!',
             cancelButtonText: 'Batal',
             reverseButtons: true,
             background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
@@ -228,6 +327,46 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 @this.call('delete', id);
+            }
+        });
+    }
+
+    function confirmRestoreCategory(id, name) {
+        Swal.fire({
+            title: 'Pulihkan Kategori?',
+            text: "Kategori '" + name + "' akan dipulihkan dan aktif kembali di sistem.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'Ya, Pulihkan!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.call('restore', id);
+            }
+        });
+    }
+
+    function confirmForceDeleteCategory(id, name) {
+        Swal.fire({
+            title: 'Hapus Permanen?',
+            text: "Kategori '" + name + "' akan dihapus selamanya dari database dan tidak dapat dipulihkan!",
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'Ya, Hapus Permanen!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.call('forceDelete', id);
             }
         });
     }
