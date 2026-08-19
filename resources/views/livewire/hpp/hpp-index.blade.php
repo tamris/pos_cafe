@@ -635,7 +635,8 @@
 
                         @else
                             {{-- MANUAL INPUT PER PORSI --}}
-                            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700"
+                            <div wire:key="manual-op-box-{{ $selected_product_id }}"
+                                 class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700"
                                  x-data="{
                                      rawOp: @entangle('alokasi_biaya_tetap').live,
                                      displayOp: '',
@@ -984,7 +985,8 @@
                                     </div>
                                 </div>
                                 @else
-                                <div x-data="{
+                                <div wire:key="proj-op-cost-manual-{{ $selected_product_id }}"
+                                     x-data="{
                                     rawOp: @entangle('alokasi_biaya_tetap').live,
                                     displayOp: '',
                                     formatOp(val) {
