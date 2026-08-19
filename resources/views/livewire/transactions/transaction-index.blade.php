@@ -413,11 +413,31 @@
 
     @push('scripts')
     <script>
-        function printStrukDirect(invoice) {
+        async function printStrukDirect(invoice) {
             if (!invoice) return;
+
+            // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH
+            if (window.posBluetooth && window.posBluetooth.isConnected) {
+                try {
+                    await window.posBluetooth.printInvoice(invoice);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Struk Dicetak!',
+                        text: 'Mengirim ke printer Bluetooth...',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                    return;
+                } catch (err) {
+                    console.warn('Bluetooth print gagal, beralih ke fallback...', err);
+                }
+            }
+
+            // 2. FALLBACK ANDROID: RAWBT
             const isAndroid = /Android/i.test(navigator.userAgent);
             if (isAndroid) {
-                // Langsung fetch data Base64 ESC/POS dan panggil RawBT tanpa buka tab baru / blank page
                 fetch('/rawbt-struk/' + invoice)
                     .then(res => res.json())
                     .then(data => {
@@ -430,10 +450,11 @@
                     .catch(() => {
                         window.open('/print-struk/' + invoice, '_blank');
                     });
-            } else {
-                // Desktop: buka halaman print standar
-                window.open('/print-struk/' + invoice, '_blank');
+                return;
             }
+
+            // 3. FALLBACK DESKTOP: BROWSER PRINT TAB
+            window.open('/print-struk/' + invoice, '_blank');
         }
     </script>
     @endpush

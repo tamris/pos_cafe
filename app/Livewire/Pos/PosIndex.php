@@ -595,6 +595,7 @@ class PosIndex extends Component
             $this->showPaymentModal = false;
             $this->showMobileCart = false;
             $this->showSuccessModal = true;
+            $this->dispatch('transaction-completed', invoice: $this->lastInvoice);
             $this->resetTransaction();
 
         } catch (\Exception $e) {

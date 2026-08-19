@@ -344,13 +344,19 @@
 
     {{-- TOMBOL AKSI CEPAT DI ATAS STRUK --}}
     <div class="action-bar">
-        <button onclick="printRawBT()" class="action-btn btn-rawbt" title="Cetak Langsung via RawBT Android">
+        <button onclick="printBluetoothDirect()" class="action-btn btn-rawbt" style="background-color: #2563eb;" title="Cetak Langsung via Web Bluetooth">
+            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m7 7 10 10-5 5V2l5 5L7 17"></path>
+            </svg>
+            <span>Bluetooth Print</span>
+        </button>
+        <button onclick="printRawBT()" class="action-btn btn-rawbt" title="Cetak via RawBT Android">
             <span>⚡</span>
-            <span>Cetak RawBT</span>
+            <span>RawBT</span>
         </button>
         <button onclick="printBrowser()" class="action-btn btn-browser" title="Cetak via Dialog Browser">
             <span>🖨️</span>
-            <span>Browser Print</span>
+            <span>Browser</span>
         </button>
         <button onclick="window.close()" class="action-btn btn-close" title="Tutup Halaman">
             <span>✕</span>
@@ -496,8 +502,21 @@
         </div>
     </div>
 
+    <script src="{{ asset('js/bluetooth-printer.js') }}"></script>
     <script>
         const rawbtData = @json($rawbtBase64);
+
+        async function printBluetoothDirect() {
+            try {
+                if (!window.posBluetooth.isConnected) {
+                    await window.posBluetooth.connect();
+                }
+                const uint8Array = window.posBluetooth.base64ToUint8Array(rawbtData);
+                await window.posBluetooth.printRawData(uint8Array);
+            } catch (err) {
+                alert('Bluetooth Print: ' + err.message);
+            }
+        }
 
         function printRawBT() {
             // Format resmi RawBT Android Intent (package: ru.a402d.rawbtprinter)
@@ -510,14 +529,17 @@
         }
 
         // Auto-print saat halaman dibuka
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Jika Web Bluetooth sudah terkoneksi, langsung tembak ke printer
+            if (window.posBluetooth && window.posBluetooth.isConnected) {
+                await printBluetoothDirect();
+                return;
+            }
+
             const isAndroid = /Android/i.test(navigator.userAgent);
-            
             if (isAndroid) {
-                // Di Android, langsung kirim perintah ESC/POS ke RawBT
                 printRawBT();
             } else {
-                // Di PC/Desktop, gunakan browser print standar
                 window.print();
             }
         });
