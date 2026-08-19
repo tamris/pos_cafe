@@ -1,12 +1,13 @@
 <header class="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 bg-white border-b border-slate-200 dark:bg-slate-800 dark:border-slate-700 transition-colors duration-300">
     
     <div class="flex items-center space-x-3">
-        {{-- TOMBOL BURGER MENU --}}
-        <button @click.stop="sidebarOpen = !sidebarOpen"
+        {{-- TOMBOL BURGER MENU (DESKTOP & MOBILE TOGGLE) --}}
+        <button @click.stop="toggleSidebar()"
             type="button"
-            class="xl:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700 transition-colors focus:outline-none"
+            class="text-slate-600 hover:text-slate-900 p-2 rounded-xl hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700/60 transition-all focus:outline-none cursor-pointer flex items-center justify-center active:scale-95 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs"
+            title="Buka / Tutup Sidebar"
             aria-label="Toggle Sidebar">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
@@ -20,7 +21,29 @@
     </div>
 
     <div class="flex items-center space-x-2 sm:space-x-3">
-        {{-- WIDGET PRINTER THERMAL KUSTOM (TAILWIND + ALPINE) --}}
+        {{-- 1. JAM DIGITAL REALTIME (KIRI) --}}
+        <div x-data="{ 
+                dateTime: '',
+                updateClock() {
+                    const now = new Date();
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const month = months[now.getMonth()];
+                    const year = now.getFullYear();
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    this.dateTime = `${day} ${month} ${year}, ${hours}:${minutes}`;
+                }
+              }" 
+              x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+              class="hidden md:inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 font-mono tracking-tight shadow-2xs">
+            <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span x-text="dateTime">{{ now()->format('d M Y, H:i') }}</span>
+        </div>
+
+        {{-- 2. WIDGET PRINTER THERMAL (TENGAH) --}}
         <div x-data="{
                 showModal: false,
                 btConnected: false,
@@ -325,10 +348,10 @@
             </template>
         </div>
 
-        {{-- TOMBOL TEMA --}}
+        {{-- 3. TOMBOL TEMA DARK/LIGHT (KANAN) --}}
         <button @click="toggleTheme()" 
                 type="button"
-                class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors focus:outline-none"
+                class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors focus:outline-none cursor-pointer"
                 title="Ganti Tema">
             
            <svg x-show="darkMode" style="display: none;" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -339,25 +362,5 @@
                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
             </svg>
         </button>
-
-        {{-- JAM DIGITAL REALTIME (AUTO-UPDATE OTOMATIS) --}}
-        <span x-data="{ 
-                dateTime: '',
-                updateClock() {
-                    const now = new Date();
-                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const month = months[now.getMonth()];
-                    const year = now.getFullYear();
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    this.dateTime = `${day} ${month} ${year}, ${hours}:${minutes}`;
-                }
-              }" 
-              x-init="updateClock(); setInterval(() => updateClock(), 1000)"
-              class="hidden md:inline-flex items-center gap-2 text-xs font-medium text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg dark:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 font-mono tracking-tight shadow-2xs">
-            <!-- <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> -->
-            <span x-text="dateTime">{{ now()->format('d M Y, H:i') }}</span>
-        </span>
     </div>
 </header>

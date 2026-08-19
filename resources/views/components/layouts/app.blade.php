@@ -32,9 +32,69 @@
     {{-- Alpine.js (Wajib ada defer) --}}
     {{-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
+    {{-- Early Execution Script: Mencegah Flash/Blink Theme & Sidebar sebelum DOM di-render --}}
+    <script>
+        (function() {
+            try {
+                const isDark = localStorage.getItem('darkMode') === 'true';
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                if (window.innerWidth >= 1280) {
+                    if (localStorage.getItem('sidebarOpenDesktop') === 'false') {
+                        document.documentElement.classList.add('sidebar-collapsed');
+                    } else {
+                        document.documentElement.classList.remove('sidebar-collapsed');
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <style>
+        [x-cloak] { display: none !important; }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { font-family: 'Inter', sans-serif; }
+
+        /* ZERO-FLICKER SIDEBAR CSS ARCHITECTURE */
+        /* Layar HP & Tablet (< 1280px): Sidebar tersembunyi secara default */
+        @media (max-width: 1279px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            #sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+            .main-content-layout {
+                padding-left: 0 !important;
+            }
+        }
+
+        /* Layar Desktop (>= 1280px): Sidebar terbuka, kecuali jika html memiliki class .sidebar-collapsed */
+        @media (min-width: 1280px) {
+            #sidebar {
+                transform: translateX(0);
+            }
+            html.sidebar-collapsed #sidebar {
+                transform: translateX(-100%) !important;
+            }
+            .main-content-layout {
+                padding-left: 16rem; /* 256px */
+            }
+            html.sidebar-collapsed .main-content-layout {
+                padding-left: 0 !important;
+            }
+        }
+
+        /* Aktifkan animasi transisi halus HANYA setelah render pertama selesai (mencegah blink saat load) */
+        body.app-ready #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.app-ready .main-content-layout {
+            transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         /* Style Scrollbar Chat */
         #chat-messages { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; scroll-behavior: smooth; }
@@ -66,30 +126,49 @@
     @livewireStyles
 </head>
 
-{{-- 
-    LOGIKA UTAMA (GABUNGAN SIDEBAR & DARK MODE):
-    1. sidebarOpen: Mengatur menu di HP/Laptop.
-    2. darkMode: Mengatur tema gelap/terang.
---}}
 <body class="bg-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:bg-slate-900 dark:text-slate-100"
       x-data="{ 
-          sidebarOpen: window.innerWidth >= 1024,
+          mobileSidebarOpen: false,
           darkMode: localStorage.getItem('darkMode') === 'true',
           
           toggleTheme() {
               this.darkMode = !this.darkMode;
               localStorage.setItem('darkMode', this.darkMode);
+              if (this.darkMode) {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+          },
+
+          toggleSidebar() {
+              if (window.innerWidth < 1280) {
+                  this.mobileSidebarOpen = !this.mobileSidebarOpen;
+              } else {
+                  const isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+                  localStorage.setItem('sidebarOpenDesktop', !isCollapsed);
+              }
           }
       }"
       x-init="
-          // Listener Resize Layar
-          window.addEventListener('resize', () => { sidebarOpen = window.innerWidth >= 1024 });
-          
-          // Init Dark Mode saat load
-          if (darkMode) document.documentElement.classList.add('dark');
-          
+          // Pastikan tema dark/light dan class html sinkron 100%
+          if (darkMode) {
+              document.documentElement.classList.add('dark');
+          } else {
+              document.documentElement.classList.remove('dark');
+          }
+
           // Watcher perubahan Dark Mode
-          $watch('darkMode', val => val ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark'));
+          $watch('darkMode', val => {
+              if (val) {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+          });
+
+          // Aktifkan animasi transisi setelah halaman selesai digambar di layar
+          setTimeout(() => { document.body.classList.add('app-ready'); }, 50);
       ">
 
     <div id="app-layout">
@@ -102,13 +181,6 @@
             <livewire:ai-chat />
         @endif
     @endauth
-
-    {{-- Backdrop Mobile untuk Sidebar --}}
-    <div x-show="sidebarOpen" 
-         @click="sidebarOpen = false"
-         x-transition.opacity
-         class="fixed inset-0 z-40 bg-black/50 lg:hidden backdrop-blur-sm">
-    </div>
 
     @livewireScripts
     @stack('scripts')
@@ -286,6 +358,24 @@
                 }
             });
         }
+
+        // Sinkronisasi Tema & Layout saat navigasi SPA Livewire
+        document.addEventListener('livewire:navigated', function() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            if (window.innerWidth >= 1280) {
+                if (localStorage.getItem('sidebarOpenDesktop') === 'false') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                } else {
+                    document.documentElement.classList.remove('sidebar-collapsed');
+                }
+            }
+        });
     </script>
 </body>
 </html>

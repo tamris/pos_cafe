@@ -1,10 +1,7 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300"
-     x-data="{ sidebarOpen: window.innerWidth >= 1280 }"
-     @resize.window="sidebarOpen = window.innerWidth >= 1280">
-    
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300">
     @include('livewire.includes.sidebar')
 
-    <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
+    <div class="main-content-layout flex flex-col min-h-screen">
         @include('livewire.includes.header', [
             'title' => 'POS Kasir Cafe', 
             'subtitle' => 'Sistem Pemesanan & Transaksi Kasir'

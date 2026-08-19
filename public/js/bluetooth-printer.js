@@ -126,7 +126,7 @@ class PosThermalPrinter {
                 if (devices && devices.length > 0) {
                     this.btDevice = devices[0];
                     this.deviceName = this.btDevice.name || localStorage.getItem('pos_printer_name') || 'Printer Bluetooth';
-                    
+
                     this.btDevice.addEventListener('gattserverdisconnected', () => {
                         this.isConnected = false;
                         this.btCharacteristic = null;
@@ -226,9 +226,9 @@ class PosThermalPrinter {
                             return char;
                         }
                     }
-                } catch (e) {}
+                } catch (e) { }
             }
-        } catch (e) {}
+        } catch (e) { }
 
         return null;
     }
@@ -274,7 +274,7 @@ class PosThermalPrinter {
         if (this.serialPort) {
             try {
                 await this.serialPort.close();
-            } catch (e) {}
+            } catch (e) { }
             this.serialPort = null;
         }
         this.isConnected = false;

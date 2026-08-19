@@ -1,10 +1,7 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300"
-     x-data="{ sidebarOpen: window.innerWidth >= 1280 }"
-     @resize.window="if (window.innerWidth >= 1280) { sidebarOpen = true } else { sidebarOpen = false }">
-    
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     @include('livewire.includes.sidebar')
 
-    <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
+    <div class="main-content-layout flex flex-col min-h-screen">
         @include('livewire.includes.header', [
             'title' => 'Penjualan Menu Hari Ini',
             'subtitle' => 'Monitor porsi terjual & performa omset cafe realtime',

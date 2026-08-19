@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     @include('livewire.includes.sidebar')
 
-    <div class="lg:pl-64">
+    <div class="main-content-layout flex flex-col min-h-screen">
         @include('livewire.includes.header', ['title' => 'Cetak Label Barcode', 'subtitle' => 'Pilih produk untuk dicetak labelnya'])
 
         <main class="p-6">
