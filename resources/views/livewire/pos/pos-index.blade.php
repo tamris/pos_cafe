@@ -617,10 +617,10 @@
 
                         <div class="grid grid-cols-2 gap-3">
                             <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-xl font-bold hover:bg-slate-200 transition-colors text-xs">Transaksi Baru</button>
-                            <a href="{{ route('print.struk', $lastInvoice) }}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs">
+                            <button type="button" onclick="printStrukDirect('{{ $lastInvoice }}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs cursor-pointer active:scale-95">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                 <span>Cetak Struk</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -988,6 +988,29 @@
             }
         });
     });
+
+    function printStrukDirect(invoice) {
+        if (!invoice) return;
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        if (isAndroid) {
+            // Langsung fetch data Base64 ESC/POS dan panggil RawBT tanpa buka tab baru
+            fetch('/rawbt-struk/' + invoice)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.rawbt) {
+                        window.location.href = "rawbt:base64," + data.rawbt + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+                    } else {
+                        window.open('/print-struk/' + invoice, '_blank');
+                    }
+                })
+                .catch(() => {
+                    window.open('/print-struk/' + invoice, '_blank');
+                });
+        } else {
+            // Desktop: buka halaman print standar
+            window.open('/print-struk/' + invoice, '_blank');
+        }
+    }
 
     function confirmResetCart() {
         Swal.fire({

@@ -251,13 +251,13 @@
                                         @endif
                                     </td>
                                     <td class="px-5 sm:px-6 py-3.5 text-right space-x-1.5 shrink-0">
-                                        <a href="{{ route('print.struk', $transaction->invoice_number) }}" target="_blank"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-2xs active:scale-95">
+                                        <button type="button" onclick="printStrukDirect('{{ $transaction->invoice_number }}')"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer">
                                             <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                             <span>Cetak</span>
-                                        </a>
+                                        </button>
                                         <button wire:click="viewDetail({{ $transaction->id }})"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-2xs active:scale-95">
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer">
                                             <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                             <span>Detail</span>
                                         </button>
@@ -395,9 +395,14 @@
                     </div>
 
                     {{-- Modal Footer --}}
-                    <div class="bg-slate-50 dark:bg-slate-900/50 px-5 sm:px-6 py-4 flex justify-end border-t border-slate-200 dark:border-slate-700">
+                    <div class="bg-slate-50 dark:bg-slate-900/50 px-5 sm:px-6 py-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700">
+                        <button type="button" onclick="printStrukDirect('{{ $selectedTransaction->invoice_number }}')"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            <span>Cetak Struk</span>
+                        </button>
                         <button type="button" wire:click="closeDetailModal"
-                            class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95">
+                            class="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer">
                             Tutup
                         </button>
                     </div>
@@ -405,4 +410,31 @@
             </div>
         </div>
     @endif
+
+    @push('scripts')
+    <script>
+        function printStrukDirect(invoice) {
+            if (!invoice) return;
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            if (isAndroid) {
+                // Langsung fetch data Base64 ESC/POS dan panggil RawBT tanpa buka tab baru / blank page
+                fetch('/rawbt-struk/' + invoice)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.rawbt) {
+                            window.location.href = "rawbt:base64," + data.rawbt + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+                        } else {
+                            window.open('/print-struk/' + invoice, '_blank');
+                        }
+                    })
+                    .catch(() => {
+                        window.open('/print-struk/' + invoice, '_blank');
+                    });
+            } else {
+                // Desktop: buka halaman print standar
+                window.open('/print-struk/' + invoice, '_blank');
+            }
+        }
+    </script>
+    @endpush
 </div>

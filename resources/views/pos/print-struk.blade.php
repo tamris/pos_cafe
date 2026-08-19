@@ -1,3 +1,131 @@
+@php
+    if (!function_exists('escposLine32')) {
+        function escposLine32($left, $right, $width = 32) {
+            $left = (string) $left;
+            $right = (string) $right;
+            $leftLen = strlen($left);
+            $rightLen = strlen($right);
+            if ($leftLen + $rightLen >= $width) {
+                return $left . " " . $right;
+            }
+            $spaces = $width - $leftLen - $rightLen;
+            return $left . str_repeat(' ', $spaces) . $right;
+        }
+    }
+
+    $esc = "\x1b";
+    $gs = "\x1d";
+    
+    // ESC/POS Commands
+    $INIT = $esc . "@";
+    $ALIGN_CENTER = $esc . "a\x01";
+    $ALIGN_LEFT = $esc . "a\x00";
+    $ALIGN_RIGHT = $esc . "a\x02";
+    $BOLD_ON = $esc . "E\x01";
+    $BOLD_OFF = $esc . "E\x00";
+    $DOUBLE_SIZE = $esc . "!\x30"; // Double Width & Double Height
+    $DOUBLE_HEIGHT = $esc . "!\x10";
+    $NORMAL_SIZE = $esc . "!\x00";
+
+    $raw = $INIT;
+    
+    // 1. Header Cafe (Center)
+    $raw .= $ALIGN_CENTER;
+    $raw .= $DOUBLE_SIZE . $BOLD_ON . ($setting->shop_name ?? 'POS CAFE & ROASTERY') . "\n" . $NORMAL_SIZE . $BOLD_OFF;
+    if (!empty($setting->address)) {
+        $raw .= $setting->address . "\n";
+    }
+    if (!empty($setting->phone)) {
+        $raw .= "Telp: " . $setting->phone . "\n";
+    }
+    $raw .= "--------------------------------\n";
+    
+    // 2. Metadata Transaksi (Left)
+    $raw .= $ALIGN_LEFT;
+    $raw .= escposLine32("No. Inv", $transaction->invoice_number) . "\n";
+    $raw .= escposLine32("Waktu", date('d/m/Y H:i', strtotime($transaction->created_at))) . "\n";
+    $raw .= escposLine32("Kasir", $transaction->user->name ?? (auth()->user()->name ?? 'Staff')) . "\n";
+    
+    if (!empty($transaction->table_number) || !empty($transaction->customer_name)) {
+        $orderTypeStr = (($transaction->order_type ?? 'dine_in') === 'dine_in') 
+            ? 'DINE IN' . ($transaction->table_number ? ' (MEJA '.$transaction->table_number.')' : '')
+            : ((($transaction->order_type ?? '') === 'take_away') ? 'TAKE AWAY' : 'DELIVERY');
+        $raw .= escposLine32("Pesanan", $orderTypeStr) . "\n";
+        
+        if (!empty($transaction->customer_name)) {
+            $raw .= escposLine32("Pelanggan", $transaction->customer_name) . "\n";
+        }
+    }
+    $raw .= "--------------------------------\n";
+    
+    // 3. Daftar Item Pesanan
+    foreach($transaction->details as $detail) {
+        $raw .= $BOLD_ON . $detail->product->name . "\n" . $BOLD_OFF;
+        $qtyPrice = $detail->quantity . " x " . number_format($detail->price, 0, ',', '.');
+        $sub = number_format($detail->subtotal, 0, ',', '.');
+        $raw .= escposLine32($qtyPrice, $sub) . "\n";
+        if (!empty($detail->notes)) {
+            $raw .= "  * " . $detail->notes . "\n";
+        }
+    }
+    $raw .= "--------------------------------\n";
+    
+    // 4. Kalkulasi & Pembayaran
+    $raw .= escposLine32("Subtotal", number_format($transaction->subtotal, 0, ',', '.')) . "\n";
+    
+    if ($transaction->discount > 0) {
+        $discNominal = ($transaction->discount <= 100) 
+            ? ($transaction->subtotal * $transaction->discount / 100) 
+            : $transaction->discount;
+        $discLabel = "Diskon" . ($transaction->discount <= 100 ? ' ('.$transaction->discount.'%)' : '');
+        $raw .= escposLine32($discLabel, "-" . number_format($discNominal, 0, ',', '.')) . "\n";
+    }
+    
+    if ($transaction->tax > 0) {
+        $taxNominal = ($transaction->tax <= 100) 
+            ? ($transaction->subtotal * $transaction->tax / 100) 
+            : $transaction->tax;
+        $taxLabel = "Pajak" . ($transaction->tax <= 100 ? ' ('.$transaction->tax.'%)' : '');
+        $raw .= escposLine32($taxLabel, "+" . number_format($taxNominal, 0, ',', '.')) . "\n";
+    }
+    
+    $raw .= "--------------------------------\n";
+    
+    // Grand Total (Big & Bold)
+    $raw .= $DOUBLE_HEIGHT . $BOLD_ON;
+    $raw .= escposLine32("TOTAL", "Rp " . number_format($transaction->total, 0, ',', '.')) . "\n";
+    $raw .= $NORMAL_SIZE . $BOLD_OFF;
+    $raw .= "--------------------------------\n";
+    
+    // Bayar & Kembali
+    $payMethod = strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS'));
+    $raw .= escposLine32("Bayar (" . $payMethod . ")", number_format($transaction->paid, 0, ',', '.')) . "\n";
+    $raw .= $BOLD_ON . escposLine32("Kembali", number_format($transaction->change, 0, ',', '.')) . "\n" . $BOLD_OFF;
+    
+    // Wifi
+    if (!empty($setting->wifi_name) || !empty($setting->wifi_password)) {
+        $raw .= "--------------------------------\n";
+        $raw .= $ALIGN_CENTER;
+        $wifiStr = "WiFi: " . ($setting->wifi_name ?? '-');
+        if (!empty($setting->wifi_password)) {
+            $wifiStr .= " | Pass: " . $setting->wifi_password;
+        }
+        $raw .= $wifiStr . "\n";
+    }
+    
+    $raw .= "--------------------------------\n";
+    
+    // Footer
+    $raw .= $ALIGN_CENTER;
+    $raw .= ($setting->receipt_footer ?? 'Terima kasih atas kunjungannya!') . "\n";
+    $raw .= "-- Have a Good Coffee Day --\n";
+    
+    // Feed 3 baris & potong kertas
+    $raw .= "\n\n\n\n";
+    $raw .= $gs . "V\x41\x03";
+    
+    $rawbtBase64 = base64_encode($raw);
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -15,13 +143,72 @@
 
         body {
             font-family: 'Courier New', Courier, monospace, 'Lucida Console';
-            font-size: 11px;
-            width: 58mm;
-            background-color: #fff;
+            font-size: 13.5px;
+            font-weight: 700;
+            background-color: #f1f5f9;
             color: #000;
-            line-height: 1.45;
-            padding: 12px 6px;
+            line-height: 1.35;
+            padding: 20px 10px;
             margin: 0 auto;
+        }
+
+        /* FLOATING ACTION BAR (HANYA MUNCUL DI LAYAR, TIDAK IKUT TERCETAK) */
+        .action-bar {
+            max-width: 380px;
+            margin: 0 auto 16px auto;
+            display: flex;
+            gap: 8px;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-rawbt {
+            background-color: #059669;
+            color: #ffffff;
+        }
+        .btn-rawbt:hover {
+            background-color: #047857;
+        }
+        .btn-browser {
+            background-color: #475569;
+            color: #ffffff;
+        }
+        .btn-browser:hover {
+            background-color: #334155;
+        }
+        .btn-close {
+            background-color: #e2e8f0;
+            color: #334155;
+            flex: 0 0 auto;
+            padding: 10px 14px;
+        }
+
+        /* PAPER RECEIPT CARD */
+        .receipt-card {
+            width: 100%;
+            max-width: 58mm;
+            background-color: #ffffff;
+            margin: 0 auto;
+            padding: 12px 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 4px;
         }
 
         .text-center { text-align: center; }
@@ -30,33 +217,35 @@
         .font-bold { font-weight: 900; }
         .uppercase { text-transform: uppercase; }
 
-        /* GARIS PEMISAH DENGAN JARAK LEGA */
+        /* GARIS PEMISAH DENGAN JARAK PAS */
         .divider {
-            border-bottom: 1px dashed #000;
-            margin: 10px 0;
+            border-bottom: 1.5px dashed #000;
+            margin: 6px 0;
             width: 100%;
         }
 
         /* HEADER */
         .cafe-header {
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .cafe-header .title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 900;
             letter-spacing: 0.5px;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            line-height: 1.2;
         }
         .cafe-header .info {
-            font-size: 9.5px;
-            line-height: 1.35;
+            font-size: 11.5px;
+            line-height: 1.25;
+            font-weight: 600;
         }
 
         /* METADATA */
         .meta-list {
-            font-size: 10px;
-            line-height: 1.6;
-            margin: 4px 0;
+            font-size: 12.5px;
+            line-height: 1.35;
+            margin: 2px 0;
         }
         .meta-list .row {
             display: flex;
@@ -66,34 +255,37 @@
 
         /* DAFTAR ITEM PESANAN */
         .item-table {
-            margin: 4px 0;
+            margin: 2px 0;
         }
         .item-block {
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .item-name {
             font-weight: 900;
-            font-size: 11px;
-            margin-bottom: 2px;
+            font-size: 13.5px;
+            line-height: 1.25;
+            margin-bottom: 1px;
+            word-break: break-word;
         }
         .item-calc {
             display: flex;
             justify-content: space-between;
-            font-size: 10px;
+            font-size: 12.5px;
+            line-height: 1.25;
         }
         .item-notes {
-            font-size: 9px;
+            font-size: 11.5px;
             font-style: italic;
-            padding-left: 6px;
-            color: #333;
-            margin-top: 2px;
+            padding-left: 4px;
+            color: #111;
+            margin-top: 1px;
         }
 
         /* KALKULASI & TOTAL */
         .calc-list {
-            font-size: 10.5px;
-            line-height: 1.6;
-            margin: 4px 0;
+            font-size: 12.5px;
+            line-height: 1.35;
+            margin: 2px 0;
         }
         .calc-list .row {
             display: flex;
@@ -103,180 +295,232 @@
         .grand-total {
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 900;
-            padding: 6px 0;
-            margin: 6px 0;
-            border-top: 1px dashed #000;
-            border-bottom: 1px dashed #000;
+            padding: 4px 0;
+            margin: 4px 0;
+            border-top: 1.5px dashed #000;
+            border-bottom: 1.5px dashed #000;
         }
 
         /* WIFI & FOOTER */
         .wifi-inline {
-            font-size: 9.5px;
-            margin: 8px 0;
-            line-height: 1.4;
+            font-size: 11.5px;
+            margin: 4px 0;
+            line-height: 1.3;
         }
         .footer {
-            margin-top: 12px;
-            font-size: 9.5px;
-            line-height: 1.4;
+            margin-top: 8px;
+            font-size: 11.5px;
+            line-height: 1.3;
         }
 
         @media print {
             @page {
-                margin: 0;
-                size: 58mm auto;
+                margin: 0mm;
+                size: 58mm 297mm;
             }
             body {
-                width: 100%;
-                padding: 8px 4px;
+                background-color: #fff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+            .action-bar {
+                display: none !important;
+            }
+            .receipt-card {
+                max-width: 58mm !important;
+                width: 100% !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 2px 2px !important;
+                margin: 0 !important;
             }
         }
     </style>
 </head>
 <body>
 
-    {{-- 1. HEADER CAFE --}}
-    <div class="cafe-header text-center">
-        <div class="title uppercase">{{ $setting->shop_name ?? 'POS CAFE & ROASTERY' }}</div>
-        @if(!empty($setting->address))
-            <div class="info">{{ $setting->address }}</div>
-        @endif
-        @if(!empty($setting->phone))
-            <div class="info">Telp: {{ $setting->phone }}</div>
-        @endif
+    {{-- TOMBOL AKSI CEPAT DI ATAS STRUK --}}
+    <div class="action-bar">
+        <button onclick="printRawBT()" class="action-btn btn-rawbt" title="Cetak Langsung via RawBT Android">
+            <span>⚡</span>
+            <span>Cetak RawBT</span>
+        </button>
+        <button onclick="printBrowser()" class="action-btn btn-browser" title="Cetak via Dialog Browser">
+            <span>🖨️</span>
+            <span>Browser Print</span>
+        </button>
+        <button onclick="window.close()" class="action-btn btn-close" title="Tutup Halaman">
+            <span>✕</span>
+        </button>
     </div>
 
-    <div class="divider"></div>
+    {{-- KONTEN STRUK 58MM --}}
+    <div class="receipt-card">
+        {{-- 1. HEADER CAFE --}}
+        <div class="cafe-header text-center">
+            <div class="title uppercase">{{ $setting->shop_name ?? 'POS CAFE & ROASTERY' }}</div>
+            @if(!empty($setting->address))
+                <div class="info">{{ $setting->address }}</div>
+            @endif
+            @if(!empty($setting->phone))
+                <div class="info">Telp: {{ $setting->phone }}</div>
+            @endif
+        </div>
 
-    {{-- 2. METADATA TRANSAKSI & TIPE PESANAN --}}
-    <div class="meta-list">
-        <div class="row">
-            <span>No. Inv</span>
-            <span class="font-bold">{{ $transaction->invoice_number }}</span>
-        </div>
-        <div class="row">
-            <span>Waktu</span>
-            <span>{{ date('d/m/Y H:i', strtotime($transaction->created_at)) }}</span>
-        </div>
-        <div class="row">
-            <span>Kasir</span>
-            <span>{{ $transaction->user->name ?? (auth()->user()->name ?? 'Staff') }}</span>
-        </div>
-        @if(!empty($transaction->table_number) || !empty($transaction->customer_name))
+        <div class="divider"></div>
+
+        {{-- 2. METADATA TRANSAKSI & TIPE PESANAN --}}
+        <div class="meta-list">
             <div class="row">
-                <span>Pesanan</span>
-                <span class="font-bold uppercase">
-                    @if(($transaction->order_type ?? 'dine_in') === 'dine_in')
-                        DINE IN {{ $transaction->table_number ? '(MEJA '.$transaction->table_number.')' : '' }}
-                    @elseif(($transaction->order_type ?? '') === 'take_away')
-                        TAKE AWAY
-                    @else
-                        DELIVERY
-                    @endif
-                </span>
+                <span>No. Inv</span>
+                <span class="font-bold">{{ $transaction->invoice_number }}</span>
             </div>
-            @if(!empty($transaction->customer_name))
+            <div class="row">
+                <span>Waktu</span>
+                <span>{{ date('d/m/Y H:i', strtotime($transaction->created_at)) }}</span>
+            </div>
+            <div class="row">
+                <span>Kasir</span>
+                <span>{{ $transaction->user->name ?? (auth()->user()->name ?? 'Staff') }}</span>
+            </div>
+            @if(!empty($transaction->table_number) || !empty($transaction->customer_name))
                 <div class="row">
-                    <span>Pelanggan</span>
-                    <span class="font-bold">{{ $transaction->customer_name }}</span>
+                    <span>Pesanan</span>
+                    <span class="font-bold uppercase">
+                        @if(($transaction->order_type ?? 'dine_in') === 'dine_in')
+                            DINE IN {{ $transaction->table_number ? '(MEJA '.$transaction->table_number.')' : '' }}
+                        @elseif(($transaction->order_type ?? '') === 'take_away')
+                            TAKE AWAY
+                        @else
+                            DELIVERY
+                        @endif
+                    </span>
+                </div>
+                @if(!empty($transaction->customer_name))
+                    <div class="row">
+                        <span>Pelanggan</span>
+                        <span class="font-bold">{{ $transaction->customer_name }}</span>
+                    </div>
+                @endif
+            @endif
+        </div>
+
+        <div class="divider"></div>
+
+        {{-- 3. DAFTAR MENU / DETAIL ITEMS --}}
+        <div class="item-table">
+            @foreach($transaction->details as $detail)
+                <div class="item-block">
+                    <div class="item-name">{{ $detail->product->name }}</div>
+                    <div class="item-calc">
+                        <span>{{ $detail->quantity }} x {{ number_format($detail->price, 0, ',', '.') }}</span>
+                        <span class="font-bold">{{ number_format($detail->subtotal, 0, ',', '.') }}</span>
+                    </div>
+                    @if($detail->notes)
+                        <div class="item-notes">* {{ $detail->notes }}</div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+
+        <div class="divider"></div>
+
+        {{-- 4. PERHITUNGAN PEMBAYARAN --}}
+        <div class="calc-list">
+            <div class="row">
+                <span>Subtotal</span>
+                <span>{{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
+            </div>
+
+            @if($transaction->discount > 0)
+                @php
+                    $discountNominal = ($transaction->discount <= 100) 
+                        ? ($transaction->subtotal * $transaction->discount / 100) 
+                        : $transaction->discount;
+                @endphp
+                <div class="row">
+                    <span>Diskon {{ $transaction->discount <= 100 ? '('.$transaction->discount.'%)' : '' }}</span>
+                    <span>-{{ number_format($discountNominal, 0, ',', '.') }}</span>
                 </div>
             @endif
-        @endif
-    </div>
 
-    <div class="divider"></div>
-
-    {{-- 3. DAFTAR MENU / DETAIL ITEMS --}}
-    <div class="item-table">
-        @foreach($transaction->details as $detail)
-            <div class="item-block">
-                <div class="item-name">{{ $detail->product->name }}</div>
-                <div class="item-calc">
-                    <span>{{ $detail->quantity }} x {{ number_format($detail->price, 0, ',', '.') }}</span>
-                    <span class="font-bold">{{ number_format($detail->subtotal, 0, ',', '.') }}</span>
+            @if($transaction->tax > 0)
+                @php
+                    $taxNominal = ($transaction->tax <= 100) 
+                        ? ($transaction->subtotal * $transaction->tax / 100) 
+                        : $transaction->tax;
+                @endphp
+                <div class="row">
+                    <span>Pajak {{ $transaction->tax <= 100 ? '('.$transaction->tax.'%)' : '' }}</span>
+                    <span>+{{ number_format($taxNominal, 0, ',', '.') }}</span>
                 </div>
-                @if($detail->notes)
-                    <div class="item-notes">* {{ $detail->notes }}</div>
+            @endif
+        </div>
+
+        <div class="grand-total">
+            <span>TOTAL</span>
+            <span>Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
+        </div>
+
+        <div class="calc-list">
+            <div class="row">
+                <span>Bayar ({{ strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS')) }})</span>
+                <span>{{ number_format($transaction->paid, 0, ',', '.') }}</span>
+            </div>
+            <div class="row font-bold">
+                <span>Kembali</span>
+                <span>{{ number_format($transaction->change, 0, ',', '.') }}</span>
+            </div>
+        </div>
+
+        {{-- 5. WIFI CAFE (JIKA ADA) --}}
+        @if(!empty($setting->wifi_name) || !empty($setting->wifi_password))
+            <div class="divider"></div>
+            <div class="wifi-inline text-center">
+                <span>WiFi: <strong>{{ $setting->wifi_name ?? '-' }}</strong></span>
+                @if(!empty($setting->wifi_password))
+                    <span> | Pass: <strong>{{ $setting->wifi_password }}</strong></span>
                 @endif
             </div>
-        @endforeach
-    </div>
-
-    <div class="divider"></div>
-
-    {{-- 4. PERHITUNGAN PEMBAYARAN --}}
-    <div class="calc-list">
-        <div class="row">
-            <span>Subtotal</span>
-            <span>{{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
-        </div>
-
-        @if($transaction->discount > 0)
-            @php
-                $discountNominal = ($transaction->discount <= 100) 
-                    ? ($transaction->subtotal * $transaction->discount / 100) 
-                    : $transaction->discount;
-            @endphp
-            <div class="row">
-                <span>Diskon {{ $transaction->discount <= 100 ? '('.$transaction->discount.'%)' : '' }}</span>
-                <span>-{{ number_format($discountNominal, 0, ',', '.') }}</span>
-            </div>
         @endif
 
-        @if($transaction->tax > 0)
-            @php
-                $taxNominal = ($transaction->tax <= 100) 
-                    ? ($transaction->subtotal * $transaction->tax / 100) 
-                    : $transaction->tax;
-            @endphp
-            <div class="row">
-                <span>Pajak {{ $transaction->tax <= 100 ? '('.$transaction->tax.'%)' : '' }}</span>
-                <span>+{{ number_format($taxNominal, 0, ',', '.') }}</span>
-            </div>
-        @endif
-    </div>
-
-    <div class="grand-total">
-        <span>TOTAL</span>
-        <span>Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
-    </div>
-
-    <div class="calc-list">
-        <div class="row">
-            <span>Bayar ({{ strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS')) }})</span>
-            <span>{{ number_format($transaction->paid, 0, ',', '.') }}</span>
-        </div>
-        <div class="row font-bold">
-            <span>Kembali</span>
-            <span>{{ number_format($transaction->change, 0, ',', '.') }}</span>
-        </div>
-    </div>
-
-    {{-- 5. WIFI CAFE (JIKA ADA) --}}
-    @if(!empty($setting->wifi_name) || !empty($setting->wifi_password))
         <div class="divider"></div>
-        <div class="wifi-inline text-center">
-            <span>WiFi: <strong>{{ $setting->wifi_name ?? '-' }}</strong></span>
-            @if(!empty($setting->wifi_password))
-                <span> | Pass: <strong>{{ $setting->wifi_password }}</strong></span>
-            @endif
+
+        {{-- 6. FOOTER --}}
+        <div class="footer text-center">
+            <div>{{ $setting->receipt_footer ?? 'Terima kasih atas kunjungannya!' }}</div>
+            <div style="font-size: 10px; color: #555; margin-top: 4px; letter-spacing: 0.5px;">-- Have a Good Coffee Day --</div>
         </div>
-    @endif
-
-    <div class="divider"></div>
-
-    {{-- 6. FOOTER --}}
-    <div class="footer text-center">
-        <div>{{ $setting->receipt_footer ?? 'Terima kasih atas kunjungannya!' }}</div>
-        <div style="font-size: 8px; color: #555; margin-top: 4px; letter-spacing: 0.5px;">-- Have a Good Coffee Day --</div>
     </div>
 
     <script>
-        window.onload = function() {
+        const rawbtData = @json($rawbtBase64);
+
+        function printRawBT() {
+            // Format resmi RawBT Android Intent (package: ru.a402d.rawbtprinter)
+            const intentUrl = "rawbt:base64," + rawbtData + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+            window.location.href = intentUrl;
+        }
+
+        function printBrowser() {
             window.print();
         }
+
+        // Auto-print saat halaman dibuka
+        window.addEventListener('DOMContentLoaded', () => {
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+                // Di Android, langsung kirim perintah ESC/POS ke RawBT
+                printRawBT();
+            } else {
+                // Di PC/Desktop, gunakan browser print standar
+                window.print();
+            }
+        });
     </script>
 </body>
 </html>

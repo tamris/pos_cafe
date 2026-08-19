@@ -78,7 +78,9 @@ Route::get('/test-gemini', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/pos', PosIndex::class)->name('pos.index');
     Route::get('/print-struk/{invoice}', [PosController::class, 'printStruk'])->name('print.struk');
+    Route::get('/rawbt-struk/{invoice}', [PosController::class, 'rawbtStruk'])->name('rawbt.struk');
     Route::get('/print-shift/{id}', [PosController::class, 'printShift'])->name('print.shift');
+    Route::get('/rawbt-shift/{id}', [PosController::class, 'rawbtShift'])->name('rawbt.shift');
     Route::get('/transactions', TransactionIndex::class)->name('transactions.index');
     Route::get('/shifts', \App\Livewire\Reports\ShiftIndex::class)->name('shifts.index');
 
