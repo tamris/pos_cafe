@@ -86,6 +86,11 @@ class HppIndex extends Component
     {
         if (!$property) return;
 
+        if ($property === 'price') {
+            $this->syncSelectedTier();
+            return;
+        }
+
         if (
             str_starts_with($property, 'biaya_tetap_items') ||
             str_starts_with($property, 'bahan_baku') ||
@@ -108,11 +113,6 @@ class HppIndex extends Component
         unset($this->hppCalculation);
         unset($this->pricingTiers);
         unset($this->salesProjection);
-
-        $calc = $this->hppCalculation();
-        if ($this->mode_alokasi_ops === 'rincian') {
-            $this->alokasi_biaya_tetap = $calc['biayaTetap'] > 0 ? $calc['biayaTetap'] : '';
-        }
 
         $tiers = $this->pricingTiers();
         if (!empty($this->selected_tier) && isset($tiers[$this->selected_tier])) {
@@ -166,9 +166,8 @@ class HppIndex extends Component
                 $this->nama_produk = $product->name;
                 $this->category_id = $product->category_id;
                 $this->price = (float) $product->price;
-                $cost = (float) ($product->operational_cost ?? 0);
-                $this->alokasi_biaya_tetap = $cost > 0 ? $cost : '';
-                $this->mode_alokasi_ops = 'manual'; // Aktifkan mode manual agar langsung menampilkan alokasi tersimpan
+                $this->alokasi_biaya_tetap = '';
+                $this->mode_alokasi_ops = 'rincian'; // Selalu default ke rekomendasi / rincian
                 $this->kenaikan_persen = 0;
                 $this->selected_tier = 'standar';
                 
@@ -200,6 +199,7 @@ class HppIndex extends Component
             $this->category_id = '';
             $this->price = 0;
             $this->alokasi_biaya_tetap = '';
+            $this->mode_alokasi_ops = 'rincian';
             $this->kenaikan_persen = 0;
             $this->selected_tier = 'standar';
             $this->bahan_baku = [];
