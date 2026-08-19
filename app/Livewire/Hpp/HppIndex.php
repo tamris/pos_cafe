@@ -37,6 +37,95 @@ class HppIndex extends Component
     public $kenaikan_persen = 0; // slider
     public $selected_tier = 'standar'; // 'kompetitif' | 'standar' | 'premium'
 
+    // Alokasi Biaya Tetap / Operasional Bulanan State
+    public $mode_alokasi_ops = 'rincian'; // 'rincian' | 'manual'
+    public $target_penjualan_bulanan = 3000; // Estimasi total porsi seluruh menu terjual/bulan (basis pembagi beban tetap)
+    public $biaya_tetap_items = [
+        ['nama' => 'Biaya Sewa Dapur / Tempat Usaha', 'nominal' => 1000000],
+        ['nama' => 'Biaya Listrik, Air & Gas', 'nominal' => 300000],
+        ['nama' => 'Biaya Gaji Barista / Karyawan', 'nominal' => 1500000],
+        ['nama' => 'Biaya Penyusutan Alat / Mesin Kopi', 'nominal' => 200000],
+    ];
+
+    // Target & Proyeksi Penjualan State
+    public $target_laba_bulanan = ''; // Default kosong agar user input sendiri
+    public $hari_operasional_sebulan = 30; // 30 hari
+
+    public function addBiayaTetapItem()
+    {
+        $this->mode_alokasi_ops = 'rincian';
+        $this->biaya_tetap_items[] = [
+            'nama' => '',
+            'nominal' => '',
+        ];
+        $this->updatePriceFromSelectedTier();
+    }
+
+    public function removeBiayaTetapItem($index)
+    {
+        $this->mode_alokasi_ops = 'rincian';
+        unset($this->biaya_tetap_items[$index]);
+        $this->biaya_tetap_items = array_values($this->biaya_tetap_items);
+        $this->updatePriceFromSelectedTier();
+    }
+
+    public function resetBiayaTetapPreset()
+    {
+        $this->mode_alokasi_ops = 'rincian';
+        $this->biaya_tetap_items = [
+            ['nama' => 'Biaya Sewa Dapur / Tempat Usaha', 'nominal' => 1000000],
+            ['nama' => 'Biaya Listrik, Air & Gas', 'nominal' => 300000],
+            ['nama' => 'Biaya Gaji Barista / Karyawan', 'nominal' => 1500000],
+            ['nama' => 'Biaya Penyusutan Alat / Mesin Kopi', 'nominal' => 200000],
+        ];
+        $this->updatePriceFromSelectedTier();
+        $this->notify('info', 'Preset biaya operasional cafe berhasil dimuat.');
+    }
+
+    public function updated($property = null)
+    {
+        if (!$property) return;
+
+        if (
+            str_starts_with($property, 'biaya_tetap_items') ||
+            str_starts_with($property, 'bahan_baku') ||
+            in_array($property, [
+                'target_penjualan_bulanan',
+                'kenaikan_persen',
+                'mode_alokasi_ops',
+                'alokasi_biaya_tetap',
+                'selected_tier',
+                'target_laba_bulanan',
+                'hari_operasional_sebulan',
+            ])
+        ) {
+            $this->updatePriceFromSelectedTier();
+        }
+    }
+
+    public function updatePriceFromSelectedTier()
+    {
+        unset($this->hppCalculation);
+        unset($this->pricingTiers);
+        unset($this->salesProjection);
+
+        $calc = $this->hppCalculation();
+        if ($this->mode_alokasi_ops === 'rincian') {
+            $this->alokasi_biaya_tetap = $calc['biayaTetap'] > 0 ? $calc['biayaTetap'] : '';
+        }
+
+        $tiers = $this->pricingTiers();
+        if (!empty($this->selected_tier) && isset($tiers[$this->selected_tier])) {
+            $this->price = (float) $tiers[$this->selected_tier]['harga'];
+        }
+    }
+
+    public function setModeAlokasi($mode)
+    {
+        $this->mode_alokasi_ops = $mode;
+        $this->updatePriceFromSelectedTier();
+    }
+
     public function selectTier($tierKey)
     {
         $this->selected_tier = $tierKey;
@@ -79,6 +168,7 @@ class HppIndex extends Component
                 $this->price = (float) $product->price;
                 $cost = (float) ($product->operational_cost ?? 0);
                 $this->alokasi_biaya_tetap = $cost > 0 ? $cost : '';
+                $this->mode_alokasi_ops = 'manual'; // Aktifkan mode manual agar langsung menampilkan alokasi tersimpan
                 $this->kenaikan_persen = 0;
                 $this->selected_tier = 'standar';
                 
@@ -198,6 +288,7 @@ class HppIndex extends Component
     {
         unset($this->bahan_baku[$index]);
         $this->bahan_baku = array_values($this->bahan_baku); // reindex
+        $this->updatePriceFromSelectedTier();
     }
 
     public function calculateSubtotal($index)
@@ -222,6 +313,7 @@ class HppIndex extends Component
         
         $subtotal = $amount * $multiplier * $pricePerBuyUnit;
         $this->bahan_baku[$index]['subtotal'] = $subtotal;
+        $this->updatePriceFromSelectedTier();
     }
 
     public function analyzeWithAI()
@@ -282,6 +374,7 @@ class HppIndex extends Component
                     $this->calculateSubtotal(count($this->bahan_baku) - 1);
                 }
                 $this->syncSelectedTier();
+                $this->updatePriceFromSelectedTier();
 
                 \Illuminate\Support\Facades\Log::info('=== [HPP AI DEBUG] BERHASIL DIMUAT KE FORM ===', [
                     'total_bahan' => count($this->bahan_baku)
@@ -305,7 +398,19 @@ class HppIndex extends Component
     public function hppCalculation()
     {
         $totalVariable = collect($this->bahan_baku)->sum('subtotal');
-        $biayaTetap = !empty($this->alokasi_biaya_tetap) ? (float) $this->alokasi_biaya_tetap : 0;
+        
+        $totalBiayaTetapBulanan = collect($this->biaya_tetap_items)->sum(function ($item) {
+            return !empty($item['nominal']) ? (float) $item['nominal'] : 0;
+        });
+
+        $targetUnits = max(1, (int) $this->target_penjualan_bulanan);
+
+        if ($this->mode_alokasi_ops === 'rincian') {
+            $biayaTetap = $totalBiayaTetapBulanan > 0 ? round($totalBiayaTetapBulanan / $targetUnits) : 0;
+        } else {
+            $biayaTetap = !empty($this->alokasi_biaya_tetap) ? (float) $this->alokasi_biaya_tetap : 0;
+        }
+
         $totalHpp = $totalVariable + $biayaTetap;
         
         $kenaikan = (float) $this->kenaikan_persen;
@@ -313,6 +418,8 @@ class HppIndex extends Component
 
         return [
             'totalVariable' => $totalVariable,
+            'totalBiayaTetapBulanan' => $totalBiayaTetapBulanan,
+            'targetUnits' => $targetUnits,
             'biayaTetap' => $biayaTetap,
             'totalHpp' => $totalHpp,
             'simulatedHpp' => $simulatedHpp
@@ -351,6 +458,58 @@ class HppIndex extends Component
                 'margin' => (($premium - $baseHpp) / $premium) * 100,
                 'profit' => $premium - $baseHpp
             ]
+        ];
+    }
+
+    #[Computed]
+    public function salesProjection()
+    {
+        $hppData = $this->hppCalculation();
+        $variableCost = (float) ($hppData['totalVariable'] ?? 0);
+        $kenaikan = (float) $this->kenaikan_persen;
+        $simulatedVariable = $variableCost * (1 + $kenaikan / 100);
+        
+        $opCostPerUnit = (float) ($hppData['biayaTetap'] ?? 0);
+        $unitCost = (float) ($hppData['simulatedHpp'] ?? ($simulatedVariable + $opCostPerUnit));
+        
+        $sellingPrice = (float) $this->price;
+        if ($sellingPrice <= 0) {
+            $tiers = $this->pricingTiers();
+            $sellingPrice = (float) ($tiers[$this->selected_tier]['harga'] ?? ($tiers['standar']['harga'] ?? 0));
+        }
+        $targetProfit = (float) $this->target_laba_bulanan;
+        $days = (int) $this->hari_operasional_sebulan > 0 ? (int) $this->hari_operasional_sebulan : 30;
+
+        // Margin bersih per porsi (Harga Jual - Biaya Bahan - Biaya Operasional)
+        $netMarginPerUnit = max(0, $sellingPrice - $unitCost);
+
+        if ($netMarginPerUnit > 0 && $targetProfit > 0) {
+            $totalUnitsMonth = ceil($targetProfit / $netMarginPerUnit);
+        } else {
+            $totalUnitsMonth = 0;
+        }
+
+        $targetUnitsDay = $days > 0 ? (int) ceil($totalUnitsMonth / $days) : 0;
+        $potensiOmzet = $totalUnitsMonth * $sellingPrice;
+        $totalBiayaProduksi = $totalUnitsMonth * $simulatedVariable;
+        $totalBiayaTetap = $totalUnitsMonth * $opCostPerUnit;
+        $proyeksiLabaBersih = $potensiOmzet - $totalBiayaProduksi - $totalBiayaTetap;
+
+        return [
+            'variableCost' => $simulatedVariable,
+            'opCostPerUnit' => $opCostPerUnit,
+            'unitCost' => $unitCost,
+            'sellingPrice' => $sellingPrice,
+            'unitMargin' => $netMarginPerUnit,
+            'netMarginPerUnit' => $netMarginPerUnit,
+            'targetProfit' => $targetProfit,
+            'days' => $days,
+            'targetUnitsDay' => $targetUnitsDay,
+            'totalUnitsMonth' => $totalUnitsMonth,
+            'potensiOmzet' => $potensiOmzet,
+            'totalBiayaProduksi' => $totalBiayaProduksi,
+            'totalBiayaTetap' => $totalBiayaTetap,
+            'proyeksiLabaBersih' => $proyeksiLabaBersih,
         ];
     }
 
@@ -403,7 +562,7 @@ class HppIndex extends Component
                 'category_id' => $categoryId,
                 'sku' => $sku,
                 'harga_beli' => $totalHpp,
-                'operational_cost' => (float) $this->alokasi_biaya_tetap,
+                'operational_cost' => (float) ($hppData['biayaTetap'] ?? 0),
                 'price' => $sellingPrice,
                 'description' => 'Menu racikan via Kalkulator HPP & AI Pricing Strategy',
             ]);
@@ -412,7 +571,7 @@ class HppIndex extends Component
             $updateData = [
                 'name' => $this->nama_produk,
                 'harga_beli' => $totalHpp,
-                'operational_cost' => (float) $this->alokasi_biaya_tetap,
+                'operational_cost' => (float) ($hppData['biayaTetap'] ?? 0),
             ];
             
             if (!empty($this->category_id)) {
