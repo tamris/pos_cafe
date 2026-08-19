@@ -157,9 +157,56 @@
                                 </div>
                             </div>
 
+                            {{-- SECTION 4: OTOMATISASI CETAK STRUK & TIKET DAPUR --}}
+                            <div class="space-y-4 pt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Otomatisasi Cetak Struk</h3>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Atur apakah struk langsung dicetak begitu transaksi selesai di kasir</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {{-- Switch 1: Auto Print Struk Pelanggan --}}
+                                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 flex items-center justify-between gap-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-900 dark:text-white mb-0.5">
+                                                Cetak Struk Pelanggan
+                                            </label>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                Otomatis cetak struk pembayaran belanja
+                                            </p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                            <input type="checkbox" wire:model.live="auto_print_receipt" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                                        </label>
+                                    </div>
+
+                                    {{-- Switch 2: Auto Print Tiket Dapur / Kitchen --}}
+                                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 flex items-center justify-between gap-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-900 dark:text-white mb-0.5">
+                                                Cetak Tiket Dapur / Kitchen
+                                            </label>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                Otomatis cetak tiket pesanan barista/dapur
+                                            </p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                            <input type="checkbox" wire:model.live="auto_print_kitchen" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
                             {{-- Submit CTA --}}
                             <div class="pt-4 border-t border-slate-100 dark:border-slate-700/80 flex justify-end">
-                                <button type="submit" class="w-full sm:w-auto bg-slate-900 dark:bg-blue-600 text-white px-6 py-2.5 sm:py-3 rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-all font-semibold text-xs sm:text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2">
+                                <button type="submit" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 sm:py-3 rounded-lg transition-all font-semibold text-xs sm:text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                     <span>Simpan Pengaturan</span>
                                 </button>

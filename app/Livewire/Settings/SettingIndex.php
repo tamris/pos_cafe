@@ -17,6 +17,8 @@ class SettingIndex extends Component
     public $receipt_footer;
     public $wifi_name;
     public $wifi_password;
+    public $auto_print_receipt = true;
+    public $auto_print_kitchen = false;
 
     public function mount()
     {
@@ -30,6 +32,8 @@ class SettingIndex extends Component
             $this->receipt_footer = $setting->receipt_footer;
             $this->wifi_name = $setting->wifi_name;
             $this->wifi_password = $setting->wifi_password;
+            $this->auto_print_receipt = (bool) ($setting->auto_print_receipt ?? true);
+            $this->auto_print_kitchen = (bool) ($setting->auto_print_kitchen ?? false);
         }
     }
 
@@ -53,6 +57,8 @@ class SettingIndex extends Component
             'receipt_footer' => $this->receipt_footer,
             'wifi_name' => $this->wifi_name,
             'wifi_password' => $this->wifi_password,
+            'auto_print_receipt' => $this->auto_print_receipt,
+            'auto_print_kitchen' => $this->auto_print_kitchen,
         ];
 
         if (!$setting) {
@@ -61,7 +67,7 @@ class SettingIndex extends Component
             $setting->update($data);
         }
 
-        session()->flash('success', 'Pengaturan toko & WiFi berhasil disimpan.');
+        session()->flash('success', 'Pengaturan toko, struk & cetak otomatis berhasil disimpan.');
     }
 
     public function render()

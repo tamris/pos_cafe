@@ -627,11 +627,15 @@
                             @endif
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                             <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs cursor-pointer">Transaksi Baru</button>
                             <button type="button" onclick="printStrukDirect('{{ $lastInvoice }}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs cursor-pointer active:scale-95">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                <span>Cetak Ulang</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                <span>Cetak Struk</span>
+                            </button>
+                            <button type="button" onclick="printKitchenDirect('{{ $lastInvoice }}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs cursor-pointer active:scale-95" title="Cetak tiket khusus untuk barista/dapur">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path></svg>
+                                <span>Tiket Dapur</span>
                             </button>
                         </div>
                     </div>
@@ -1000,16 +1004,29 @@
             }
         });
 
-        // AUTO-PRINT INSTAN BEGITU TRANSAKSI SELESAI (SILENT BACKGROUND PRINT)
+        // AUTO-PRINT INSTAN BEGITU TRANSAKSI SELESAI (SESUAI PENGATURAN TOKO)
         Livewire.on('transaction-completed', async (event) => {
             const data = Array.isArray(event) ? event[0] : event;
             const invoice = data.invoice || data.invoice_number || data;
+            const autoPrintReceipt = data.autoPrintReceipt !== undefined ? Boolean(data.autoPrintReceipt) : true;
+            const autoPrintKitchen = Boolean(data.autoPrintKitchen);
             
             if (invoice && window.posBluetooth && window.posBluetooth.isConnected) {
                 try {
-                    await window.posBluetooth.printInvoice(invoice);
+                    // 1. Cetak Struk Belanja Pelanggan (jika aktif)
+                    if (autoPrintReceipt) {
+                        await window.posBluetooth.printInvoice(invoice);
+                    }
+
+                    // 2. Cetak Tiket Dapur / Kitchen (jika aktif)
+                    if (autoPrintKitchen) {
+                        if (autoPrintReceipt) {
+                            await new Promise(r => setTimeout(r, 600)); // jeda buffer agar tidak tumpang tindih
+                        }
+                        await window.posBluetooth.printKitchen(invoice);
+                    }
                 } catch (err) {
-                    console.warn('Auto print bluetooth error:', err);
+                    console.warn('Auto print error:', err);
                 }
             }
         });
@@ -1048,6 +1065,41 @@
 
         // 3. FALLBACK DESKTOP: BROWSER PRINT TAB
         window.open('/print-struk/' + invoice, '_blank');
+    }
+
+    async function printKitchenDirect(invoice) {
+        if (!invoice) return;
+
+        // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH / USB
+        if (window.posBluetooth && window.posBluetooth.isConnected) {
+            try {
+                await window.posBluetooth.printKitchen(invoice);
+                return;
+            } catch (err) {
+                console.warn('Bluetooth/USB print tiket dapur gagal, beralih ke fallback...', err);
+            }
+        }
+
+        // 2. FALLBACK ANDROID: RAWBT KITCHEN
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        if (isAndroid) {
+            fetch('/rawbt-kitchen/' + invoice)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.rawbt) {
+                        window.location.href = "rawbt:base64," + data.rawbt + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+                    } else {
+                        window.open('/print-kitchen/' + invoice, '_blank');
+                    }
+                })
+                .catch(() => {
+                    window.open('/print-kitchen/' + invoice, '_blank');
+                });
+            return;
+        }
+
+        // 3. FALLBACK DESKTOP: BROWSER PRINT TAB
+        window.open('/print-kitchen/' + invoice, '_blank');
     }
 
     function confirmResetCart() {

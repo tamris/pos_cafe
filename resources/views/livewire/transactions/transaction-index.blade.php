@@ -395,12 +395,19 @@
                     </div>
 
                     {{-- Modal Footer --}}
-                    <div class="bg-slate-50 dark:bg-slate-900/50 px-5 sm:px-6 py-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700">
-                        <button type="button" onclick="printStrukDirect('{{ $selectedTransaction->invoice_number }}')"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                            <span>Cetak Struk</span>
-                        </button>
+                    <div class="bg-slate-50 dark:bg-slate-900/50 px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2.5 border-t border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="printStrukDirect('{{ $selectedTransaction->invoice_number }}')"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                <span>Cetak Struk</span>
+                            </button>
+                            <button type="button" onclick="printKitchenDirect('{{ $selectedTransaction->invoice_number }}')"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer" title="Cetak tiket dapur untuk barista/chef">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path></svg>
+                                <span>Tiket Dapur</span>
+                            </button>
+                        </div>
                         <button type="button" wire:click="closeDetailModal"
                             class="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer">
                             Tutup
@@ -446,6 +453,41 @@
 
             // 3. FALLBACK DESKTOP: BROWSER PRINT TAB
             window.open('/print-struk/' + invoice, '_blank');
+        }
+
+        async function printKitchenDirect(invoice) {
+            if (!invoice) return;
+
+            // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH / USB
+            if (window.posBluetooth && window.posBluetooth.isConnected) {
+                try {
+                    await window.posBluetooth.printKitchen(invoice);
+                    return;
+                } catch (err) {
+                    console.warn('Bluetooth/USB print tiket dapur gagal, beralih ke fallback...', err);
+                }
+            }
+
+            // 2. FALLBACK ANDROID: RAWBT KITCHEN
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            if (isAndroid) {
+                fetch('/rawbt-kitchen/' + invoice)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.rawbt) {
+                            window.location.href = "rawbt:base64," + data.rawbt + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+                        } else {
+                            window.open('/print-kitchen/' + invoice, '_blank');
+                        }
+                    })
+                    .catch(() => {
+                        window.open('/print-kitchen/' + invoice, '_blank');
+                    });
+                return;
+            }
+
+            // 3. FALLBACK DESKTOP: BROWSER PRINT TAB
+            window.open('/print-kitchen/' + invoice, '_blank');
         }
     </script>
     @endpush

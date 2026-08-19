@@ -354,6 +354,17 @@ class PosThermalPrinter {
         return await this.printRawData(uint8Array);
     }
 
+    async printKitchen(invoice) {
+        const response = await fetch('/rawbt-kitchen/' + invoice);
+        if (!response.ok) throw new Error('Gagal mengambil data tiket dapur.');
+        const data = await response.json();
+
+        if (!data.rawbt) throw new Error('Data tiket dapur kosong.');
+
+        const uint8Array = this.base64ToUint8Array(data.rawbt);
+        return await this.printRawData(uint8Array);
+    }
+
     async printShift(shiftId) {
         const response = await fetch('/rawbt-shift/' + shiftId);
         if (!response.ok) throw new Error('Gagal mengambil data rekap shift.');

@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\CashierShift;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -594,10 +595,18 @@ class PosIndex extends Component
             $this->lastTransaction = Transaction::with(['details.product', 'user'])->find($transaction->id);
             $this->lastInvoice = $transaction->invoice_number ?? '';
 
+            $setting = Setting::first();
+            $autoPrintReceipt = (bool) ($setting->auto_print_receipt ?? true);
+            $autoPrintKitchen = (bool) ($setting->auto_print_kitchen ?? false);
+
             $this->showPaymentModal = false;
             $this->showMobileCart = false;
             $this->showSuccessModal = true;
-            $this->dispatch('transaction-completed', invoice: $this->lastInvoice);
+            $this->dispatch('transaction-completed', 
+                invoice: $this->lastInvoice,
+                autoPrintReceipt: $autoPrintReceipt,
+                autoPrintKitchen: $autoPrintKitchen
+            );
             $this->resetTransaction();
 
         } catch (\Exception $e) {

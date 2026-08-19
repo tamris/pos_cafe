@@ -60,4 +60,32 @@ class PosController extends Controller
             'rawbt' => $rawbt,
         ]);
     }
+
+    public function rawbtKitchen($invoice)
+    {
+        $transaction = Transaction::with(['details.product', 'user'])
+            ->where('invoice_number', $invoice)
+            ->firstOrFail();
+
+        $setting = Setting::first();
+        $rawbt = base64_encode(ReceiptPrintService::buildKitchenEscPos($transaction, $setting));
+
+        return response()->json([
+            'status' => 'success',
+            'invoice' => $invoice,
+            'rawbt' => $rawbt,
+        ]);
+    }
+
+    public function printKitchen($invoice)
+    {
+        $transaction = Transaction::with(['details.product', 'user'])
+            ->where('invoice_number', $invoice)
+            ->firstOrFail();
+
+        $setting = Setting::first();
+        $rawbtKitchenBase64 = base64_encode(ReceiptPrintService::buildKitchenEscPos($transaction, $setting));
+
+        return view('pos.print-kitchen', compact('transaction', 'setting', 'rawbtKitchenBase64'));
+    }
 }

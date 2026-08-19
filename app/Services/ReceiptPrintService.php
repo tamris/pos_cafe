@@ -140,8 +140,8 @@ class ReceiptPrintService
         $raw .= ($setting->receipt_footer ?? 'Terima kasih telah berkunjung ke Cafe!') . "\r\n";
         $raw .= "-- Have a Good Coffee Day --\r\n";
 
-        // FEED KERTAS 4 BARIS AGAR PAS DISOBEK
-        $raw .= "\r\n\r\n\r\n\r\n";
+        // FEED KERTAS 4 BARIS & PERINTAH AUTO-CUT (GS V 0)
+        $raw .= "\r\n\r\n\r\n\r\n\x1d\x56\x00";
 
         return $raw;
     }
@@ -220,7 +220,81 @@ class ReceiptPrintService
         $raw .= "--------------------------------\r\n";
         $raw .= $ALIGN_CENTER;
         $raw .= "Dicetak pada " . now()->format('d/m/Y H:i:s') . "\r\n";
-        $raw .= "\r\n\r\n\r\n\r\n";
+        $raw .= "\r\n\r\n\r\n\r\n\x1d\x56\x00";
+
+        return $raw;
+    }
+
+    /**
+     * Format Tiket Pesanan Khusus Dapur / Kitchen / Barista (Tanpa info harga)
+     */
+    public static function buildKitchenEscPos(Transaction $transaction, ?Setting $setting = null): string
+    {
+        if (!$setting) {
+            $setting = Setting::first();
+        }
+
+        $esc = "\x1b";
+        $INIT = $esc . "@";
+        $ALIGN_CENTER = $esc . "a\x01";
+        $ALIGN_LEFT = $esc . "a\x00";
+        $FONT_NORMAL = $esc . "!\x00";
+        $FONT_BOLD = $esc . "!\x08";
+        $FONT_LARGE = $esc . "!\x18"; // Double Height + Bold
+
+        $raw = $INIT . $FONT_NORMAL;
+
+        // 1. HEADER DAPUR / KITCHEN
+        $raw .= $ALIGN_CENTER;
+        $raw .= $FONT_LARGE . "*** TIKET DAPUR ***" . $FONT_NORMAL . "\r\n";
+        $raw .= $FONT_BOLD . strtoupper($setting->shop_name ?? 'POS CAFE') . $FONT_NORMAL . "\r\n";
+        $raw .= "--------------------------------\r\n";
+
+        // 2. METADATA ORDER
+        $raw .= $ALIGN_LEFT;
+        $raw .= self::line32("No. Inv", $transaction->invoice_number) . "\r\n";
+        $raw .= self::line32("Waktu", date('d/m/Y H:i:s', strtotime($transaction->created_at))) . "\r\n";
+        $raw .= self::line32("Kasir", $transaction->user->name ?? 'Kasir') . "\r\n";
+
+        // 3. TIPE PESANAN & MEJA (BESAR & TEBAL)
+        $raw .= "--------------------------------\r\n";
+        $raw .= $ALIGN_CENTER;
+        $orderTypeStr = (($transaction->order_type ?? 'dine_in') === 'dine_in')
+            ? 'DINE IN' . ($transaction->table_number ? ' (MEJA ' . $transaction->table_number . ')' : '')
+            : ((($transaction->order_type ?? '') === 'take_away') ? 'TAKE AWAY (BUNGKUS)' : 'DELIVERY (KIRIM)');
+        $raw .= $FONT_LARGE . $orderTypeStr . $FONT_NORMAL . "\r\n";
+
+        if (!empty($transaction->customer_name)) {
+            $raw .= $FONT_BOLD . "Pelanggan: " . $transaction->customer_name . $FONT_NORMAL . "\r\n";
+        }
+        $raw .= "--------------------------------\r\n";
+
+        // 4. DAFTAR ITEM PESANAN UNTUK BARISTA / CHEF
+        $raw .= $ALIGN_LEFT;
+        $totalItems = 0;
+        foreach ($transaction->details as $detail) {
+            $productName = $detail->product->name ?? 'Item';
+            $totalItems += (int) $detail->quantity;
+
+            // Baris Item (Double Height + Bold)
+            $raw .= $FONT_LARGE . $detail->quantity . "x  " . $productName . $FONT_NORMAL . "\r\n";
+
+            // Catatan Khusus Menu (Jika ada, cetak bold jelas)
+            if (!empty($detail->notes)) {
+                $raw .= $FONT_BOLD . " >> CATATAN: " . $detail->notes . $FONT_NORMAL . "\r\n";
+            }
+            $raw .= "\r\n";
+        }
+
+        // 5. TOTAL ITEM
+        $raw .= "--------------------------------\r\n";
+        $raw .= $FONT_LARGE . self::line32("TOTAL ITEM", $totalItems . " Menu") . $FONT_NORMAL . "\r\n";
+        $raw .= "--------------------------------\r\n";
+
+        // 6. FOOTER DAPUR
+        $raw .= $ALIGN_CENTER;
+        $raw .= "-- SEGERA DISIAPKAN --\r\n";
+        $raw .= "\r\n\r\n\r\n\r\n\x1d\x56\x00";
 
         return $raw;
     }
