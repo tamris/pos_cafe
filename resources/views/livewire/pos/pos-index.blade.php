@@ -565,10 +565,17 @@
     {{-- 6. MODAL: SUCCESS & PRINT RECEIPT                                         --}}
     {{-- ========================================================================= --}}
     @if ($showSuccessModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 z-50 overflow-y-auto" @keydown.window.escape="$wire.closeSuccessModal()">
             <div class="flex items-center justify-center min-h-screen px-4 text-center">
-                <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs"></div>
-                <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
+                {{-- Backdrop Klik Dimana Saja untuk Menutup --}}
+                <div wire:click="closeSuccessModal" class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs cursor-pointer" title="Klik untuk menutup"></div>
+                
+                <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 relative z-10">
+                    {{-- Tombol Close X di Pojok Kanan Atas --}}
+                    <button wire:click="closeSuccessModal" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
                     <div class="text-center">
                         <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path></svg>
@@ -616,10 +623,10 @@
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
-                            <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-xl font-bold hover:bg-slate-200 transition-colors text-xs">Transaksi Baru</button>
+                            <button wire:click="closeSuccessModal" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white py-2.5 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs cursor-pointer">Transaksi Baru</button>
                             <button type="button" onclick="printStrukDirect('{{ $lastInvoice }}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-1.5 transition-all text-xs shadow-xs cursor-pointer active:scale-95">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                <span>Cetak Struk</span>
+                                <span>Cetak Ulang</span>
                             </button>
                         </div>
                     </div>
@@ -988,7 +995,7 @@
             }
         });
 
-        // AUTO-PRINT INSTAN BEGITU TRANSAKSI SELESAI
+        // AUTO-PRINT INSTAN BEGITU TRANSAKSI SELESAI (SILENT BACKGROUND PRINT)
         Livewire.on('transaction-completed', async (event) => {
             const data = Array.isArray(event) ? event[0] : event;
             const invoice = data.invoice || data.invoice_number || data;
@@ -996,15 +1003,6 @@
             if (invoice && window.posBluetooth && window.posBluetooth.isConnected) {
                 try {
                     await window.posBluetooth.printInvoice(invoice);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Struk Tercetak!',
-                        text: 'Tercetak otomatis via Bluetooth',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        toast: true,
-                        position: 'top-end'
-                    });
                 } catch (err) {
                     console.warn('Auto print bluetooth error:', err);
                 }
@@ -1015,22 +1013,13 @@
     async function printStrukDirect(invoice) {
         if (!invoice) return;
 
-        // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH (INSTAN TANPA RAWBT / TANPA APLIKASI PIHAK KETIGA)
+        // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH / USB (INSTAN TANPA NOTIFIKASI GANGGUAN)
         if (window.posBluetooth && window.posBluetooth.isConnected) {
             try {
                 await window.posBluetooth.printInvoice(invoice);
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Struk Dicetak!',
-                    text: 'Mengirim ke printer Bluetooth...',
-                    timer: 1500,
-                    showConfirmButton: false,
-                    toast: true,
-                    position: 'top-end'
-                });
                 return;
             } catch (err) {
-                console.warn('Bluetooth print gagal, beralih ke fallback...', err);
+                console.warn('Bluetooth/USB print gagal, beralih ke fallback...', err);
             }
         }
 

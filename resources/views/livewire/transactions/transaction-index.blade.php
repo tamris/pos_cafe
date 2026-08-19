@@ -416,22 +416,13 @@
         async function printStrukDirect(invoice) {
             if (!invoice) return;
 
-            // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH
+            // 1. PRIORITAS UTAMA: DIRECT WEB BLUETOOTH / USB
             if (window.posBluetooth && window.posBluetooth.isConnected) {
                 try {
                     await window.posBluetooth.printInvoice(invoice);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Struk Dicetak!',
-                        text: 'Mengirim ke printer Bluetooth...',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        toast: true,
-                        position: 'top-end'
-                    });
                     return;
                 } catch (err) {
-                    console.warn('Bluetooth print gagal, beralih ke fallback...', err);
+                    console.warn('Bluetooth/USB print gagal, beralih ke fallback...', err);
                 }
             }
 
