@@ -278,7 +278,11 @@ class PosIndex extends Component
 
     public function addToCart($productId)
     {
-        $product = Product::with('category')->find($productId);
+        // 1. Cari produk langsung dari koleksi memory yang sudah dimuat (Super Cepat 0 ms query)
+        $product = $this->products ? $this->products->firstWhere('id', $productId) : null;
+        if (!$product) {
+            $product = Product::with('category')->find($productId);
+        }
 
         if (!$product || !$product->category || !$product->category->is_active) {
             $this->notify('error', 'Kategori menu ini sedang tidak aktif di POS.');
@@ -290,7 +294,7 @@ class PosIndex extends Component
             return;
         }
 
-        // Cek apakah produk sudah ada di keranjang (tanpa notes khusus)
+        // 2. Cek apakah produk sudah ada di keranjang
         $existingIndex = null;
         foreach ($this->cart as $index => $item) {
             if ($item['id'] === $productId && empty($item['notes'])) {
@@ -302,8 +306,6 @@ class PosIndex extends Component
         if ($existingIndex !== null) {
             $this->cart[$existingIndex]['quantity']++;
             $this->cart[$existingIndex]['subtotal'] = $this->cart[$existingIndex]['quantity'] * $this->cart[$existingIndex]['price'];
-            $this->calculateTotal();
-            $this->notify('success', 'Masuk keranjang: ' . $product->name);
         } else {
             $this->cart[] = [
                 'id' => $product->id,
@@ -315,9 +317,9 @@ class PosIndex extends Component
                 'subtotal' => $product->price,
                 'notes' => ''
             ];
-            $this->calculateTotal();
-            $this->notify('success', 'Masuk keranjang: ' . $product->name);
         }
+
+        $this->calculateTotal();
     }
 
     public function scanBarcode()

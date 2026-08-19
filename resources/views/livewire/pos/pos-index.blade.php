@@ -178,8 +178,10 @@
                                 @endphp
                                 @if($product->is_active)
                                     {{-- 1. KARTU MENU AKTIF (KLIK UNTUK ORDER) --}}
-                                    <div wire:click="addToCart({{ $product->id }})"
-                                        class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-500 transition-all active:scale-[0.97] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer">
+                                    <div wire:key="product-active-{{ $product->id }}"
+                                        wire:click="addToCart({{ $product->id }})"
+                                        style="touch-action: manipulation;"
+                                        class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-500 transition-all active:scale-[0.97] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer select-none">
                                         
                                         {{-- In-Cart Badge Indicator --}}
                                         @if($inCartQty > 0)
@@ -190,10 +192,11 @@
 
                                         <div>
                                             {{-- Frame Gambar Produk --}}
-                                            <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2 overflow-hidden bg-slate-100 dark:bg-slate-700/50 relative flex items-center justify-center border border-slate-100 dark:border-slate-700/60">
+                                            <div class="w-full aspect-square xl:aspect-[4/3] rounded-lg mb-1.5 xl:mb-2 overflow-hidden bg-slate-100 dark:bg-slate-700/50 relative flex items-center justify-center border border-slate-100 dark:border-slate-700/60 pointer-events-none">
                                                 @if ($product->image)
                                                     <img src="{{ Storage::url($product->image) }}" 
                                                          alt="{{ $product->name }}" 
+                                                         loading="lazy"
                                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                                                 @else
                                                     <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
@@ -227,7 +230,9 @@
                                     </div>
                                 @else
                                     {{-- 2. KARTU MENU NON-AKTIF (GRAYED OUT & DISABLED DI PALING BAWAH) --}}
-                                    <div wire:click="addToCart({{ $product->id }})"
+                                    <div wire:key="product-inactive-{{ $product->id }}"
+                                        wire:click="addToCart({{ $product->id }})"
+                                        style="touch-action: manipulation;"
                                         class="bg-slate-100/80 dark:bg-slate-900/60 rounded-xl p-2 sm:p-2.5 xl:p-3 border border-dashed border-slate-300 dark:border-slate-700 opacity-60 grayscale hover:opacity-75 transition-all flex flex-col justify-between h-full relative overflow-hidden cursor-not-allowed select-none group">
                                         
                                         {{-- Badge Tidak Tersedia --}}
