@@ -30,8 +30,88 @@
 
                         <form wire:submit.prevent="update" class="p-5 sm:p-6 space-y-6">
                             
-                            {{-- SECTION 1: INFORMASI CAFE --}}
+                            {{-- SECTION 1: LOGO CAFE / HEADER STRUK --}}
                             <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Logo Struk & Identitas Visual</h3>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Upload logo cafe untuk dicetak di header atas struk</p>
+                                        </div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Aktifkan/Nonaktifkan cetak logo pada struk">
+                                        <input type="checkbox" wire:model.live="show_logo_receipt" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                                        <span class="ml-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hidden sm:inline">Cetak Logo</span>
+                                    </label>
+                                </div>
+
+                                <div class="p-4 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 space-y-4">
+                                    <div class="flex flex-col sm:flex-row items-center gap-5">
+                                        {{-- Image Display Area / Thumbnail --}}
+                                        <div class="relative group w-24 h-24 sm:w-28 sm:h-28 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center p-2 overflow-hidden shadow-xs shrink-0">
+                                            @if ($new_logo)
+                                                <img src="{{ $new_logo->temporaryUrl() }}" alt="Preview Logo Baru" class="w-full h-full object-contain filter grayscale contrast-150">
+                                                <span class="absolute top-1 right-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">Baru</span>
+                                            @elseif ($shop_logo)
+                                                <img src="{{ asset('storage/' . $shop_logo) }}" alt="Logo Saat Ini" class="w-full h-full object-contain filter grayscale contrast-150">
+                                            @else
+                                                <div class="text-center text-slate-400 dark:text-slate-500">
+                                                    <svg class="w-8 h-8 mx-auto stroke-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                    <span class="text-[10px] block mt-1 font-medium">Belum ada logo</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Loading Spinner saat upload gambar --}}
+                                            <div wire:loading wire:target="new_logo" class="absolute inset-0 bg-slate-900/70 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs font-semibold">
+                                                <svg class="animate-spin w-6 h-6 text-white mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <span>Mengunggah...</span>
+                                            </div>
+                                        </div>
+
+                                        {{-- Actions & Upload Controls --}}
+                                        <div class="flex-1 w-full space-y-2.5">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <label for="shop_logo_input" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold transition-colors shadow-xs">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                                    <span>{{ ($shop_logo || $new_logo) ? 'Ganti Logo' : 'Upload Logo' }}</span>
+                                                </label>
+                                                <input id="shop_logo_input" type="file" wire:model="new_logo" accept="image/*" class="sr-only" wire:key="logo-input-{{ $new_logo ? 'selected' : ($shop_logo ? 'has-logo' : 'empty') }}">
+
+                                                @if ($new_logo)
+                                                    <button type="button" wire:click="cancelNewLogo" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold transition-all cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                        <span>Batal</span>
+                                                    </button>
+                                                @elseif ($shop_logo)
+                                                    <button type="button" onclick="confirmRemoveLogo()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-rose-200/80 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-xs font-semibold transition-all active:scale-95 cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                        <span>Hapus Logo</span>
+                                                    </button>
+                                                @endif
+                                            </div>
+
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                <p>Format yang didukung: <strong>PNG, JPG, JPEG, WebP</strong> (Maks. 5MB).</p>
+                                                <p class="text-slate-400 dark:text-slate-500 mt-0.5">💡 <em>Gunakan gambar siluet/logo berlatar transparan atau putih dengan kontras jelas untuk hasil cetak thermal hitam-putih yang tajam.</em></p>
+                                            </div>
+
+                                            @error('new_logo') 
+                                                <span class="text-rose-500 text-xs font-medium block">{{ $message }}</span> 
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- SECTION 2: INFORMASI CAFE --}}
+                            <div class="space-y-4 pt-2">
                                 <div class="flex items-center gap-2">
                                     <div class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
@@ -87,7 +167,7 @@
                                 </div>
                             </div>
 
-                            {{-- SECTION 2: AKSES WIFI PENGUNJUNG --}}
+                            {{-- SECTION 3: AKSES WIFI PENGUNJUNG --}}
                             <div class="space-y-4 pt-2">
                                 <div class="flex items-center gap-2">
                                     <div class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
@@ -132,7 +212,7 @@
                                 </div>
                             </div>
 
-                            {{-- SECTION 3: FOOTER STRUK --}}
+                            {{-- SECTION 4: FOOTER STRUK --}}
                             <div class="space-y-4 pt-2">
                                 <div class="flex items-center gap-2">
                                     <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -154,10 +234,10 @@
                                 </div>
                             </div>
 
-                            {{-- SECTION 4: OTOMATISASI CETAK STRUK & TIKET DAPUR --}}
+                            {{-- SECTION 5: OTOMATISASI CETAK STRUK & TIKET DAPUR --}}
                             <div class="space-y-4 pt-2">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                    <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                     </div>
                                     <div>
@@ -195,7 +275,7 @@
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                                             <input type="checkbox" wire:model.live="auto_print_kitchen" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
                                         </label>
                                     </div>
                                 </div>
@@ -203,7 +283,7 @@
 
                             {{-- Submit CTA --}}
                             <div class="pt-4 border-t border-slate-100 dark:border-slate-700/80 flex justify-end">
-                                <button type="submit" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 sm:py-3 rounded-lg transition-all font-semibold text-xs sm:text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                                <button type="submit" class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-6 py-2.5 sm:py-3 rounded-lg transition-all font-semibold text-xs sm:text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                     <span>Simpan Pengaturan</span>
                                 </button>
@@ -217,8 +297,8 @@
                     <div class="xl:sticky xl:top-6 w-full flex flex-col items-center">
                         
                         <div class="w-full flex items-center justify-between mb-3 px-1">
-                            <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                <span>🧾</span>
+                            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                 <span>Preview Struk Real-Time</span>
                             </h3>
                             <span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full">
@@ -244,8 +324,18 @@
                                     }
                                 </style>
 
-                                {{-- 1. HEADER CAFE --}}
+                                {{-- 1. HEADER CAFE & LOGO --}}
                                 <div class="text-center mb-2">
+                                    @if ($show_logo_receipt && ($new_logo || $shop_logo))
+                                        <div class="flex justify-center mb-1.5">
+                                            @if ($new_logo)
+                                                <img src="{{ $new_logo->temporaryUrl() }}" alt="Logo Cafe" class="max-h-12 max-w-[130px] object-contain filter grayscale contrast-200">
+                                            @elseif ($shop_logo)
+                                                <img src="{{ asset('storage/' . $shop_logo) }}" alt="Logo Cafe" class="max-h-12 max-w-[130px] object-contain filter grayscale contrast-200">
+                                            @endif
+                                        </div>
+                                    @endif
+
                                     <div class="font-black text-xs uppercase tracking-tight">
                                         {{ $shop_name ?: 'POS CAFE & ROASTERY' }}
                                     </div>
@@ -363,3 +453,29 @@
         </main>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    function confirmRemoveLogo() {
+        Swal.fire({
+            title: 'Hapus Logo Struk?',
+            html: `<div class="text-left text-xs space-y-2">
+                    <p class="text-slate-600 dark:text-slate-400">File logo cafe akan dihapus dari sistem dan struk akan kembali dicetak dalam format teks tanpa logo.</p>
+                   </div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'Ya, Hapus Logo',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.call('removeLogo');
+            }
+        });
+    }
+</script>
+@endpush

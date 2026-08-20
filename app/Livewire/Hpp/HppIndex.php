@@ -48,7 +48,7 @@ class HppIndex extends Component
     ];
 
     // Target & Proyeksi Penjualan State
-    public $target_laba_bulanan = ''; // Default kosong agar user input sendiri
+    public $target_laba_bulanan = 5000000; // Default kosong agar user input sendiri
     public $hari_operasional_sebulan = 30; // 30 hari
 
     public function addBiayaTetapItem()

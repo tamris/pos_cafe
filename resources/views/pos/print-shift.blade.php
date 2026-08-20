@@ -1,85 +1,6 @@
 @php
-    if (!function_exists('escposLine32')) {
-        function escposLine32($left, $right, $width = 32) {
-            $left = (string) $left;
-            $right = (string) $right;
-            $leftLen = strlen($left);
-            $rightLen = strlen($right);
-            if ($leftLen + $rightLen >= $width) {
-                return $left . " " . $right;
-            }
-            $spaces = $width - $leftLen - $rightLen;
-            return $left . str_repeat(' ', $spaces) . $right;
-        }
-    }
-
-    $esc = "\x1b";
-    $gs = "\x1d";
-    
-    $raw = $esc . "@";
-    $raw .= $esc . "a\x01"; // Center
-    $raw .= $esc . "!\x30" . ($setting->shop_name ?? 'POS CAFE') . "\n" . $esc . "!\x00";
-    if (!empty($setting->address)) {
-        $raw .= $setting->address . "\n";
-    }
-    if (!empty($setting->phone)) {
-        $raw .= "Telp: " . $setting->phone . "\n";
-    }
-    $raw .= "--------------------------------\n";
-    $raw .= $esc . "E\x01" . "*** REKAP SHIFT KASIR ***\n" . $esc . "E\x00";
-    $raw .= ($shift->status === 'closed' ? 'STATUS: DITUTUP (FINAL)' : 'STATUS: SHIFT AKTIF') . "\n";
-    $raw .= "--------------------------------\n";
-    
-    // Meta
-    $raw .= $esc . "a\x00"; // Left
-    $raw .= escposLine32("Shift ID", "#SFT-" . str_pad($shift->id, 5, '0', STR_PAD_LEFT)) . "\n";
-    $raw .= escposLine32("Kasir", $shift->user->name ?? '-') . "\n";
-    $raw .= escposLine32("Buka Shift", $shift->start_time ? $shift->start_time->format('d/m/y H:i') : '-') . "\n";
-    $raw .= escposLine32("Tutup Shift", $shift->end_time ? $shift->end_time->format('d/m/y H:i') : '(Belum Ditutup)') . "\n";
-    if ($shift->end_time) {
-        $durStr = $shift->start_time->diffInHours($shift->end_time) . " Jam " . ($shift->start_time->diffInMinutes($shift->end_time) % 60) . " Mnt";
-        $raw .= escposLine32("Durasi", $durStr) . "\n";
-    }
-    $raw .= "--------------------------------\n";
-    
-    // Penjualan
-    $raw .= $esc . "E\x01" . "RINCIAN PENJUALAN\n" . $esc . "E\x00";
-    $raw .= escposLine32("Total Struk", number_format($shift->total_transactions, 0, ',', '.') . " Trx") . "\n";
-    $raw .= escposLine32("Penjualan Tunai", "Rp " . number_format($shift->cash_sales, 0, ',', '.')) . "\n";
-    $raw .= escposLine32("Penjualan QRIS", "Rp " . number_format($shift->qris_sales, 0, ',', '.')) . "\n";
-    $raw .= escposLine32("Penjualan Transfer", "Rp " . number_format($shift->transfer_sales, 0, ',', '.')) . "\n";
-    $raw .= "--------------------------------\n";
-    
-    // Total Omset
-    $raw .= $esc . "!\x10" . $esc . "E\x01";
-    $raw .= escposLine32("TOTAL OMSET", "Rp " . number_format($shift->total_sales, 0, ',', '.')) . "\n";
-    $raw .= $esc . "!\x00" . $esc . "E\x00";
-    $raw .= "--------------------------------\n";
-    
-    // Kas Laci
-    $raw .= $esc . "E\x01" . "REKONSILIASI KAS LACI\n" . $esc . "E\x00";
-    $raw .= escposLine32("Modal Kas Awal", "Rp " . number_format($shift->starting_cash, 0, ',', '.')) . "\n";
-    $raw .= escposLine32("(+) Total Tunai", "Rp " . number_format($shift->cash_sales, 0, ',', '.')) . "\n";
-    $raw .= $esc . "E\x01" . escposLine32("(=) Kas Harapan", "Rp " . number_format($shift->expected_cash, 0, ',', '.')) . "\n" . $esc . "E\x00";
-    if ($shift->status === 'closed') {
-        $raw .= $esc . "E\x01" . escposLine32("Uang Fisik Kas", "Rp " . number_format($shift->actual_cash ?? 0, 0, ',', '.')) . "\n" . $esc . "E\x00";
-        $diff = (float) ($shift->difference ?? 0);
-        $diffStr = $diff == 0 ? "Rp 0 (PAS)" : ($diff > 0 ? "+Rp " . number_format($diff, 0, ',', '.') . " (LEBIH)" : "-Rp " . number_format(abs($diff), 0, ',', '.') . " (KURANG)");
-        $raw .= "--------------------------------\n";
-        $raw .= $esc . "E\x01" . escposLine32("SELISIH KAS", $diffStr) . "\n" . $esc . "E\x00";
-    }
-    
-    if (!empty($shift->notes)) {
-        $raw .= "Catatan: " . $shift->notes . "\n";
-    }
-    
-    $raw .= "--------------------------------\n";
-    $raw .= $esc . "a\x01"; // Center
-    $raw .= "Dicetak pada " . now()->format('d/m/Y H:i:s') . "\n";
-    $raw .= "\n\n\n\n";
-    $raw .= $gs . "V\x41\x03";
-    
-    $rawbtShiftBase64 = base64_encode($raw);
+    use App\Services\ReceiptPrintService;
+    $rawbtShiftBase64 = base64_encode(ReceiptPrintService::buildShiftEscPos($shift, $setting));
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -304,8 +225,13 @@
 
     {{-- KONTEN STRUK 58MM --}}
     <div class="receipt-card">
-        {{-- HEADER CAFE --}}
+        {{-- HEADER CAFE & LOGO --}}
         <div class="cafe-header text-center">
+            @if (($setting->show_logo_receipt ?? true) && !empty($setting->shop_logo))
+                <div style="text-align: center; margin-bottom: 8px;">
+                    <img src="{{ asset('storage/' . $setting->shop_logo) }}" alt="Logo Cafe" style="max-height: 54px; max-width: 140px; margin: 0 auto; display: block; filter: grayscale(100%) contrast(150%);">
+                </div>
+            @endif
             <div class="title uppercase">{{ $setting->shop_name ?? 'POS CAFE' }}</div>
             <div class="info">{{ $setting->address ?? 'Alamat Outlet' }}</div>
             @if (!empty($setting->phone))

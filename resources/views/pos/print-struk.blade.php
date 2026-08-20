@@ -1,130 +1,6 @@
 @php
-    if (!function_exists('escposLine32')) {
-        function escposLine32($left, $right, $width = 32) {
-            $left = (string) $left;
-            $right = (string) $right;
-            $leftLen = strlen($left);
-            $rightLen = strlen($right);
-            if ($leftLen + $rightLen >= $width) {
-                return $left . " " . $right;
-            }
-            $spaces = $width - $leftLen - $rightLen;
-            return $left . str_repeat(' ', $spaces) . $right;
-        }
-    }
-
-    $esc = "\x1b";
-    $gs = "\x1d";
-    
-    // ESC/POS Commands
-    $INIT = $esc . "@";
-    $ALIGN_CENTER = $esc . "a\x01";
-    $ALIGN_LEFT = $esc . "a\x00";
-    $ALIGN_RIGHT = $esc . "a\x02";
-    $BOLD_ON = $esc . "E\x01";
-    $BOLD_OFF = $esc . "E\x00";
-    $DOUBLE_SIZE = $esc . "!\x30"; // Double Width & Double Height
-    $DOUBLE_HEIGHT = $esc . "!\x10";
-    $NORMAL_SIZE = $esc . "!\x00";
-
-    $raw = $INIT;
-    
-    // 1. Header Cafe (Center)
-    $raw .= $ALIGN_CENTER;
-    $raw .= $DOUBLE_SIZE . $BOLD_ON . ($setting->shop_name ?? 'POS CAFE & ROASTERY') . "\n" . $NORMAL_SIZE . $BOLD_OFF;
-    if (!empty($setting->address)) {
-        $raw .= $setting->address . "\n";
-    }
-    if (!empty($setting->phone)) {
-        $raw .= "Telp: " . $setting->phone . "\n";
-    }
-    $raw .= "--------------------------------\n";
-    
-    // 2. Metadata Transaksi (Left)
-    $raw .= $ALIGN_LEFT;
-    $raw .= escposLine32("No. Inv", $transaction->invoice_number) . "\n";
-    $raw .= escposLine32("Waktu", date('d/m/Y H:i', strtotime($transaction->created_at))) . "\n";
-    $raw .= escposLine32("Kasir", $transaction->user->name ?? (auth()->user()->name ?? 'Staff')) . "\n";
-    
-    if (!empty($transaction->table_number) || !empty($transaction->customer_name)) {
-        $orderTypeStr = (($transaction->order_type ?? 'dine_in') === 'dine_in') 
-            ? 'DINE IN' . ($transaction->table_number ? ' (MEJA '.$transaction->table_number.')' : '')
-            : ((($transaction->order_type ?? '') === 'take_away') ? 'TAKE AWAY' : 'DELIVERY');
-        $raw .= escposLine32("Pesanan", $orderTypeStr) . "\n";
-        
-        if (!empty($transaction->customer_name)) {
-            $raw .= escposLine32("Pelanggan", $transaction->customer_name) . "\n";
-        }
-    }
-    $raw .= "--------------------------------\n";
-    
-    // 3. Daftar Item Pesanan
-    foreach($transaction->details as $detail) {
-        $raw .= $BOLD_ON . $detail->product->name . "\n" . $BOLD_OFF;
-        $qtyPrice = $detail->quantity . " x " . number_format($detail->price, 0, ',', '.');
-        $sub = number_format($detail->subtotal, 0, ',', '.');
-        $raw .= escposLine32($qtyPrice, $sub) . "\n";
-        if (!empty($detail->notes)) {
-            $raw .= "  * " . $detail->notes . "\n";
-        }
-    }
-    $raw .= "--------------------------------\n";
-    
-    // 4. Kalkulasi & Pembayaran
-    $raw .= escposLine32("Subtotal", number_format($transaction->subtotal, 0, ',', '.')) . "\n";
-    
-    if ($transaction->discount > 0) {
-        $discNominal = ($transaction->discount <= 100) 
-            ? ($transaction->subtotal * $transaction->discount / 100) 
-            : $transaction->discount;
-        $discLabel = "Diskon" . ($transaction->discount <= 100 ? ' ('.$transaction->discount.'%)' : '');
-        $raw .= escposLine32($discLabel, "-" . number_format($discNominal, 0, ',', '.')) . "\n";
-    }
-    
-    if ($transaction->tax > 0) {
-        $taxNominal = ($transaction->tax <= 100) 
-            ? ($transaction->subtotal * $transaction->tax / 100) 
-            : $transaction->tax;
-        $taxLabel = "Pajak" . ($transaction->tax <= 100 ? ' ('.$transaction->tax.'%)' : '');
-        $raw .= escposLine32($taxLabel, "+" . number_format($taxNominal, 0, ',', '.')) . "\n";
-    }
-    
-    $raw .= "--------------------------------\n";
-    
-    // Grand Total (Big & Bold)
-    $raw .= $DOUBLE_HEIGHT . $BOLD_ON;
-    $raw .= escposLine32("TOTAL", "Rp " . number_format($transaction->total, 0, ',', '.')) . "\n";
-    $raw .= $NORMAL_SIZE . $BOLD_OFF;
-    $raw .= "--------------------------------\n";
-    
-    // Bayar & Kembali
-    $payMethod = strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS'));
-    $raw .= escposLine32("Bayar (" . $payMethod . ")", number_format($transaction->paid, 0, ',', '.')) . "\n";
-    $raw .= $BOLD_ON . escposLine32("Kembali", number_format($transaction->change, 0, ',', '.')) . "\n" . $BOLD_OFF;
-    
-    // Wifi
-    if (!empty($setting->wifi_name) || !empty($setting->wifi_password)) {
-        $raw .= "--------------------------------\n";
-        $raw .= $ALIGN_CENTER;
-        $wifiStr = "WiFi: " . ($setting->wifi_name ?? '-');
-        if (!empty($setting->wifi_password)) {
-            $wifiStr .= " | Pass: " . $setting->wifi_password;
-        }
-        $raw .= $wifiStr . "\n";
-    }
-    
-    $raw .= "--------------------------------\n";
-    
-    // Footer
-    $raw .= $ALIGN_CENTER;
-    $raw .= ($setting->receipt_footer ?? 'Terima kasih atas kunjungannya!') . "\n";
-    $raw .= "-- Have a Good Coffee Day --\n";
-    
-    // Feed 3 baris & potong kertas
-    $raw .= "\n\n\n\n";
-    $raw .= $gs . "V\x41\x03";
-    
-    $rawbtBase64 = base64_encode($raw);
+    use App\Services\ReceiptPrintService;
+    $rawbtBase64 = base64_encode(ReceiptPrintService::buildTransactionEscPos($transaction, $setting));
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -365,8 +241,13 @@
 
     {{-- KONTEN STRUK 58MM --}}
     <div class="receipt-card">
-        {{-- 1. HEADER CAFE --}}
+        {{-- 1. HEADER CAFE & LOGO --}}
         <div class="cafe-header text-center">
+            @if (($setting->show_logo_receipt ?? true) && !empty($setting->shop_logo))
+                <div style="text-align: center; margin-bottom: 8px;">
+                    <img src="{{ asset('storage/' . $setting->shop_logo) }}" alt="Logo Cafe" style="max-height: 54px; max-width: 140px; margin: 0 auto; display: block; filter: grayscale(100%) contrast(150%);">
+                </div>
+            @endif
             <div class="title uppercase">{{ $setting->shop_name ?? 'POS CAFE & ROASTERY' }}</div>
             @if(!empty($setting->address))
                 <div class="info">{{ $setting->address }}</div>
