@@ -205,11 +205,11 @@
                                     $inCartQty = $this->getCartQuantity($product->id);
                                 @endphp
                                 @if($product->is_active)
-                                    {{-- 1. KARTU MENU AKTIF (KLIK UNTUK ORDER) --}}
+                                    {{-- 1. KARTU MENU AKTIF (KLIK UNTUK ORDER - ZERO TOUCH LATENCY) --}}
                                     <div wire:key="product-active-{{ $product->id }}"
                                         wire:click="addToCart({{ $product->id }})"
-                                        style="touch-action: manipulation;"
-                                        class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-500 transition-all active:scale-[0.97] flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer select-none">
+                                        style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
+                                        class="bg-white dark:bg-slate-800 rounded-xl p-2 sm:p-2.5 xl:p-3 border {{ $inCartQty > 0 ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/80 dark:border-slate-700/80' }} shadow-2xs active:scale-[0.97] active:bg-slate-50 dark:active:bg-slate-700/50 flex flex-col justify-between h-full relative overflow-hidden cursor-pointer select-none">
                                         
                                         {{-- In-Cart Badge Indicator --}}
                                         @if($inCartQty > 0)
@@ -225,9 +225,9 @@
                                                     <img src="{{ Storage::url($product->image) }}" 
                                                          alt="{{ $product->name }}" 
                                                          loading="lazy"
-                                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                                         class="w-full h-full object-cover">
                                                 @else
-                                                    <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                                    <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
                                                         <svg class="w-7 h-7 sm:w-8 sm:h-8 opacity-75" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"></path>
                                                         </svg>
@@ -236,7 +236,7 @@
                                             </div>
                                             
                                             {{-- Judul Menu --}}
-                                            <h3 class="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-center xl:text-left">
+                                            <h3 class="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs xl:text-sm line-clamp-2 leading-tight text-center xl:text-left">
                                                 {{ $product->name }}
                                             </h3>
                                             
@@ -251,7 +251,7 @@
                                         {{-- Harga & Plus Button --}}
                                         <div class="hidden xl:flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-700/60 mt-1">
                                             <p class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                                            <span class="text-xs bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400 dark:group-hover:bg-emerald-600 dark:group-hover:text-white rounded-lg p-1 transition-colors">
+                                            <span class="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-lg p-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
                                             </span>
                                         </div>
