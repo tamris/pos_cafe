@@ -45,6 +45,7 @@ class SalesReportExport implements
         $query = Transaction::with(['user', 'details'])
             ->withSum('details', 'profit')
             ->whereBetween('created_at', [$start, $end])
+            ->where('status', 'completed')
             ->latest();
 
         $this->totalRows = $query->count(); 

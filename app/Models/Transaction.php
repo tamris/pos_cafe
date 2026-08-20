@@ -23,12 +23,30 @@ class Transaction extends Model
         'order_type',
         'table_number',
         'customer_name',
-        'status'
+        'status',
+        'cancelled_reason',
+        'cancelled_by',
+        'cancelled_at',
+    ];
+
+    protected $casts = [
+        'subtotal' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'total' => 'decimal:2',
+        'paid' => 'decimal:2',
+        'change' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function cancelledBy()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by')->withTrashed();
     }
 
     public function shift()
@@ -39,6 +57,21 @@ class Transaction extends Model
     public function details()
     {
         return $this->hasMany(TransactionDetail::class);
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
     }
 
     protected static function boot()

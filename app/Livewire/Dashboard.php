@@ -37,25 +37,29 @@ class Dashboard extends Component
     public function loadDashboardData()
     {
         $this->totalCategories = Category::count();
-        $this->todayTransactions = Transaction::whereDate('created_at', today())->count();
-        $this->todayRevenue = (float) Transaction::whereDate('created_at', today())->sum('total');
+        $this->todayTransactions = Transaction::whereDate('created_at', today())->where('status', 'completed')->count();
+        $this->todayRevenue = (float) Transaction::whereDate('created_at', today())->where('status', 'completed')->sum('total');
         
         $this->todayItemsSold = (int) Transaction::whereDate('transactions.created_at', today())
+                                ->where('transactions.status', 'completed')
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.quantity');
 
         $this->todayProfit = (float) Transaction::whereDate('transactions.created_at', today())
+                                ->where('transactions.status', 'completed')
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.profit');
 
         // Data Kemarin untuk Komparasi (Growth %)
         $yesterday = now()->subDay();
         $yesterdayItemsSold = Transaction::whereDate('transactions.created_at', $yesterday)
+                                ->where('transactions.status', 'completed')
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.quantity');
-        $yesterdayTransactions = Transaction::whereDate('created_at', $yesterday)->count();
-        $yesterdayRevenue = Transaction::whereDate('created_at', $yesterday)->sum('total');
+        $yesterdayTransactions = Transaction::whereDate('created_at', $yesterday)->where('status', 'completed')->count();
+        $yesterdayRevenue = Transaction::whereDate('created_at', $yesterday)->where('status', 'completed')->sum('total');
         $yesterdayProfit = Transaction::whereDate('transactions.created_at', $yesterday)
+                                ->where('transactions.status', 'completed')
                                 ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
                                 ->sum('transaction_details.profit');
 
@@ -71,12 +75,17 @@ class Dashboard extends Component
 
         $this->topProducts = Product::select('products.*', DB::raw('COALESCE(SUM(transaction_details.quantity), 0) as total_sold'))
             ->leftJoin('transaction_details', 'products.id', '=', 'transaction_details.product_id')
+            ->leftJoin('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->where(function($q) {
+                $q->whereNull('transactions.status')->orWhere('transactions.status', 'completed');
+            })
             ->groupBy('products.id')
             ->orderBy('total_sold', 'DESC')
             ->take(5)
             ->get();
 
         $this->paymentMethodStats = Transaction::whereDate('created_at', today())
+            ->where('status', 'completed')
             ->select('payment_method', DB::raw('count(*) as count'))
             ->groupBy('payment_method')
             ->get()
@@ -103,7 +112,7 @@ class Dashboard extends Component
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $chartLabels[] = $date->translatedFormat('D, d M');
-            $total = (float) Transaction::whereDate('created_at', $date->format('Y-m-d'))->sum('total');
+            $total = (float) Transaction::whereDate('created_at', $date->format('Y-m-d'))->where('status', 'completed')->sum('total');
             $chartData[] = $total;
         }
 

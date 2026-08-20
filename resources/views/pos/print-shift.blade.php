@@ -435,6 +435,10 @@
         <div class="divider"></div>
 
         {{-- 2. RINCIAN TRANSAKSI & PENJUALAN --}}
+        @php
+            $shiftCancelledCount = $shift->transactions()->where('status', 'cancelled')->count();
+            $shiftCancelledSum = $shift->transactions()->where('status', 'cancelled')->sum('total');
+        @endphp
         <div class="section-header">
             <span>Rincian Penjualan</span>
         </div>
@@ -455,6 +459,12 @@
                 <span class="lbl">Penjualan Transfer:</span>
                 <span class="val">Rp {{ number_format($shift->transfer_sales, 0, ',', '.') }}</span>
             </div>
+            @if ($shiftCancelledCount > 0)
+                <div class="data-row" style="color: #b91c1c;">
+                    <span class="lbl" style="color: #b91c1c;">Transaksi Void (Batal):</span>
+                    <span class="val font-bold" style="color: #b91c1c;">{{ $shiftCancelledCount }} Trx (Rp {{ number_format($shiftCancelledSum, 0, ',', '.') }})</span>
+                </div>
+            @endif
         </div>
 
         {{-- TOTAL OMSET --}}

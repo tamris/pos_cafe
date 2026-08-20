@@ -356,6 +356,13 @@ class ReceiptPrintService
         $raw .= self::line32("Penjualan Tunai", "Rp " . number_format($shift->cash_sales, 0, ',', '.')) . "\r\n";
         $raw .= self::line32("Penjualan QRIS", "Rp " . number_format($shift->qris_sales, 0, ',', '.')) . "\r\n";
         $raw .= self::line32("Penjualan Transfer", "Rp " . number_format($shift->transfer_sales, 0, ',', '.')) . "\r\n";
+        
+        $shiftCancelledCount = $shift->transactions()->where('status', 'cancelled')->count();
+        $shiftCancelledSum = $shift->transactions()->where('status', 'cancelled')->sum('total');
+        if ($shiftCancelledCount > 0) {
+            $raw .= self::line32("Void / Batal (" . $shiftCancelledCount . "x)", "Rp " . number_format($shiftCancelledSum, 0, ',', '.')) . "\r\n";
+        }
+
         $raw .= "--------------------------------\r\n";
 
         // Total Omset (Lebih Besar & Bold)

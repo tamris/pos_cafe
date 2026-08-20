@@ -944,6 +944,35 @@
                             </div>
                         </div>
 
+                        {{-- Rekap Transaksi Dibatalkan (Void) jika ada --}}
+                        @php
+                            $cancelledTrx = $selectedShift->transactions()->where('status', 'cancelled')->get();
+                            $cancelledCount = $cancelledTrx->count();
+                            $cancelledSum = $cancelledTrx->sum('total');
+                        @endphp
+                        @if($cancelledCount > 0)
+                            <div class="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-xl text-xs space-y-1.5">
+                                <div class="flex items-center justify-between text-rose-800 dark:text-rose-300 font-bold">
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path></svg>
+                                        <span>Transaksi Dibatalkan (Void):</span>
+                                    </span>
+                                    <span class="font-black text-rose-700 dark:text-rose-400">{{ $cancelledCount }} Trx (Rp {{ number_format($cancelledSum, 0, ',', '.') }})</span>
+                                </div>
+                                <div class="divide-y divide-rose-200/60 dark:divide-rose-800/60 pt-1 text-[11px]">
+                                    @foreach($cancelledTrx as $cTrx)
+                                        <div class="py-1 flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                            <div>
+                                                <span class="font-mono font-bold text-rose-700 dark:text-rose-400">{{ $cTrx->invoice_number }}</span>
+                                                <span class="text-slate-500 dark:text-slate-400 ml-1">• {{ $cTrx->cancelled_reason ?: 'Dibatalkan' }}</span>
+                                            </div>
+                                            <span class="font-bold text-slate-900 dark:text-white">Rp {{ number_format($cTrx->total, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
                         {{-- Catatan Shift --}}
                         @if (!empty($selectedShift->notes))
                             <div class="p-3.5 bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300">
