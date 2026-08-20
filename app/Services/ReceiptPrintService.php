@@ -271,9 +271,15 @@ class ReceiptPrintService
         $raw .= "--------------------------------\r\n";
 
         // 6. PEMBAYARAN & KEMBALIAN
-        $payMethod = strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS'));
-        $raw .= self::line32("Bayar (" . $payMethod . ")", number_format($transaction->paid, 0, ',', '.')) . "\r\n";
-        $raw .= self::line32("Kembali", number_format($transaction->change, 0, ',', '.')) . "\r\n";
+        if ($transaction->status === 'pending') {
+            $raw .= $ALIGN_CENTER . $FONT_BOLD . "*** TAGIHAN SEMENTARA ***" . $FONT_NORMAL . "\r\n";
+            $raw .= $ALIGN_CENTER . "(BELUM LUNAS / OPEN BILL)" . "\r\n";
+            $raw .= $ALIGN_LEFT;
+        } else {
+            $payMethod = strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS'));
+            $raw .= self::line32("Bayar (" . $payMethod . ")", number_format($transaction->paid, 0, ',', '.')) . "\r\n";
+            $raw .= self::line32("Kembali", number_format($transaction->change, 0, ',', '.')) . "\r\n";
+        }
 
         // 7. WIFI CAFE
         if (!empty($setting->wifi_name) || !empty($setting->wifi_password)) {

@@ -41,20 +41,36 @@
                 {{-- Dynamic Inputs based on Order Type --}}
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     @if($orderType === 'dine_in')
-                        <div class="flex flex-wrap items-center gap-2" wire:key="input-container-table">
-                            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Pilih Meja:</label>
-                            <select wire:model.live="selectedTable" class="px-3 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-36 sm:w-40">
-                                <option value="">-- Pilih Meja --</option>
-                                @for ($i = 1; $i <= 20; $i++)
-                                    <option value="{{ sprintf('%02d', $i) }}">Meja {{ sprintf('%02d', $i) }}</option>
-                                @endfor
-                                <option value="custom">Ketik Meja Manual...</option>
-                            </select>
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3" wire:key="input-container-table">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Pilih Meja:</label>
+                                <select wire:model.live="selectedTable" class="px-2.5 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-44 sm:w-48">
+                                    <option value="">-- Pilih Meja --</option>
+                                    @for ($i = 1; $i <= 20; $i++)
+                                        @php
+                                            $tableVal = sprintf('%02d', $i);
+                                            $tableAltVal = (string) $i;
+                                            $isOccupied = in_array($tableVal, $occupiedTables ?? []) || in_array($tableAltVal, $occupiedTables ?? []);
+                                            $isCurrentBillTable = ($currentOpenBillId && ($tableNumber === $tableVal || $tableNumber === $tableAltVal));
+                                        @endphp
+                                        <option value="{{ $tableVal }}">
+                                            Meja {{ $tableVal }} @if($isCurrentBillTable) (📌 Bill Ini) @elseif($isOccupied) (🔴 Terisi) @else (🟢 Kosong) @endif
+                                        </option>
+                                    @endfor
+                                    <option value="custom">Ketik Meja Manual...</option>
+                                </select>
 
-                            @if($isCustomTable)
-                                <input type="text" wire:model.live="customTableNumber" placeholder="Contoh: Meja VIP 01" autofocus
-                                    class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-36">
-                            @endif
+                                @if($isCustomTable)
+                                    <input type="text" wire:model.live="customTableNumber" placeholder="Contoh: VIP 01" autofocus
+                                        class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-28 sm:w-32">
+                                @endif
+                            </div>
+
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs font-bold text-slate-600 dark:text-slate-300 hidden sm:inline">Pelanggan:</label>
+                                <input type="text" wire:model.live="customerName" placeholder="Nama Pelanggan (Opsional)"
+                                    class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-36 sm:w-44">
+                            </div>
                         </div>
                     @else
                         <div class="flex items-center gap-2" wire:key="input-container-customer">
@@ -105,6 +121,21 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
+                    {{-- Open Bill / Active Tables Button with Badge --}}
+                    <button type="button" wire:click="openOpenBillsModal"
+                        class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer relative"
+                        title="Lihat daftar pesanan meja yang sedang berjalan (Open Bill)">
+                        <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H7.5m9 0h1.5A2.25 2.25 0 0120.25 6v12a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5"></path>
+                        </svg>
+                        <span>Bill Aktif</span>
+                        @if($openBillsCount > 0)
+                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-indigo-600 rounded-full animate-pulse">
+                                {{ $openBillsCount }}
+                            </span>
+                        @endif
+                    </button>
+
                     {{-- Quick Availability / Item 86 Toggle Button --}}
                     <button type="button" wire:click="openAvailabilityModal"
                         class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
@@ -961,6 +992,153 @@
                     <button type="button" wire:click="closeAvailabilityModal"
                         class="px-4 py-2 bg-slate-900 dark:bg-emerald-600 text-white rounded-lg font-bold shadow-xs hover:bg-slate-800 dark:hover:bg-emerald-700 transition cursor-pointer">
                         Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ========================================================================= --}}
+    {{-- MODAL DAFTAR BILL AKTIF / OPEN BILLS (HOLD ORDERS)                       --}}
+    {{-- ========================================================================= --}}
+    @if ($showOpenBillsModal)
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transition-colors">
+                
+                {{-- Header Modal --}}
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-indigo-50/60 dark:bg-indigo-950/40">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H7.5m9 0h1.5A2.25 2.25 0 0120.25 6v12a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">Daftar Bill Aktif (Open Bill)</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Daftar pesanan meja yang belum diselesaikan pembayarannya</p>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="closeOpenBillsModal"
+                        class="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                {{-- Search Box --}}
+                <div class="p-3.5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+                    <div class="relative">
+                        <input type="text" wire:model.live.debounce.300ms="openBillsSearch"
+                            placeholder="Cari nomor meja, nama pelanggan, atau invoice..."
+                            class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+                    </div>
+                </div>
+
+                {{-- List of Active Bills --}}
+                <div class="p-4 overflow-y-auto space-y-3.5 flex-1 min-h-0">
+                    @forelse ($openBills as $bill)
+                        @php
+                            $isCurrentlyEditing = ($currentOpenBillId === $bill->id);
+                        @endphp
+                        <div class="rounded-2xl p-4 transition-all duration-150 space-y-3 {{ $isCurrentlyEditing ? 'bg-indigo-50/40 dark:bg-indigo-950/40 border-2 border-indigo-500 shadow-md ring-2 ring-indigo-500/20' : 'bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 hover:border-indigo-500 dark:hover:border-indigo-500 hover:shadow-md shadow-2xs' }}">
+                            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl {{ $isCurrentlyEditing ? 'bg-indigo-600 text-white' : 'bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200/80 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300' }} flex items-center justify-center font-black text-xs shrink-0 shadow-2xs transition-colors">
+                                        @if($bill->order_type === 'dine_in')
+                                            {{ $bill->table_number ? $bill->table_number : 'DI' }}
+                                        @else
+                                            TA
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base">
+                                                {{ $bill->table_number ? 'Meja ' . $bill->table_number : ($bill->customer_name ?: 'Dine In (Tanpa Meja)') }}
+                                            </h4>
+                                            @if($bill->customer_name && $bill->table_number)
+                                                <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold">({{ $bill->customer_name }})</span>
+                                            @endif
+                                            @if($isCurrentlyEditing)
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-600 text-white shadow-2xs animate-pulse">
+                                                    Sedang Dibuka di Keranjang
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80">
+                                                    Belum Lunas
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                                            <span class="font-mono text-slate-600 dark:text-slate-300">{{ $bill->invoice_number }}</span>
+                                            <span>•</span>
+                                            <span>Dibuat: {{ $bill->created_at->format('H:i') }} ({{ $bill->created_at->diffForHumans() }})</span>
+                                            <span>•</span>
+                                            <span>Kasir: <strong class="text-slate-700 dark:text-slate-300">{{ $bill->user->name ?? 'Kasir' }}</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right shrink-0">
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ $bill->details->sum('quantity') }} Item Menu</p>
+                                    <p class="text-base sm:text-lg font-black text-indigo-600 dark:text-indigo-400">Rp {{ number_format($bill->total, 0, ',', '.') }}</p>
+                                </div>
+                            </div>
+
+                            {{-- Menu Summary Tags --}}
+                            <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                @foreach ($bill->details->take(6) as $d)
+                                    <span class="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-200/70 dark:border-slate-700 text-xs font-medium">
+                                        <strong class="text-indigo-600 dark:text-indigo-400 font-extrabold">{{ $d->quantity }}x</strong>
+                                        <span>{{ $d->product->name ?? 'Item' }}</span>
+                                    </span>
+                                @endforeach
+                                @if($bill->details->count() > 6)
+                                    <span class="text-[11px] text-slate-400 dark:text-slate-500 font-bold self-center px-1">+{{ $bill->details->count() - 6 }} menu lainnya</span>
+                                @endif
+                            </div>
+
+                            {{-- Action Buttons: Cetak Dapur, Cetak Tagihan, Buka & Proses Bayar --}}
+                            <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                {{-- Cetak Tiket Dapur --}}
+                                <button type="button" onclick="printKitchenDirect('{{ $bill->invoice_number }}')"
+                                    class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                                    title="Cetak Tiket Dapur / Barista">
+                                    <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" /></svg>
+                                    <span>Cetak Dapur</span>
+                                </button>
+
+                                {{-- Cetak Tagihan Sementara --}}
+                                <button type="button" onclick="printStrukDirect('{{ $bill->invoice_number }}')"
+                                    class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                                    title="Cetak Tagihan Sementara (Pre-Bill) untuk Meja Pelanggan">
+                                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h10.5a2.25 2.25 0 0 1 2.25 2.25v6a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 15V9a2.25 2.25 0 0 1 2.25-2.25Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 17.25v2.25h10.5v-2.25M6.75 6.75V4.5h10.5v2.25" /></svg>
+                                    <span>Cetak Tagihan</span>
+                                </button>
+
+                                {{-- Buka / Tambah Menu / Bayar --}}
+                                <button type="button" wire:click="resumeOpenBill({{ $bill->id }})"
+                                    class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95">
+                                    <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
+                                    <span>Buka & Proses Bayar</span>
+                                </button>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-12">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H7.5m9 0h1.5A2.25 2.25 0 0120.25 6v12a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5"></path></svg>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">Tidak Ada Bill Aktif</h4>
+                            <p class="text-xs text-slate-400 mt-1">Semua pesanan meja sudah diselesaikan pembayarannya.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                {{-- Footer Modal --}}
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Total {{ count($openBills) }} bill yang belum diselesaikan.</p>
+                    <button type="button" wire:click="closeOpenBillsModal"
+                        class="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg font-bold shadow-xs hover:bg-slate-800 transition cursor-pointer">
+                        Tutup
                     </button>
                 </div>
             </div>

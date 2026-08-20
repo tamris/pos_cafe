@@ -1,4 +1,16 @@
 <div class="space-y-2" x-data="{ showDiscountTax: {{ ($discount > 0 || $tax > 0) ? 'true' : 'false' }} }">
+    @if($currentOpenBillId)
+        <div class="p-2 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between text-xs">
+            <div class="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-bold truncate">
+                <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"></path></svg>
+                <span class="truncate">Edit Bill: {{ $tableNumber ? 'Meja '.$tableNumber : ($customerName ?: $currentOpenBillInvoice) }}</span>
+            </div>
+            <button type="button" wire:click="resetTransaction" class="text-[10px] text-amber-700 hover:text-amber-900 dark:text-amber-400 font-extrabold underline shrink-0 ml-1 cursor-pointer">
+                Batal Edit
+            </button>
+        </div>
+    @endif
+
     {{-- Collapsible Discount & Tax Button --}}
     <div class="flex items-center justify-between">
         <button type="button" @click="showDiscountTax = !showDiscountTax" 
@@ -59,19 +71,32 @@
     </div>
 
     {{-- Action CTA buttons --}}
-    <div class="grid grid-cols-4 gap-2 pt-1">
-        {{-- Tombol Batal/Reset --}}
-        <button type="button" onclick="confirmResetCart()"
-            class="col-span-1 flex items-center justify-center border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl py-2.5 transition-colors shadow-2xs"
-            title="Kosongkan Keranjang">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path></svg>
-        </button>
+    @if ($orderType === 'dine_in')
+        {{-- DINE IN: Tombol Simpan Bill & Bayar Sekarang --}}
+        <div class="grid grid-cols-2 gap-2 pt-1">
+            {{-- Tombol Simpan / Open Bill --}}
+            <button type="button" wire:click="saveOpenBill"
+                class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-2xs transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Simpan pesanan meja (Bayar nanti saat selesai nongkrong)">
+                <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H7.5m9 0h1.5A2.25 2.25 0 0120.25 6v12a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5"></path></svg>
+                <span class="truncate">{{ $currentOpenBillId ? 'Update Bill' : 'Simpan Bill' }}</span>
+            </button>
 
-        {{-- Tombol Bayar Sekarang (Emerald CTA) --}}
-        <button type="button" wire:click="openPaymentModal"
-            class="col-span-3 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
-            <span>Proses Bayar</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
-        </button>
-    </div>
+            {{-- Tombol Bayar Sekarang --}}
+            <button type="button" wire:click="openPaymentModal"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 cursor-pointer">
+                <span class="truncate">Bayar</span>
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
+            </button>
+        </div>
+    @else
+        {{-- TAKE AWAY / DELIVERY: Hanya tombol Bayar Sekarang Full Width --}}
+        <div class="pt-1">
+            <button type="button" wire:click="openPaymentModal"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
+                <span>Proses Bayar</span>
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
+            </button>
+        </div>
+    @endif
 </div>

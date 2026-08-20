@@ -352,16 +352,23 @@
             <span>Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
         </div>
 
-        <div class="calc-list">
-            <div class="row">
-                <span>Bayar ({{ strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS')) }})</span>
-                <span>{{ number_format($transaction->paid, 0, ',', '.') }}</span>
+        @if($transaction->status === 'pending')
+            <div class="text-center font-bold" style="padding: 6px 0; margin: 4px 0; border: 1.5px dashed #000; font-size: 12px;">
+                *** TAGIHAN SEMENTARA ***<br>
+                <span style="font-size: 10px; font-weight: normal;">(BELUM LUNAS / OPEN BILL)</span>
             </div>
-            <div class="row font-bold">
-                <span>Kembali</span>
-                <span>{{ number_format($transaction->change, 0, ',', '.') }}</span>
+        @else
+            <div class="calc-list">
+                <div class="row">
+                    <span>Bayar ({{ strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS')) }})</span>
+                    <span>{{ number_format($transaction->paid, 0, ',', '.') }}</span>
+                </div>
+                <div class="row font-bold">
+                    <span>Kembali</span>
+                    <span>{{ number_format($transaction->change, 0, ',', '.') }}</span>
+                </div>
             </div>
-        </div>
+        @endif
 
         {{-- 5. WIFI CAFE (JIKA ADA) --}}
         @if(!empty($setting->wifi_name) || !empty($setting->wifi_password))

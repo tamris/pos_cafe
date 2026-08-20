@@ -69,9 +69,24 @@ class Transaction extends Model
         return $query->where('status', 'cancelled');
     }
 
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeOpenBill($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
     public function isCancelled(): bool
     {
         return $this->status === 'cancelled';
+    }
+
+    public function isOpenBill(): bool
+    {
+        return $this->status === 'pending';
     }
 
     protected static function boot()

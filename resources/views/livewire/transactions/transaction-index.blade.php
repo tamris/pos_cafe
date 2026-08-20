@@ -275,7 +275,8 @@
 
                             <select wire:model.live="statusFilter" class="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs sm:text-sm font-medium">
                                 <option value="">Semua Status</option>
-                                <option value="completed">Selesai (Berhasil)</option>
+                                <option value="completed">Selesai (Lunas)</option>
+                                <option value="pending">Bill Aktif (Open Bill)</option>
                                 <option value="cancelled">Dibatalkan (Void)</option>
                             </select>
                         </div>
@@ -298,13 +299,17 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-xs sm:text-sm">
                             @forelse($transactions as $transaction)
-                                <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors {{ $transaction->status === 'cancelled' ? 'bg-rose-50/30 dark:bg-rose-950/20' : '' }}">
+                                <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors {{ $transaction->status === 'cancelled' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ($transaction->status === 'pending' ? 'bg-amber-50/30 dark:bg-amber-950/20' : '') }}">
                                     <td class="px-4 sm:px-6 py-3.5 font-extrabold text-slate-900 dark:text-white font-mono whitespace-nowrap">
                                         <div class="flex items-center gap-1.5">
                                             <span>{{ $transaction->invoice_number }}</span>
                                             @if($transaction->status === 'cancelled')
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
                                                     VOID
+                                                </span>
+                                            @elseif($transaction->status === 'pending')
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                                                    OPEN
                                                 </span>
                                             @endif
                                         </div>
@@ -354,6 +359,10 @@
                                             @if($transaction->status === 'cancelled')
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800" title="Alasan: {{ $transaction->cancelled_reason }}">
                                                     Dibatalkan
+                                                </span>
+                                            @elseif($transaction->status === 'pending')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                                    Bill Aktif
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
