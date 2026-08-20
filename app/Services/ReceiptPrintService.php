@@ -341,9 +341,12 @@ class ReceiptPrintService
         $raw .= self::line32("Kasir", $shift->user->name ?? '-') . "\r\n";
         $raw .= self::line32("Buka Shift", $shift->start_time ? $shift->start_time->format('d/m/y H:i') : '-') . "\r\n";
         $raw .= self::line32("Tutup Shift", $shift->end_time ? $shift->end_time->format('d/m/y H:i') : '(Belum Ditutup)') . "\r\n";
-        if ($shift->end_time) {
-            $durStr = $shift->start_time->diffInHours($shift->end_time) . " Jam " . ($shift->start_time->diffInMinutes($shift->end_time) % 60) . " Mnt";
-            $raw .= self::line32("Durasi", $durStr) . "\r\n";
+        if ($shift->end_time && $shift->start_time) {
+            $totalMinutes = (int) $shift->start_time->diffInMinutes($shift->end_time);
+            $hours = intdiv($totalMinutes, 60);
+            $minutes = $totalMinutes % 60;
+            $durStr = $hours > 0 ? "{$hours} Jam {$minutes} Mnt" : "{$minutes} Menit";
+            $raw .= self::line32("Durasi Kerja", $durStr) . "\r\n";
         }
         $raw .= "--------------------------------\r\n";
 
@@ -377,9 +380,15 @@ class ReceiptPrintService
             $raw .= "Catatan: " . $shift->notes . "\r\n";
         }
 
+        // Tanda Tangan
+        $raw .= "\r\n";
+        $raw .= self::line32("   Kasir", "Supervisor  ") . "\r\n\r\n\r\n";
+        $kasirName = substr($shift->user->name ?? 'Kasir', 0, 10);
+        $raw .= self::line32(" ( " . $kasirName . " )", "( .......... )") . "\r\n";
+
         $raw .= "--------------------------------\r\n";
         $raw .= $ALIGN_CENTER;
-        $raw .= "Dicetak pada " . now()->format('d/m/Y H:i:s') . "\r\n";
+        $raw .= "Dicetak: " . now()->format('d/m/Y H:i:s') . "\r\n";
         $raw .= "\r\n\r\n\r\n\r\n\x1d\x56\x00";
 
         return $raw;

@@ -170,7 +170,6 @@ class ShiftIndex extends Component
         $this->activeShift->status = 'closed';
         $this->activeShift->save();
 
-        $closedShiftId = $this->activeShift->id;
         $this->activeShift = null;
         $this->showEndShiftModal = false;
 
@@ -178,8 +177,6 @@ class ShiftIndex extends Component
             'type' => 'success', 
             'message' => 'Shift kasir berhasil ditutup dan direkonsiliasi.'
         ]);
-
-        return redirect()->route('print.shift', $closedShiftId);
     }
 
     public function updatedDateFrom()

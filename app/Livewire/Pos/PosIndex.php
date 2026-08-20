@@ -68,6 +68,11 @@ class PosIndex extends Component
     public $lastInvoice = '';
     public $lastTransaction = null;
 
+    public function isCashierRole(): bool
+    {
+        return in_array(auth()->user()?->role, ['kasir', 'cashier']);
+    }
+
     public function mount()
     {
         $this->loadProducts();
@@ -181,12 +186,10 @@ class PosIndex extends Component
         $this->activeShift->status = 'closed';
         $this->activeShift->save();
 
-        $closedShiftId = $this->activeShift->id;
         $this->activeShift = null;
         $this->showEndShiftModal = false;
 
-        $this->dispatch('open-print-shift-tab', url: route('print.shift', $closedShiftId));
-        $this->notify('success', 'Shift kasir berhasil ditutup dan direkap!');
+        $this->notify('success', 'Shift kasir berhasil ditutup!');
     }
 
     // Helper Notifikasi Toast
@@ -468,6 +471,11 @@ class PosIndex extends Component
     {
         if (empty($this->cart)) return;
 
+        if ($this->isCashierRole() && !$this->activeShift) {
+            $this->openStartShiftModal();
+            return;
+        }
+
         $this->showPaymentModal = true;
         if ($this->paymentMethod !== 'cash') {
             $this->paid = $this->total;
@@ -537,6 +545,11 @@ class PosIndex extends Component
 
     public function processPayment()
     {
+        if ($this->isCashierRole() && !$this->activeShift) {
+            $this->openStartShiftModal();
+            return;
+        }
+
         $paid = (float) $this->paid;
         $total = (float) $this->total;      
 
