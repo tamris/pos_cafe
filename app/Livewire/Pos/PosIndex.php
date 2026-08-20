@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\CashierShift;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -59,6 +60,14 @@ class PosIndex extends Component
     public $showSuccessModal = false;
     public $showMobileCart = false;
 
+    // Open Bill / Hold Orders State
+    public $currentOpenBillId = null;
+    public $currentOpenBillInvoice = '';
+    public $showOpenBillsModal = false;
+    public $openBillsSearch = '';
+    public $preBillTransaction = null;
+    public $showPreBillModal = false;
+
     // Quick Menu & Category Availability Modal State (Item 86)
     public $showAvailabilityModal = false;
     public $availabilityTab = 'products'; // 'products' or 'categories'
@@ -66,6 +75,11 @@ class PosIndex extends Component
     public $availabilityCategoryFilter = '';
     public $lastInvoice = '';
     public $lastTransaction = null;
+
+    public function isCashierRole(): bool
+    {
+        return in_array(auth()->user()?->role, ['kasir', 'cashier']);
+    }
 
     public function mount()
     {
@@ -138,6 +152,14 @@ class PosIndex extends Component
             return;
         }
 
+        // GUARD: Cek apakah masih ada Bill Aktif (Open Bill / Pending) yang belum diselesaikan
+        $pendingBillsCount = Transaction::where('status', 'pending')->count();
+        if ($pendingBillsCount > 0) {
+            $this->notify('error', "Tidak dapat menutup shift! Masih ada {$pendingBillsCount} Bill Aktif (Open Bill) yang belum diselesaikan.");
+            $this->openOpenBillsModal();
+            return;
+        }
+
         $this->actualCash = (float) $this->activeShift->expected_cash;
         $this->formattedActualCash = number_format($this->actualCash, 0, ',', '.');
         $this->calculateShiftDifference();
@@ -173,6 +195,15 @@ class PosIndex extends Component
             return;
         }
 
+        // GUARD: Cek kembali saat submit endShift
+        $pendingBillsCount = Transaction::where('status', 'pending')->count();
+        if ($pendingBillsCount > 0) {
+            $this->notify('error', "Tidak dapat menutup shift! Masih ada {$pendingBillsCount} Bill Aktif (Open Bill) yang belum diselesaikan.");
+            $this->showEndShiftModal = false;
+            $this->openOpenBillsModal();
+            return;
+        }
+
         $this->activeShift->end_time = now();
         $this->activeShift->actual_cash = (float) $this->actualCash;
         $this->activeShift->difference = (float) $this->actualCash - (float) $this->activeShift->expected_cash;
@@ -180,12 +211,10 @@ class PosIndex extends Component
         $this->activeShift->status = 'closed';
         $this->activeShift->save();
 
-        $closedShiftId = $this->activeShift->id;
         $this->activeShift = null;
         $this->showEndShiftModal = false;
 
-        $this->dispatch('open-print-shift-tab', url: route('print.shift', $closedShiftId));
-        $this->notify('success', 'Shift kasir berhasil ditutup dan direkap!');
+        $this->notify('success', 'Shift kasir berhasil ditutup!');
     }
 
     // Helper Notifikasi Toast
@@ -278,7 +307,11 @@ class PosIndex extends Component
 
     public function addToCart($productId)
     {
-        $product = Product::with('category')->find($productId);
+        // 1. Cari produk langsung dari koleksi memory yang sudah dimuat (Super Cepat 0 ms query)
+        $product = $this->products ? $this->products->firstWhere('id', $productId) : null;
+        if (!$product) {
+            $product = Product::with('category')->find($productId);
+        }
 
         if (!$product || !$product->category || !$product->category->is_active) {
             $this->notify('error', 'Kategori menu ini sedang tidak aktif di POS.');
@@ -290,7 +323,7 @@ class PosIndex extends Component
             return;
         }
 
-        // Cek apakah produk sudah ada di keranjang (tanpa notes khusus)
+        // 2. Cek apakah produk sudah ada di keranjang
         $existingIndex = null;
         foreach ($this->cart as $index => $item) {
             if ($item['id'] === $productId && empty($item['notes'])) {
@@ -302,8 +335,6 @@ class PosIndex extends Component
         if ($existingIndex !== null) {
             $this->cart[$existingIndex]['quantity']++;
             $this->cart[$existingIndex]['subtotal'] = $this->cart[$existingIndex]['quantity'] * $this->cart[$existingIndex]['price'];
-            $this->calculateTotal();
-            $this->notify('success', 'Masuk keranjang: ' . $product->name);
         } else {
             $this->cart[] = [
                 'id' => $product->id,
@@ -315,9 +346,9 @@ class PosIndex extends Component
                 'subtotal' => $product->price,
                 'notes' => ''
             ];
-            $this->calculateTotal();
-            $this->notify('success', 'Masuk keranjang: ' . $product->name);
         }
+
+        $this->calculateTotal();
     }
 
     public function scanBarcode()
@@ -440,6 +471,8 @@ class PosIndex extends Component
         $this->customTableNumber = '';
         $this->isCustomTable = false;
         $this->customerName = '';
+        $this->currentOpenBillId = null;
+        $this->currentOpenBillInvoice = '';
         $this->loadProducts();
         $this->showMobileCart = false;
     }
@@ -464,6 +497,11 @@ class PosIndex extends Component
     public function openPaymentModal()
     {
         if (empty($this->cart)) return;
+
+        if ($this->isCashierRole() && !$this->activeShift) {
+            $this->openStartShiftModal();
+            return;
+        }
 
         $this->showPaymentModal = true;
         if ($this->paymentMethod !== 'cash') {
@@ -532,8 +570,208 @@ class PosIndex extends Component
     public function closePaymentModal() { $this->showPaymentModal = false; }
     public function closeSuccessModal() { $this->showSuccessModal = false; }
 
+    public function openOpenBillsModal()
+    {
+        $this->showOpenBillsModal = true;
+        $this->openBillsSearch = '';
+    }
+
+    public function closeOpenBillsModal()
+    {
+        $this->showOpenBillsModal = false;
+    }
+
+    public function openPreBillModal($transactionId)
+    {
+        $this->preBillTransaction = Transaction::with(['details.product', 'user'])->find($transactionId);
+        if ($this->preBillTransaction) {
+            $this->showPreBillModal = true;
+        }
+    }
+
+    public function closePreBillModal()
+    {
+        $this->showPreBillModal = false;
+        $this->preBillTransaction = null;
+    }
+
+    public function saveOpenBill()
+    {
+        if (empty($this->cart)) {
+            $this->notify('error', 'Keranjang masih kosong.');
+            return;
+        }
+
+        if ($this->orderType !== 'dine_in') {
+            $this->notify('error', 'Fitur Simpan Bill hanya berlaku untuk pesanan Dine In (Makan di Tempat).');
+            return;
+        }
+
+        if ($this->isCashierRole() && !$this->activeShift) {
+            $this->openStartShiftModal();
+            return;
+        }
+
+        // Pastikan ada identitas meja/nama pelanggan agar pesanan tidak tertukar
+        if (empty($this->tableNumber) && empty($this->customerName)) {
+            $this->notify('error', 'Silakan pilih Nomor Meja atau isi Nama Pelanggan untuk Open Bill.');
+            return;
+        }
+
+        DB::beginTransaction();
+        try {
+            $discountPercent = (float) $this->discount;
+            $taxPercent = (float) $this->tax;
+            $finalDiscountAmount = ($this->subtotal * $discountPercent) / 100;
+            $finalTaxAmount = ($this->subtotal * $taxPercent) / 100;
+            $total = (float) $this->total;
+
+            if ($this->currentOpenBillId) {
+                // Update Open Bill yang sedang aktif/diedit
+                $transaction = Transaction::find($this->currentOpenBillId);
+                if (!$transaction || $transaction->status !== 'pending') {
+                    $this->notify('error', 'Bill tidak ditemukan atau sudah diselesaikan.');
+                    DB::rollBack();
+                    return;
+                }
+
+                $transaction->update([
+                    'subtotal' => (float) $this->subtotal,
+                    'discount' => $finalDiscountAmount,
+                    'tax' => $finalTaxAmount,
+                    'total' => $total,
+                    'order_type' => $this->orderType,
+                    'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                    'customer_name' => $this->customerName ?: null,
+                ]);
+
+                $transaction->details()->delete();
+            } else {
+                // Buat Open Bill baru
+                $shiftId = $this->activeShift?->id;
+                $transaction = Transaction::create([
+                    'user_id' => auth()->id(),
+                    'shift_id' => $shiftId,
+                    'subtotal' => (float) $this->subtotal,
+                    'discount' => $finalDiscountAmount,
+                    'tax' => $finalTaxAmount,
+                    'total' => $total,
+                    'paid' => 0,
+                    'change' => 0,
+                    'payment_method' => 'cash',
+                    'order_type' => $this->orderType,
+                    'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                    'customer_name' => $this->customerName ?: null,
+                    'status' => 'pending',
+                ]);
+            }
+
+            foreach ($this->cart as $item) {
+                $harga_beli = $item['harga_beli'] ?? 0;
+                $profit = ($item['price'] - $harga_beli) * $item['quantity'];
+
+                TransactionDetail::create([
+                    'transaction_id' => $transaction->id,
+                    'product_id' => $item['id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'harga_beli' => $harga_beli,
+                    'subtotal' => $item['subtotal'],
+                    'profit' => $profit,
+                    'notes' => $item['notes'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+
+            $identifier = $transaction->table_number ? 'Meja ' . $transaction->table_number : ($transaction->customer_name ?: $transaction->invoice_number);
+            
+            $setting = Setting::first();
+            $autoPrintKitchen = (bool) ($setting->auto_print_kitchen ?? false);
+
+            $this->notify('success', "Pesanan {$identifier} berhasil disimpan (Open Bill).");
+
+            if ($autoPrintKitchen) {
+                $this->dispatch('print-kitchen-ticket', invoice: $transaction->invoice_number);
+            }
+
+            $this->resetTransaction();
+            $this->showMobileCart = false;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->notify('error', 'Gagal menyimpan Open Bill: ' . $e->getMessage());
+        }
+    }
+
+    public function resumeOpenBill($transactionId)
+    {
+        $transaction = Transaction::with(['details.product'])->find($transactionId);
+        if (!$transaction || $transaction->status !== 'pending') {
+            $this->notify('error', 'Bill tidak ditemukan atau sudah selesai.');
+            return;
+        }
+
+        $this->currentOpenBillId = $transaction->id;
+        $this->currentOpenBillInvoice = $transaction->invoice_number;
+        $this->orderType = $transaction->order_type ?? 'dine_in';
+        $this->tableNumber = $transaction->table_number ?? '';
+        $this->selectedTable = $transaction->table_number ?? '';
+        $this->customerName = $transaction->customer_name ?? '';
+
+        $this->discount = ($transaction->subtotal > 0 && $transaction->discount > 0) ? round(($transaction->discount / $transaction->subtotal) * 100) : 0;
+        $this->tax = ($transaction->subtotal > 0 && $transaction->tax > 0) ? round(($transaction->tax / $transaction->subtotal) * 100) : 0;
+
+        $this->cart = [];
+        foreach ($transaction->details as $d) {
+            $this->cart[] = [
+                'id' => $d->product_id,
+                'name' => $d->product->name ?? 'Menu',
+                'price' => (float) $d->price,
+                'harga_beli' => (float) $d->harga_beli,
+                'quantity' => (int) $d->quantity,
+                'subtotal' => (float) $d->subtotal,
+                'notes' => $d->notes ?? '',
+                'sugar_level' => 'Normal',
+                'ice_level' => 'Normal',
+            ];
+        }
+
+        $this->calculateTotal();
+        $this->showOpenBillsModal = false;
+        $label = $transaction->table_number ? 'Meja ' . $transaction->table_number : ($transaction->customer_name ?: $transaction->invoice_number);
+        $this->notify('info', "Memuat Bill {$label} ke keranjang.");
+    }
+
+    public function cancelOpenBill($transactionId)
+    {
+        $transaction = Transaction::find($transactionId);
+        if (!$transaction || $transaction->status !== 'pending') {
+            $this->notify('error', 'Bill tidak ditemukan.');
+            return;
+        }
+
+        $transaction->update([
+            'status' => 'cancelled',
+            'cancelled_reason' => 'Dibatalkan Kasir sebelum Bayar (Void Open Bill)',
+            'cancelled_by' => auth()->id(),
+            'cancelled_at' => now(),
+        ]);
+
+        if ($this->currentOpenBillId === $transaction->id) {
+            $this->resetTransaction();
+        }
+
+        $this->notify('info', "Bill {$transaction->invoice_number} berhasil dibatalkan.");
+    }
+
     public function processPayment()
     {
+        if ($this->isCashierRole() && !$this->activeShift) {
+            $this->openStartShiftModal();
+            return;
+        }
+
         $paid = (float) $this->paid;
         $total = (float) $this->total;      
 
@@ -551,21 +789,61 @@ class PosIndex extends Component
 
             $shiftId = $this->activeShift?->id;
 
-            $transaction = Transaction::create([
-                'user_id' => auth()->id(),
-                'shift_id' => $shiftId,
-                'subtotal' => (float) $this->subtotal,
-                'discount' => $finalDiscountAmount,
-                'tax' => $finalTaxAmount,
-                'total' => $total,
-                'paid' => $paid,
-                'change' => (float) $this->change,
-                'payment_method' => $this->paymentMethod,
-                'order_type' => $this->orderType,
-                'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
-                'customer_name' => $this->customerName ?: null,
-                'status' => 'completed',
-            ]);
+            if ($this->currentOpenBillId) {
+                // Selesaikan Open Bill yang sudah ada
+                $transaction = Transaction::find($this->currentOpenBillId);
+                if ($transaction) {
+                    $transaction->update([
+                        'shift_id' => $shiftId,
+                        'subtotal' => (float) $this->subtotal,
+                        'discount' => $finalDiscountAmount,
+                        'tax' => $finalTaxAmount,
+                        'total' => $total,
+                        'paid' => $paid,
+                        'change' => (float) $this->change,
+                        'payment_method' => $this->paymentMethod,
+                        'order_type' => $this->orderType,
+                        'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                        'customer_name' => $this->customerName ?: null,
+                        'status' => 'completed',
+                    ]);
+
+                    $transaction->details()->delete();
+                } else {
+                    $transaction = Transaction::create([
+                        'user_id' => auth()->id(),
+                        'shift_id' => $shiftId,
+                        'subtotal' => (float) $this->subtotal,
+                        'discount' => $finalDiscountAmount,
+                        'tax' => $finalTaxAmount,
+                        'total' => $total,
+                        'paid' => $paid,
+                        'change' => (float) $this->change,
+                        'payment_method' => $this->paymentMethod,
+                        'order_type' => $this->orderType,
+                        'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                        'customer_name' => $this->customerName ?: null,
+                        'status' => 'completed',
+                    ]);
+                }
+            } else {
+                // Checkout transaksi langsung baru
+                $transaction = Transaction::create([
+                    'user_id' => auth()->id(),
+                    'shift_id' => $shiftId,
+                    'subtotal' => (float) $this->subtotal,
+                    'discount' => $finalDiscountAmount,
+                    'tax' => $finalTaxAmount,
+                    'total' => $total,
+                    'paid' => $paid,
+                    'change' => (float) $this->change,
+                    'payment_method' => $this->paymentMethod,
+                    'order_type' => $this->orderType,
+                    'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                    'customer_name' => $this->customerName ?: null,
+                    'status' => 'completed',
+                ]);
+            }
 
             foreach ($this->cart as $item) {
                 $harga_beli = $item['harga_beli'] ?? 0;
@@ -592,9 +870,18 @@ class PosIndex extends Component
             $this->lastTransaction = Transaction::with(['details.product', 'user'])->find($transaction->id);
             $this->lastInvoice = $transaction->invoice_number ?? '';
 
+            $setting = Setting::first();
+            $autoPrintReceipt = (bool) ($setting->auto_print_receipt ?? true);
+            $autoPrintKitchen = (bool) ($setting->auto_print_kitchen ?? false);
+
             $this->showPaymentModal = false;
             $this->showMobileCart = false;
             $this->showSuccessModal = true;
+            $this->dispatch('transaction-completed', 
+                invoice: $this->lastInvoice,
+                autoPrintReceipt: $autoPrintReceipt,
+                autoPrintKitchen: $autoPrintKitchen
+            );
             $this->resetTransaction();
 
         } catch (\Exception $e) {
@@ -650,6 +937,23 @@ class PosIndex extends Component
         $categories = Category::where('is_active', true)->withCount('products')->orderBy('name', 'asc')->get();
         $allCategories = Category::withCount('products')->orderBy('name', 'asc')->get();
 
+        $openBillsCount = Transaction::where('status', 'pending')->count();
+        $openBills = [];
+        if ($this->showOpenBillsModal) {
+            $query = Transaction::with(['details.product', 'user'])
+                ->where('status', 'pending')
+                ->latest();
+
+            if ($this->openBillsSearch) {
+                $query->where(function ($q) {
+                    $q->where('table_number', 'like', '%' . $this->openBillsSearch . '%')
+                      ->orWhere('customer_name', 'like', '%' . $this->openBillsSearch . '%')
+                      ->orWhere('invoice_number', 'like', '%' . $this->openBillsSearch . '%');
+                });
+            }
+            $openBills = $query->get();
+        }
+
         $availabilityProducts = [];
         if ($this->showAvailabilityModal) {
             $query = Product::with('category')->latest();
@@ -665,9 +969,18 @@ class PosIndex extends Component
             $availabilityProducts = $query->get();
         }
 
+        $occupiedTables = Transaction::where('status', 'pending')
+            ->whereNotNull('table_number')
+            ->pluck('table_number')
+            ->map(fn($t) => (string) $t)
+            ->toArray();
+
         return view('livewire.pos.pos-index', [
             'categories' => $categories,
             'allCategories' => $allCategories,
+            'openBillsCount' => $openBillsCount,
+            'openBills' => $openBills,
+            'occupiedTables' => $occupiedTables,
             'availabilityProducts' => $availabilityProducts,
         ]);
     }

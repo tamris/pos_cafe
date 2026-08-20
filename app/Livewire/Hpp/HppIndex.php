@@ -48,7 +48,7 @@ class HppIndex extends Component
     ];
 
     // Target & Proyeksi Penjualan State
-    public $target_laba_bulanan = ''; // Default kosong agar user input sendiri
+    public $target_laba_bulanan = 5000000; // Default kosong agar user input sendiri
     public $hari_operasional_sebulan = 30; // 30 hari
 
     public function addBiayaTetapItem()
@@ -86,6 +86,11 @@ class HppIndex extends Component
     {
         if (!$property) return;
 
+        if ($property === 'price') {
+            $this->syncSelectedTier();
+            return;
+        }
+
         if (
             str_starts_with($property, 'biaya_tetap_items') ||
             str_starts_with($property, 'bahan_baku') ||
@@ -108,11 +113,6 @@ class HppIndex extends Component
         unset($this->hppCalculation);
         unset($this->pricingTiers);
         unset($this->salesProjection);
-
-        $calc = $this->hppCalculation();
-        if ($this->mode_alokasi_ops === 'rincian') {
-            $this->alokasi_biaya_tetap = $calc['biayaTetap'] > 0 ? $calc['biayaTetap'] : '';
-        }
 
         $tiers = $this->pricingTiers();
         if (!empty($this->selected_tier) && isset($tiers[$this->selected_tier])) {
@@ -166,11 +166,36 @@ class HppIndex extends Component
                 $this->nama_produk = $product->name;
                 $this->category_id = $product->category_id;
                 $this->price = (float) $product->price;
-                $cost = (float) ($product->operational_cost ?? 0);
-                $this->alokasi_biaya_tetap = $cost > 0 ? $cost : '';
-                $this->mode_alokasi_ops = 'manual'; // Aktifkan mode manual agar langsung menampilkan alokasi tersimpan
-                $this->kenaikan_persen = 0;
-                $this->selected_tier = 'standar';
+                
+                // Muat konfigurasi alokasi biaya operasional yang tersimpan
+                $meta = $product->ai_pricing_data;
+                if (is_array($meta) && isset($meta['mode_alokasi_ops'])) {
+                    $this->mode_alokasi_ops = $meta['mode_alokasi_ops'];
+                    if ($this->mode_alokasi_ops === 'manual') {
+                        $this->alokasi_biaya_tetap = !empty($meta['manual_alokasi_nominal']) 
+                            ? (float) $meta['manual_alokasi_nominal'] 
+                            : ((float) $product->operational_cost ?: '');
+                    } else {
+                        // Jika mode Rekomendasi/Rincian, kosongkan input manual agar tidak tercampur
+                        $this->alokasi_biaya_tetap = '';
+                    }
+
+                    if (isset($meta['target_penjualan_bulanan'])) {
+                        $this->target_penjualan_bulanan = $meta['target_penjualan_bulanan'];
+                    }
+                    if (isset($meta['selected_tier'])) {
+                        $this->selected_tier = $meta['selected_tier'];
+                    }
+                    if (isset($meta['kenaikan_persen'])) {
+                        $this->kenaikan_persen = $meta['kenaikan_persen'];
+                    }
+                } else {
+                    // Default untuk produk yang belum memiliki metadata
+                    $this->mode_alokasi_ops = 'rincian';
+                    $this->alokasi_biaya_tetap = '';
+                    $this->kenaikan_persen = 0;
+                    $this->selected_tier = 'standar';
+                }
                 
                 if ($product->ingredients->count() > 0) {
                     $this->bahan_baku = [];
@@ -200,6 +225,7 @@ class HppIndex extends Component
             $this->category_id = '';
             $this->price = 0;
             $this->alokasi_biaya_tetap = '';
+            $this->mode_alokasi_ops = 'rincian';
             $this->kenaikan_persen = 0;
             $this->selected_tier = 'standar';
             $this->bahan_baku = [];
@@ -557,21 +583,39 @@ class HppIndex extends Component
             if (strlen($skuPrefix) < 3) $skuPrefix = 'CFE';
             $sku = $skuPrefix . '-' . rand(1000, 9999);
 
+            $pricingMetadata = [
+                'mode_alokasi_ops' => $this->mode_alokasi_ops,
+                'manual_alokasi_nominal' => ($this->mode_alokasi_ops === 'manual') ? (float) $this->alokasi_biaya_tetap : '',
+                'selected_tier' => $this->selected_tier,
+                'kenaikan_persen' => $this->kenaikan_persen,
+                'target_penjualan_bulanan' => $this->target_penjualan_bulanan,
+            ];
+
             $product = Product::create([
                 'name' => $this->nama_produk,
                 'category_id' => $categoryId,
                 'sku' => $sku,
                 'harga_beli' => $totalHpp,
                 'operational_cost' => (float) ($hppData['biayaTetap'] ?? 0),
+                'ai_pricing_data' => $pricingMetadata,
                 'price' => $sellingPrice,
                 'description' => 'Menu racikan via Kalkulator HPP & AI Pricing Strategy',
             ]);
         } else {
             // UPDATE PRODUK YANG SUDAH ADA
+            $pricingMetadata = [
+                'mode_alokasi_ops' => $this->mode_alokasi_ops,
+                'manual_alokasi_nominal' => ($this->mode_alokasi_ops === 'manual') ? (float) $this->alokasi_biaya_tetap : '',
+                'selected_tier' => $this->selected_tier,
+                'kenaikan_persen' => $this->kenaikan_persen,
+                'target_penjualan_bulanan' => $this->target_penjualan_bulanan,
+            ];
+
             $updateData = [
                 'name' => $this->nama_produk,
                 'harga_beli' => $totalHpp,
                 'operational_cost' => (float) ($hppData['biayaTetap'] ?? 0),
+                'ai_pricing_data' => $pricingMetadata,
             ];
             
             if (!empty($this->category_id)) {

@@ -1,10 +1,7 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300"
-     x-data="{ sidebarOpen: window.innerWidth >= 1280 }"
-     @resize.window="if (window.innerWidth >= 1280) { sidebarOpen = true } else { sidebarOpen = false }">
-    
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     @include('livewire.includes.sidebar')
 
-    <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
+    <div class="main-content-layout flex flex-col min-h-screen">
         @include('livewire.includes.header', [
             'title' => 'Manajemen HPP & Margin Keuntungan',
             'subtitle' => 'Kelola harga modal resep (HPP)',
@@ -638,7 +635,8 @@
 
                         @else
                             {{-- MANUAL INPUT PER PORSI --}}
-                            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700"
+                            <div wire:key="manual-op-box-{{ $selected_product_id }}"
+                                 class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700"
                                  x-data="{
                                      rawOp: @entangle('alokasi_biaya_tetap').live,
                                      displayOp: '',
@@ -987,7 +985,8 @@
                                     </div>
                                 </div>
                                 @else
-                                <div x-data="{
+                                <div wire:key="proj-op-cost-manual-{{ $selected_product_id }}"
+                                     x-data="{
                                     rawOp: @entangle('alokasi_biaya_tetap').live,
                                     displayOp: '',
                                     formatOp(val) {

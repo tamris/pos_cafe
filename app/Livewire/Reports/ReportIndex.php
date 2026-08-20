@@ -117,12 +117,13 @@ class ReportIndex extends Component
         $dateFrom = $this->dateFrom . ' 00:00:00';
         $dateTo = $this->dateTo . ' 23:59:59';
 
-        $summaryQuery = Transaction::whereBetween('created_at', [$dateFrom, $dateTo]);
+        $summaryQuery = Transaction::whereBetween('created_at', [$dateFrom, $dateTo])->where('status', 'completed');
 
         $this->totalTransactions = $summaryQuery->count();
         $this->totalRevenue = (float) $summaryQuery->sum('total');
 
         $this->totalProfit = (float) Transaction::whereBetween('transactions.created_at', [$dateFrom, $dateTo])
+            ->where('transactions.status', 'completed')
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->sum('transaction_details.profit');
 
@@ -136,10 +137,11 @@ class ReportIndex extends Component
         $prevTo = $from->copy()->subDay()->endOfDay();
         $prevFrom = $prevTo->copy()->subDays($diffInDays - 1)->startOfDay();
 
-        $prevSummary = Transaction::whereBetween('created_at', [$prevFrom, $prevTo]);
+        $prevSummary = Transaction::whereBetween('created_at', [$prevFrom, $prevTo])->where('status', 'completed');
         $prevRevenue = (float) (clone $prevSummary)->sum('total');
         $prevTransactions = (clone $prevSummary)->count();
         $prevProfit = (float) Transaction::whereBetween('transactions.created_at', [$prevFrom, $prevTo])
+            ->where('transactions.status', 'completed')
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->sum('transaction_details.profit');
         $prevMargin = $prevRevenue > 0 ? round(($prevProfit / $prevRevenue) * 100, 1) : 0;

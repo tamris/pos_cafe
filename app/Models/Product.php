@@ -19,6 +19,7 @@ class Product extends Model
         'barcode',
         'harga_beli',
         'operational_cost',
+        'ai_pricing_data',
         'is_active',
         'image'
     ];
@@ -28,6 +29,7 @@ class Product extends Model
         'price' => 'decimal:2',
         'harga_beli' => 'decimal:2',
         'operational_cost' => 'decimal:2',
+        'ai_pricing_data' => 'array',
     ];
 
     public function scopeActive($query)

@@ -1,10 +1,7 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300"
-     x-data="{ sidebarOpen: window.innerWidth >= 1280 }"
-     @resize.window="sidebarOpen = window.innerWidth >= 1280">
-
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     @include('livewire.includes.sidebar')
 
-    <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
+    <div class="main-content-layout flex flex-col min-h-screen">
         @include('livewire.includes.header', [
             'title' => $isAdmin ? 'Laporan Shift Kasir' : 'Riwayat Shift Saya',
             'subtitle' => $isAdmin ? 'Rekap buka-tutup shift, rekonsiliasi laci kasir, dan deteksi selisih kas' : 'Rekapitulasi riwayat shift kerja, omset penjualan, dan rekonsiliasi kas Anda',
@@ -294,18 +291,12 @@
                                         </td>
 
                                         {{-- Aksi --}}
-                                        <td class="px-5 sm:px-6 py-4 whitespace-nowrap text-right space-x-1.5 shrink-0">
+                                        <td class="px-5 sm:px-6 py-4 whitespace-nowrap text-right shrink-0">
                                             <button type="button" wire:click="openDetailModal({{ $shift->id }})"
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all active:scale-95 shadow-2xs">
-                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                class="inline-flex items-center px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all active:scale-95 shadow-2xs cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                                 <span>Detail</span>
                                             </button>
-
-                                            <a href="{{ route('print.shift', $shift->id) }}" target="_blank"
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all active:scale-95 shadow-2xs">
-                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                                <span>Cetak</span>
-                                            </a>
                                         </td>
                                     </tr>
                                 @empty
@@ -644,18 +635,12 @@
                                         </td>
 
                                         {{-- Aksi --}}
-                                        <td class="px-5 sm:px-6 py-4 whitespace-nowrap text-right space-x-1.5 shrink-0">
+                                        <td class="px-5 sm:px-6 py-4 whitespace-nowrap text-right shrink-0">
                                             <button type="button" wire:click="openDetailModal({{ $shift->id }})"
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all active:scale-95 shadow-2xs">
-                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                class="inline-flex items-center px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all active:scale-95 shadow-2xs cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                                 <span>Detail</span>
                                             </button>
-
-                                            <a href="{{ route('print.shift', $shift->id) }}" target="_blank"
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all active:scale-95 shadow-2xs">
-                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                                <span>Cetak</span>
-                                            </a>
                                         </td>
                                     </tr>
                                 @empty
@@ -846,9 +831,9 @@
                         <button type="button" wire:click="closeEndShiftModal" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition-colors">
                             Batal
                         </button>
-                        <button type="button" wire:click="endShift" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
+                        <button type="button" wire:click="endShift" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
-                            <span>Tutup Shift & Cetak Rekap</span>
+                            <span>Tutup Shift</span>
                         </button>
                     </div>
                 </div>
@@ -958,6 +943,35 @@
                                 <span class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-0.5 block">Rp {{ number_format($selectedShift->transfer_sales, 0, ',', '.') }}</span>
                             </div>
                         </div>
+
+                        {{-- Rekap Transaksi Dibatalkan (Void) jika ada --}}
+                        @php
+                            $cancelledTrx = $selectedShift->transactions()->where('status', 'cancelled')->get();
+                            $cancelledCount = $cancelledTrx->count();
+                            $cancelledSum = $cancelledTrx->sum('total');
+                        @endphp
+                        @if($cancelledCount > 0)
+                            <div class="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-xl text-xs space-y-1.5">
+                                <div class="flex items-center justify-between text-rose-800 dark:text-rose-300 font-bold">
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path></svg>
+                                        <span>Transaksi Dibatalkan (Void):</span>
+                                    </span>
+                                    <span class="font-black text-rose-700 dark:text-rose-400">{{ $cancelledCount }} Trx (Rp {{ number_format($cancelledSum, 0, ',', '.') }})</span>
+                                </div>
+                                <div class="divide-y divide-rose-200/60 dark:divide-rose-800/60 pt-1 text-[11px]">
+                                    @foreach($cancelledTrx as $cTrx)
+                                        <div class="py-1 flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                            <div>
+                                                <span class="font-mono font-bold text-rose-700 dark:text-rose-400">{{ $cTrx->invoice_number }}</span>
+                                                <span class="text-slate-500 dark:text-slate-400 ml-1">• {{ $cTrx->cancelled_reason ?: 'Dibatalkan' }}</span>
+                                            </div>
+                                            <span class="font-bold text-slate-900 dark:text-white">Rp {{ number_format($cTrx->total, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
 
                         {{-- Catatan Shift --}}
                         @if (!empty($selectedShift->notes))
