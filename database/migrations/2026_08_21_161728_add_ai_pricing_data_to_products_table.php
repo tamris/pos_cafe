@@ -12,12 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            if (!Schema::hasColumn('products', 'is_active')) {
-                $table->boolean('is_active')->default(true);
-            }
-            if (!Schema::hasColumn('products', 'deleted_at')) {
-                $table->softDeletes();
-            }
+            $table->json('ai_pricing_data')->nullable();
         });
     }
 
@@ -27,12 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            if (Schema::hasColumn('products', 'is_active')) {
-                $table->dropColumn('is_active');
-            }
-            if (Schema::hasColumn('products', 'deleted_at')) {
-                $table->dropSoftDeletes();
-            }
+            $table->dropColumn('ai_pricing_data');
         });
     }
 };
