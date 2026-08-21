@@ -8,6 +8,7 @@
         $shopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe';
     @endphp
     <title>{{ $title ?? 'Masuk - ' . $shopName }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
     
     {{-- 1. CDN Tailwind & Config untuk Dark Mode --}}
     <script src="https://cdn.tailwindcss.com"></script>

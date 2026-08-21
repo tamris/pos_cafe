@@ -94,7 +94,21 @@ class Transaction extends Model
         parent::boot();
 
         static::creating(function ($transaction) {
-            $transaction->invoice_number = 'INV-' . date('Ymd') . '-' . str_pad(static::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
+            if (!$transaction->invoice_number) {
+                $prefix = 'INV-' . date('Ymd') . '-';
+                $latestTransaction = static::where('invoice_number', 'like', $prefix . '%')
+                    ->orderBy('invoice_number', 'desc')
+                    ->first();
+
+                if ($latestTransaction) {
+                    $lastNumber = (int) substr($latestTransaction->invoice_number, -4);
+                    $nextNumber = $lastNumber + 1;
+                } else {
+                    $nextNumber = 1;
+                }
+
+                $transaction->invoice_number = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            }
         });
     }
 }

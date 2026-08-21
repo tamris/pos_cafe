@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? (\App\Models\Setting::first()?->shop_name ?? 'POS Cafe') }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
     
     {{-- 1. CDN Tailwind & Config untuk Dark Mode --}}
     <script src="https://cdn.tailwindcss.com"></script>

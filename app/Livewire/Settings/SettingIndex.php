@@ -65,7 +65,6 @@ class SettingIndex extends Component
     protected $messages = [
         'shop_name.required' => 'Nama cafe wajib diisi',
         'address.required' => 'Alamat cafe wajib diisi',
-        'phone.required' => 'Nomor telepon wajib diisi',
         'new_logo.image' => 'File yang dipilih harus berupa format gambar (PNG, JPG, JPEG, WebP).',
         'new_logo.max' => 'Ukuran file gambar maksimal 5MB.',
     ];
@@ -81,7 +80,7 @@ class SettingIndex extends Component
         $this->validate([
             'shop_name' => 'required|string|max:255',
             'address' => 'required|string',
-            'phone' => 'required|string',
+            'phone' => 'nullable|string',
             'wifi_name' => 'nullable|string|max:255',
             'wifi_password' => 'nullable|string|max:255',
             'new_logo' => 'nullable|image|max:5120',
