@@ -18,9 +18,10 @@
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace, 'Lucida Console';
-            font-size: 13.5px;
-            font-weight: 700;
+            font-family: 'Consolas', 'Courier Prime', 'Lucida Console', monospace;
+            font-size: 11.5px;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
             background-color: #f1f5f9;
             color: #000;
             line-height: 1.35;
@@ -90,31 +91,45 @@
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .text-left { text-align: left; }
-        .font-bold { font-weight: 900; }
+        .font-bold { font-weight: 700; }
+        .font-normal { font-weight: 400; }
         .uppercase { text-transform: uppercase; }
 
         /* GARIS PEMISAH DENGAN JARAK PAS */
         .divider {
-            border-bottom: 1.5px dashed #000;
+            border-bottom: 1px dashed #000;
             margin: 6px 0;
             width: 100%;
         }
 
         /* HEADER */
         .cafe-header {
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+        }
+        .logo-wrapper {
+            margin: 0 auto 8px auto;
+            text-align: center;
+        }
+        .logo-wrapper img {
+            max-height: 38px;
+            max-width: 140px;
+            margin: 0 auto;
+            display: block;
+            object-fit: contain;
+            filter: grayscale(100%) contrast(150%);
         }
         .cafe-header .title {
-            font-size: 16px;
-            font-weight: 900;
+            font-size: 14px;
+            font-weight: 400; /* TIDAK BOLD */
             letter-spacing: 0.5px;
-            margin-bottom: 2px;
-            line-height: 1.2;
+            margin-bottom: 5px;
+            line-height: 1.25;
         }
         .cafe-header .info {
-            font-size: 11.5px;
-            line-height: 1.25;
-            font-weight: 600;
+            font-size: 11px;
+            line-height: 1.3;
+            font-weight: 400;
+            margin-bottom: 2px;
         }
 
         /* METADATA */
@@ -137,8 +152,8 @@
             margin-bottom: 4px;
         }
         .item-name {
-            font-weight: 900;
-            font-size: 13.5px;
+            font-weight: 400; /* TIDAK BOLD */
+            font-size: 12px;
             line-height: 1.25;
             margin-bottom: 1px;
             word-break: break-word;
@@ -146,7 +161,8 @@
         .item-calc {
             display: flex;
             justify-content: space-between;
-            font-size: 12.5px;
+            font-size: 11.5px;
+            font-weight: 400;
             line-height: 1.25;
         }
         .item-notes {
@@ -158,12 +174,16 @@
         }
 
         /* KALKULASI & TOTAL */
-        .calc-list {
-            font-size: 12.5px;
-            line-height: 1.35;
-            margin: 2px 0;
+        .total-row {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 0;
+            display: flex;
+            justify-content: space-between;
         }
-        .calc-list .row {
+        .payment-row {
+            font-size: 11.5px;
+            font-weight: 400;
             display: flex;
             justify-content: space-between;
             margin-bottom: 2px;
@@ -172,11 +192,11 @@
             display: flex;
             justify-content: space-between;
             font-size: 16px;
-            font-weight: 900;
+            font-weight: 700;
             padding: 4px 0;
             margin: 4px 0;
-            border-top: 1.5px dashed #000;
-            border-bottom: 1.5px dashed #000;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
         }
 
         /* WIFI & FOOTER */
@@ -243,16 +263,19 @@
     <div class="receipt-card">
         {{-- 1. HEADER CAFE & LOGO --}}
         <div class="cafe-header text-center">
+            {{-- LOGO (JIKA ADA) --}}
             @if (($setting->show_logo_receipt ?? true) && !empty($setting->shop_logo))
-                <div style="text-align: center; margin-bottom: 8px;">
-                    <img src="{{ asset('storage/' . $setting->shop_logo) }}" alt="Logo Cafe" style="max-height: 54px; max-width: 140px; margin: 0 auto; display: block; filter: grayscale(100%) contrast(150%);">
+                <div class="logo-wrapper">
+                    <img src="{{ Storage::url($setting->shop_logo) }}" alt="Logo Cafe">
                 </div>
             @endif
-            <div class="title uppercase">{{ $setting->shop_name ?? 'POS CAFE & ROASTERY' }}</div>
-            @if(!empty($setting->address))
+
+            <div class="title">{{ strtoupper($setting->shop_name ?? 'POS CAFE') }}</div>
+            
+            @if (!empty($setting->address))
                 <div class="info">{{ $setting->address }}</div>
             @endif
-            @if(!empty($setting->phone))
+            @if (!empty($setting->phone))
                 <div class="info">Telp: {{ $setting->phone }}</div>
             @endif
         </div>

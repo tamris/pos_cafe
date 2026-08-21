@@ -75,9 +75,10 @@
             padding: 24px;
             border-radius: 16px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-            font-family: 'Courier Prime', monospace;
-            font-size: 13px;
-            line-height: 1.4;
+            font-family: 'Consolas', 'Courier Prime', monospace;
+            font-size: 11.5px;
+            font-weight: 400;
+            line-height: 1.25;
             border: 1px solid #e2e8f0;
         }
 
@@ -87,7 +88,7 @@
         }
 
         .title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             text-transform: uppercase;
         }
@@ -100,28 +101,29 @@
         .order-banner {
             background: #f8fafc;
             border: 1px dashed #cbd5e1;
-            padding: 8px;
+            padding: 6px;
             border-radius: 8px;
             text-align: center;
-            margin: 10px 0;
-            font-size: 15px;
+            margin: 6px 0;
+            font-size: 13px;
             font-weight: 700;
         }
 
         .item-row {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .item-name {
-            font-size: 14px;
+            font-size: 12.5px;
             font-weight: 700;
         }
 
         .item-note {
-            font-size: 12px;
-            font-weight: 700;
-            color: #b45309;
-            margin-left: 12px;
+            font-size: 11px;
+            font-weight: 400;
+            font-style: italic;
+            margin-left: 10px;
+            margin-top: 2px;
         }
 
         .footer {
