@@ -112,17 +112,17 @@
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border"
                     :class="btConnected 
                         ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border-emerald-300 dark:border-emerald-700/80' 
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'">
+                        : 'bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/60 border-rose-300 dark:border-rose-700/80'">
                 
                 {{-- Icon Printer --}}
-                <svg class="w-3.5 h-3.5 shrink-0" :class="btConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="w-3.5 h-3.5 shrink-0" :class="btConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M6 9V2h12v7"></path>
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
                     <path d="M6 14h12v8H6z"></path>
                 </svg>
 
                 {{-- Status Dot --}}
-                <span class="w-2 h-2 rounded-full shrink-0" :class="btConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+                <span class="w-2 h-2 rounded-full shrink-0" :class="btConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></span>
 
                 {{-- Text Label --}}
                 <span class="hidden md:inline font-semibold" x-text="btConnected ? btName : 'Printer'"></span>

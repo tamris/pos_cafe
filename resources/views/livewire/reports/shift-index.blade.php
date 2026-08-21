@@ -32,7 +32,7 @@
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Dimulai sejak {{ $activeShift->start_time ? $activeShift->start_time->format('d M Y, H:i') : '-' }} WIB 
+                                    Dimulai sejak {{ $activeShift->start_time ? $activeShift->start_time->translatedFormat('d M Y, H:i') : '-' }} WIB 
                                     ({{ $activeShift->start_time ? $activeShift->start_time->diffForHumans() : '' }})
                                 </p>
                             </div>
