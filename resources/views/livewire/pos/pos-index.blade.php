@@ -44,7 +44,11 @@
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3" wire:key="input-container-table">
                             <div class="flex items-center gap-1.5">
                                 <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Pilih Meja:</label>
-                                <select wire:model.live="selectedTable" class="px-2.5 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-44 sm:w-48">
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h1.5M20.25 6A2.25 2.25 0 0018 3.75h-1.5M3.75 18A2.25 2.25 0 006 20.25h1.5m12.75-2.25A2.25 2.25 0 0118 20.25h-1.5M9 11.25v1.5c0 1.243-.997 2.25-2.25 2.25h-1.5m10.5-3.75v1.5c0 1.243.997 2.25 2.25 2.25h1.5"></path></svg>
+                                    </div>
+                                    <select wire:model.live="selectedTable" class="appearance-none px-8 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-44 sm:w-48 transition-all outline-none">
                                     <option value="">-- Pilih Meja --</option>
                                     @for ($i = 1; $i <= 20; $i++)
                                         @php
@@ -57,8 +61,12 @@
                                             Meja {{ $tableVal }} @if($isCurrentBillTable) (📌 Bill Ini) @elseif($isOccupied) (🔴 Terisi) @else (🟢 Kosong) @endif
                                         </option>
                                     @endfor
-                                    <option value="custom">Ketik Meja Manual...</option>
-                                </select>
+                                        <option value="custom">Ketik Meja Manual...</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                    </div>
+                                </div>
 
                                 @if($isCustomTable)
                                     <input type="text" wire:model.live="customTableNumber" placeholder="Contoh: VIP 01" autofocus
@@ -188,12 +196,20 @@
                                     </button>
                                 @endif
                             </div>
-                            <select wire:model.live="selectedCategory" class="px-3 sm:px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs font-semibold w-full sm:w-56">
-                                <option value="">Semua Kategori ({{ $categories->sum('products_count') }})</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }} ({{ $category->products_count }})</option>
-                                @endforeach
-                            </select>
+                            <div class="relative group w-full sm:w-56">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                                </div>
+                                <select wire:model.live="selectedCategory" class="appearance-none pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs font-semibold w-full transition-all outline-none">
+                                    <option value="">Semua Kategori ({{ $categories->sum('products_count') }})</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }} ({{ $category->products_count }})</option>
+                                    @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -906,13 +922,21 @@
                     </div>
 
                     @if($availabilityTab === 'products')
-                        <select wire:model.live="availabilityCategoryFilter"
-                            class="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-full sm:w-44">
-                            <option value="">Semua Kategori</option>
-                            @foreach ($allCategories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative group w-full sm:w-44">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                            </div>
+                            <select wire:model.live="availabilityCategoryFilter"
+                                class="appearance-none pl-8 pr-8 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-full transition-all outline-none">
+                                <option value="">Semua Kategori</option>
+                                @foreach ($allCategories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                            </div>
+                        </div>
                     @endif
                 </div>
 

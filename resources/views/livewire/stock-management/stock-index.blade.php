@@ -3,8 +3,8 @@
 
     <div class="main-content-layout flex flex-col min-h-screen">
         @include('livewire.includes.header', [
-            'title' => 'Penjualan Menu Hari Ini',
-            'subtitle' => 'Monitor porsi terjual & performa omset cafe realtime',
+            'title' => 'Performa Penjualan Menu',
+            'subtitle' => 'Monitor porsi terjual & performa omset cafe',
         ])
 
         <main class="p-4 sm:p-6 space-y-6 flex-1">
@@ -16,7 +16,7 @@
                 <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between gap-2 mb-3">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Terjual Hari Ini</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Terjual {{ $periodLabel }}</span>
                             <div class="flex items-center justify-center w-10 h-10 bg-orange-50 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400 shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </div>
@@ -43,42 +43,7 @@
                                 0%
                             </span>
                         @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs kemarin</span>
-                    </div>
-                </div>
-
-                {{-- Card 2: Total Omset Kotor --}}
-                <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between gap-2 mb-3">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Omset Kotor Hari Ini</span>
-                            <div class="flex items-center justify-center w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400 shrink-0">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <h3 class="text-xl sm:text-2xl 2xl:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate">
-                                Rp {{ number_format($totalRevenueToday, 0, ',', '.') }}
-                            </h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center text-xs pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                        @if ($revenueGrowth > 0)
-                            <span class="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-semibold gap-1 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                +{{ $revenueGrowth }}%
-                            </span>
-                        @elseif ($revenueGrowth < 0)
-                            <span class="inline-flex items-center text-rose-600 dark:text-rose-400 font-semibold gap-1 bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-md">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
-                                {{ $revenueGrowth }}%
-                            </span>
-                        @else
-                            <span class="inline-flex items-center text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                0%
-                            </span>
-                        @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs kemarin</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs sebelumnya</span>
                     </div>
                 </div>
 
@@ -101,7 +66,7 @@
                         <span class="inline-flex items-center text-amber-700 dark:text-amber-300 font-semibold gap-1 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-md">
                             🔥 {{ $topSellerQty }} Porsi
                         </span>
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">Ranking 1 Hari Ini</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">Ranking 1 {{ $periodLabel }}</span>
                     </div>
                 </div>
 
@@ -136,7 +101,42 @@
                                 0%
                             </span>
                         @endif
-                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs kemarin</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">vs sebelumnya</span>
+                    </div>
+                </div>
+
+                {{-- Card 4: Kategori Favorit --}}
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Kategori Favorit</span>
+                            <div class="flex items-center justify-center w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <h3 class="text-base sm:text-lg 2xl:text-xl font-bold tracking-tight text-slate-800 dark:text-white leading-tight truncate" title="{{ $topCategoryName }}">
+                                {{ $topCategoryName }}
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-xs pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                        @if ($categoryGrowth > 0)
+                            <span class="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-semibold gap-1 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                +{{ $categoryGrowth }}%
+                            </span>
+                        @elseif ($categoryGrowth < 0)
+                            <span class="inline-flex items-center text-rose-600 dark:text-rose-400 font-semibold gap-1 bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-md">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+                                {{ $categoryGrowth }}%
+                            </span>
+                        @else
+                            <span class="inline-flex items-center text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                0%
+                            </span>
+                        @endif
+                        <span class="text-slate-400 dark:text-slate-500 ml-2">({{ $topCategoryQty }} porsi)</span>
                     </div>
                 </div>
             </div>
@@ -148,27 +148,42 @@
                 <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
                     <div>
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Performa Penjualan Per Menu</h2>
-                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Diurutkan berdasarkan porsi terbanyak yang terjual hari ini</p>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Diurutkan berdasarkan porsi terbanyak yang terjual</p>
                     </div>
                     
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
-                        {{-- Filter Kategori --}}
-                        <select wire:model.live="categoryFilter" 
-                            class="px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-full sm:w-auto">
-                            <option value="">Semua Kategori Cafe</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4">
+                        {{-- Filter Periode --}}
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <select wire:model.live="filterPeriod" class="appearance-none w-full sm:w-44 pl-10 pr-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer transition-all outline-none">
+                                <option value="today">Hari Ini</option>
+                                <option value="yesterday">Kemarin</option>
+                                <option value="this_week">Minggu Ini</option>
+                                <option value="this_month">Bulan Ini</option>
+                                <option value="last_month">Bulan Lalu</option>
+                                <option value="all_time">Semua Waktu</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                            </div>
+                        </div>
 
-                        {{-- Search Menu --}}
-                        <div class="relative w-full sm:w-60">
-                            <input type="text" wire:model.live.debounce.300ms="search"
-                                placeholder="Cari menu..."
-                                class="w-full pl-10 pr-4 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs">
-                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5 sm:top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
+                        {{-- Filter Kategori --}}
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                            </div>
+                            <select wire:model.live="categoryFilter" class="appearance-none w-full sm:w-56 pl-10 pr-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer transition-all outline-none">
+                                <option value="">Semua Kategori Cafe</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -181,8 +196,8 @@
                                 <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700">Nama Menu Cafe</th>
                                 <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700">Kategori</th>
                                 <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700">Harga Jual</th>
-                                <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700 text-center">Terjual Hari Ini</th>
-                                <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700 text-right">Omset Hari Ini</th>
+                                <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700 text-center">Terjual {{ $periodLabel }}</th>
+                                <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700 text-right">Omset {{ $periodLabel }}</th>
                                 <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700 text-center">Total All-Time</th>
                                 <th class="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-700 text-right">Aksi</th>
                             </tr>
@@ -190,8 +205,8 @@
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-xs sm:text-sm">
                             @forelse($products as $product)
                                 @php
-                                    $soldToday = $product->sold_today ?? 0;
-                                    $revenueToday = $product->revenue_today ?? 0;
+                                    $soldToday = $product->sold_period ?? 0;
+                                    $revenueToday = $product->revenue_period ?? 0;
                                     $soldAllTime = $product->sold_all_time ?? 0;
                                 @endphp
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
@@ -276,7 +291,7 @@
                 {{-- Modal Header --}}
                 <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-700 mb-4">
                     <div>
-                        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Rincian Penjualan Hari Ini</h3>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Rincian Penjualan {{ $periodLabel }}</h3>
                         <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">{{ $selectedProduct->name ?? '' }}</p>
                     </div>
                     <button wire:click="closeModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1">
@@ -333,7 +348,7 @@
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">
-                                        Belum ada transaksi untuk menu ini hari ini
+                                        Belum ada transaksi untuk menu ini pada periode ini
                                     </td>
                                 </tr>
                             @endforelse

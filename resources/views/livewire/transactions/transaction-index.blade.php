@@ -266,19 +266,37 @@
                                 <input type="date" wire:model.live="dateTo" class="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs sm:text-sm [color-scheme:light] dark:[color-scheme:dark]">
                             </div>
 
-                            <select wire:model.live="paymentMethodFilter" class="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs sm:text-sm font-medium">
-                                <option value="">Semua Metode</option>
-                                <option value="cash">Tunai (Cash)</option>
-                                <option value="transfer">Transfer Bank</option>
-                                <option value="qris">QRIS</option>
-                            </select>
+                            {{-- Filter Metode Pembayaran --}}
+                            <div class="relative group w-full sm:w-auto">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                                </div>
+                                <select wire:model.live="paymentMethodFilter" class="appearance-none w-full sm:w-44 pl-10 pr-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer transition-all outline-none">
+                                    <option value="">Semua Metode</option>
+                                    <option value="cash">Tunai (Cash)</option>
+                                    <option value="transfer">Transfer Bank</option>
+                                    <option value="qris">QRIS</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                </div>
+                            </div>
 
-                            <select wire:model.live="statusFilter" class="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer text-xs sm:text-sm font-medium">
-                                <option value="">Semua Status</option>
-                                <option value="completed">Selesai (Lunas)</option>
-                                <option value="pending">Bill Aktif (Open Bill)</option>
-                                <option value="cancelled">Dibatalkan (Void)</option>
-                            </select>
+                            {{-- Filter Status --}}
+                            <div class="relative group w-full sm:w-auto">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <select wire:model.live="statusFilter" class="appearance-none w-full sm:w-44 pl-10 pr-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer transition-all outline-none">
+                                    <option value="">Semua Status</option>
+                                    <option value="completed">Selesai (Lunas)</option>
+                                    <option value="pending">Bill Aktif (Open Bill)</option>
+                                    <option value="cancelled">Dibatalkan (Void)</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -343,16 +361,16 @@
                                     <td class="px-4 sm:px-6 py-3.5 whitespace-nowrap text-center">
                                         <div class="inline-flex items-center justify-center gap-1.5">
                                             @if($transaction->payment_method == 'cash')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
                                                     Tunai
                                                 </span>
-                                            @elseif($transaction->payment_method == 'transfer')
+                                            @elseif($transaction->payment_method == 'qris')
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                                    Transfer
+                                                    QRIS
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                                    QRIS
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
+                                                    Transfer
                                                 </span>
                                             @endif
 

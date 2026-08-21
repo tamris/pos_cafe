@@ -20,4 +20,9 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    public function transactionDetails()
+    {
+        return $this->hasManyThrough(TransactionDetail::class, Product::class);
+    }
 }

@@ -2,12 +2,12 @@
     @if(auth()->check() && auth()->user()->role === 'admin')
     
     {{-- Floating Toggle Button --}}
-    <button onclick="toggleChat()"
+    <!-- <button onclick="toggleChat()"
         class="fixed bottom-6 right-6 w-14 h-14 bg-black hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-50 group active:scale-95"
         id="chat-toggle-btn"
         title="Buka AI Asisten">
         <i class="fas fa-robot text-xl group-hover:scale-110 transition-transform" id="chat-icon"></i>
-    </button>
+    </button> -->
 
     {{-- Chat Modal Window --}}
     <div id="chat-modal"

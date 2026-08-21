@@ -110,7 +110,7 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
-                    <button wire:click="toggleCalculator" class="px-4 py-2.5 text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-xs flex items-center justify-center shrink-0">
+                    <button wire:click="toggleCalculator" class="px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-xs flex items-center justify-center shrink-0">
                         @if($showCalculator)
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                             Kembali ke Daftar Menu
@@ -122,19 +122,27 @@
                     
                     @if(!$showCalculator)
                     {{-- Filter Kategori --}}
-                    <select wire:model.live="categoryFilter" 
-                        class="px-3.5 py-2.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer w-full sm:w-auto">
-                        <option value="">Semua Kategori</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="relative group w-full sm:w-auto">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                        </div>
+                        <select wire:model.live="categoryFilter" 
+                            class="appearance-none w-full sm:w-48 pl-10 pr-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer transition-all outline-none">
+                            <option value="">Semua Kategori</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                        </div>
+                    </div>
 
                     {{-- Search Input --}}
                     <div class="relative w-full sm:w-60">
                         <input type="text" wire:model.live.debounce.300ms="search"
                             placeholder="Cari nama menu / SKU..."
-                            class="w-full pl-9 pr-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs font-medium">
+                            class="w-full pl-9 pr-3.5 py-2 sm:py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs sm:text-sm font-medium">
                         <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
@@ -398,12 +406,17 @@
                                         <label class="block md:hidden text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Takaran per Porsi</label>
                                         <div class="flex gap-2">
                                             <input type="number" step="any" wire:model.live.debounce.400ms="bahan_baku.{{ $index }}.takaran" wire:change="calculateSubtotal({{ $index }})" placeholder="0" class="w-1/2 px-2.5 py-2 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
-                                            <select wire:model.live="bahan_baku.{{ $index }}.satuan_takaran" wire:change="calculateSubtotal({{ $index }})" class="w-1/2 px-2 py-2 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 cursor-pointer">
-                                                <option value="gram">Gram (gr)</option>
-                                                <option value="ml">Mililiter (ml)</option>
-                                                <option value="pcs">Pcs / Butir</option>
-                                                <option value="sachet">Sachet</option>
-                                            </select>
+                                            <div class="relative group w-1/2">
+                                                <select wire:model.live="bahan_baku.{{ $index }}.satuan_takaran" wire:change="calculateSubtotal({{ $index }})" class="appearance-none w-full px-2 py-2 pr-6 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 cursor-pointer transition-all outline-none">
+                                                    <option value="gram">Gram (gr)</option>
+                                                    <option value="ml">Mililiter (ml)</option>
+                                                    <option value="pcs">Pcs / Butir</option>
+                                                    <option value="sachet">Sachet</option>
+                                                </select>
+                                                <div class="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none text-slate-400">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     
@@ -423,17 +436,22 @@
                                                 </div>
                                                 <span class="text-xs text-slate-400 font-bold">/</span>
                                                 <input type="number" step="any" wire:model.live.debounce.400ms="bahan_baku.{{ $index }}.jumlah_beli" wire:change="calculateSubtotal({{ $index }})" placeholder="1" class="w-12 px-1.5 py-2 text-xs sm:text-sm font-bold text-center border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
-                                                <select wire:model.live="bahan_baku.{{ $index }}.satuan_beli" wire:change="calculateSubtotal({{ $index }})" class="w-18 px-1.5 py-2 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 cursor-pointer">
-                                                    <option value="kg">Kg</option>
-                                                    <option value="liter">Liter</option>
-                                                    <option value="gram">Gram</option>
-                                                    <option value="ml">Ml</option>
-                                                    <option value="pack">Pack</option>
-                                                    <option value="pcs">Pcs</option>
-                                                    <option value="botol">Botol</option>
-                                                    <option value="kaleng">Kaleng</option>
-                                                    <option value="dus">Dus</option>
-                                                </select>
+                                                <div class="relative group w-18">
+                                                    <select wire:model.live="bahan_baku.{{ $index }}.satuan_beli" wire:change="calculateSubtotal({{ $index }})" class="appearance-none w-full px-1.5 py-2 pr-5 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 cursor-pointer transition-all outline-none">
+                                                        <option value="kg">Kg</option>
+                                                        <option value="liter">Liter</option>
+                                                        <option value="gram">Gram</option>
+                                                        <option value="ml">Ml</option>
+                                                        <option value="pack">Pack</option>
+                                                        <option value="pcs">Pcs</option>
+                                                        <option value="botol">Botol</option>
+                                                        <option value="kaleng">Kaleng</option>
+                                                        <option value="dus">Dus</option>
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none text-slate-400">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1026,12 +1044,20 @@
                                         <span>Hari Buka / Bulan</span>
                                         <span class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold lowercase">operasional</span>
                                     </label>
-                                    <select wire:model.live="hari_operasional_sebulan" class="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                                        <option value="30">30 Hari (Setiap Hari)</option>
-                                        <option value="26">26 Hari (Libur 1 Hari/Mgg)</option>
-                                        <option value="24">24 Hari (Libur Weekend)</option>
-                                        <option value="20">20 Hari (Hari Kerja)</option>
-                                    </select>
+                                    <div class="relative group">
+                                        <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 group-hover:text-blue-500 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"></path></svg>
+                                        </div>
+                                        <select wire:model.live="hari_operasional_sebulan" class="appearance-none w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all outline-none">
+                                            <option value="30">30 Hari (Setiap Hari)</option>
+                                            <option value="26">26 Hari (Libur 1 Hari/Mgg)</option>
+                                            <option value="24">24 Hari (Libur Weekend)</option>
+                                            <option value="20">20 Hari (Hari Kerja)</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path></svg>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>
