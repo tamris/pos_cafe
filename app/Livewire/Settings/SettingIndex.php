@@ -201,6 +201,11 @@ class SettingIndex extends Component
 
     public function render()
     {
-        return view('livewire.settings.setting-index');
+        return view('livewire.settings.setting-index', [
+            'midtransServerKey' => config('midtrans.server_key'),
+            'midtransClientKey' => config('midtrans.client_key'),
+            'midtransMerchantId' => config('midtrans.merchant_id'),
+            'midtransIsProduction' => config('midtrans.is_production', false),
+        ]);
     }
 }

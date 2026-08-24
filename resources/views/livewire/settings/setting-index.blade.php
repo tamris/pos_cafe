@@ -283,6 +283,53 @@
                                 </div>
                             </div>
 
+                            {{-- SECTION 6: PAYMENT GATEWAY MIDTRANS --}}
+                            <div class="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-700/80">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Payment Gateway (Midtrans)</h3>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Status koneksi pembayaran online QRIS & Self-Order</p>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold {{ $midtransIsProduction ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $midtransIsProduction ? 'bg-emerald-500' : 'bg-amber-500' }}"></span>
+                                        {{ $midtransIsProduction ? 'Production Mode' : 'Sandbox (Testing)' }}
+                                    </span>
+                                </div>
+
+                                <div class="p-4 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 space-y-3 text-xs">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold block">Merchant ID</span>
+                                            <span class="font-mono font-bold text-slate-800 dark:text-slate-200">{{ $midtransMerchantId ?: '(Belum diatur)' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold block">Client Key</span>
+                                            <span class="font-mono text-slate-800 dark:text-slate-200">{{ $midtransClientKey ? substr($midtransClientKey, 0, 12) . '...' : '(Belum diatur)' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                                        <span class="text-slate-500 dark:text-slate-400 text-[11px] font-medium block mb-1">
+                                            <strong>URL Webhook / Notification:</strong> (Salin URL ini ke Dashboard Midtrans &rarr; Settings &rarr; Configuration)
+                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" readonly value="{{ url('/api/midtrans/notification') }}" id="midtransWebhookInput"
+                                                   class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 font-mono text-[11px] text-slate-700 dark:text-slate-300 select-all">
+                                            <button type="button" 
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('midtransWebhookInput').value); alert('URL Webhook berhasil disalin!');"
+                                                    class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shrink-0 cursor-pointer">
+                                                Salin
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {{-- Submit CTA --}}
                             <div class="pt-4 border-t border-slate-100 dark:border-slate-700/80 flex justify-end">
                                 <button type="submit" class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-6 py-2.5 sm:py-3 rounded-lg transition-all font-semibold text-xs sm:text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2 cursor-pointer">

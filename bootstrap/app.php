@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'isAdmin' => \App\Http\Middleware\IsAdmin::class,
             'admin' => \App\Http\Middleware\IsAdmin::class,
         ]);
+        
+        $middleware->validateCsrfTokens(except: [
+            'api/midtrans/*',
+            'midtrans/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

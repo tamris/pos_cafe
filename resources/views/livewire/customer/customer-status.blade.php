@@ -223,7 +223,7 @@
                     </div>
                 @endif
                 <div class="flex justify-between text-sm font-extrabold text-stone-900 pt-2 border-t border-stone-100">
-                    <span>Total Tagihan (QRIS)</span>
+                    <span>Total Tagihan ({{ strtoupper($transaction->payment_method ?: 'Online') }})</span>
                     <span class="text-amber-700 font-heading">Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
                 </div>
             </div>

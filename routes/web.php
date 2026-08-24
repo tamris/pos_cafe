@@ -22,6 +22,10 @@ Route::get('/order', CustomerOrder::class)->name('customer.order');
 Route::get('/order/pay/{token}', CustomerPayment::class)->name('customer.payment');
 Route::get('/order/status/{token}', CustomerStatus::class)->name('customer.status');
 
+// Midtrans Webhook Notification
+Route::post('/api/midtrans/notification', [\App\Http\Controllers\MidtransCallbackController::class, 'handle'])->name('midtrans.notification');
+Route::post('/midtrans/callback', [\App\Http\Controllers\MidtransCallbackController::class, 'handle']);
+
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/', Login::class)->name('login');

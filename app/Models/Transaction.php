@@ -26,6 +26,7 @@ class Transaction extends Model
         'status',
         'order_source',
         'order_token',
+        'snap_token',
         'customer_phone',
         'payment_status',
         'cancelled_reason',
