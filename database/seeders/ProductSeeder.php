@@ -23,7 +23,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Kopi gula aren khas barista dengan espresso ganda dan susu creamy',
                 'price' => 22000,
                 'harga_beli' => 9000,
-                'stock' => 100,
                 'image' => null,
             ],
             [
@@ -34,7 +33,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Espresso lembut dipadu steamed milk segar',
                 'price' => 24000,
                 'harga_beli' => 10000,
-                'stock' => 80,
                 'image' => null,
             ],
             [
@@ -45,7 +43,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Double shot espresso murni dengan air mineral',
                 'price' => 18000,
                 'harga_beli' => 6000,
-                'stock' => 120,
                 'image' => null,
             ],
             [
@@ -56,7 +53,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Espresso dengan sirup vanila dan drizzle saus karamel gurih',
                 'price' => 28000,
                 'harga_beli' => 12000,
-                'stock' => 60,
                 'image' => null,
             ],
             [
@@ -67,7 +63,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Seduh manual biji kopi Arabica Aceh Gayo bersensasi fruity',
                 'price' => 26000,
                 'harga_beli' => 11000,
-                'stock' => 50,
                 'image' => null,
             ],
 
@@ -80,7 +75,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Matcha Uji Jepang premium dengan susu manis lembut',
                 'price' => 25000,
                 'harga_beli' => 11000,
-                'stock' => 70,
                 'image' => null,
             ],
             [
@@ -91,7 +85,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Cokelat pekat rich dan creamy khas cafe',
                 'price' => 24000,
                 'harga_beli' => 10000,
-                'stock' => 65,
                 'image' => null,
             ],
             [
@@ -102,7 +95,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Teh Earl Grey beraroma bergamot dengan susu segar',
                 'price' => 20000,
                 'harga_beli' => 8000,
-                'stock' => 90,
                 'image' => null,
             ],
             [
@@ -113,7 +105,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Mocktail soda leci dan perasan lemon segar',
                 'price' => 22000,
                 'harga_beli' => 8500,
-                'stock' => 75,
                 'image' => null,
             ],
 
@@ -126,7 +117,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Croissant berlapis dengan mentega Prancis yang garing',
                 'price' => 20000,
                 'harga_beli' => 8000,
-                'stock' => 40,
                 'image' => null,
             ],
             [
@@ -137,7 +127,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Croissant berisian krim almond dan taburan almond slice',
                 'price' => 25000,
                 'harga_beli' => 11000,
-                'stock' => 35,
                 'image' => null,
             ],
             [
@@ -148,7 +137,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Kue brownies cokelat legit dengan toping choco chip',
                 'price' => 18000,
                 'harga_beli' => 7000,
-                'stock' => 45,
                 'image' => null,
             ],
 
@@ -161,7 +149,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Nasi goreng bumbu rempah dengan telur mata sapi dan ayam pop',
                 'price' => 32000,
                 'harga_beli' => 14000,
-                'stock' => 50,
                 'image' => null,
             ],
             [
@@ -172,7 +159,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Spaghetti saus krim keju parmesan dengan smoked beef',
                 'price' => 35000,
                 'harga_beli' => 15000,
-                'stock' => 40,
                 'image' => null,
             ],
             [
@@ -183,7 +169,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Nasi hangat dengan katsu ayam renyah dan saus donburi manis',
                 'price' => 34000,
                 'harga_beli' => 14500,
-                'stock' => 45,
                 'image' => null,
             ],
 
@@ -196,7 +181,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Kentang goreng aroma truffle dengan parutan keju parmesan',
                 'price' => 22000,
                 'harga_beli' => 8500,
-                'stock' => 60,
                 'image' => null,
             ],
             [
@@ -207,7 +191,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Sayap ayam goreng renyah dengan baluran saus madu gurih (5 pcs)',
                 'price' => 28000,
                 'harga_beli' => 12000,
-                'stock' => 50,
                 'image' => null,
             ]
         ];
@@ -221,7 +204,6 @@ class ProductSeeder extends Seeder
                 'description' => $product['description'],
                 'price' => $product['price'],
                 'harga_beli' => $product['harga_beli'],
-                'stock' => $product['stock'],
                 'image' => $product['image'],
                 'created_at' => now(),
                 'updated_at' => now(),

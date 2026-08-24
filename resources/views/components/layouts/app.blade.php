@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Toko Kendali' }}</title>
+    <title>{{ $title ?? (\App\Models\Setting::first()?->shop_name ?? 'POS Cafe') }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
     
     {{-- 1. CDN Tailwind & Config untuk Dark Mode --}}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,13 +28,74 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/bluetooth-printer.js') }}"></script>
     
     {{-- Alpine.js (Wajib ada defer) --}}
     {{-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
+    {{-- Early Execution Script: Mencegah Flash/Blink Theme & Sidebar sebelum DOM di-render --}}
+    <script>
+        (function() {
+            try {
+                const isDark = localStorage.getItem('darkMode') === 'true';
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                if (window.innerWidth >= 1280) {
+                    if (localStorage.getItem('sidebarOpenDesktop') === 'false') {
+                        document.documentElement.classList.add('sidebar-collapsed');
+                    } else {
+                        document.documentElement.classList.remove('sidebar-collapsed');
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <style>
+        [x-cloak] { display: none !important; }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { font-family: 'Inter', sans-serif; }
+
+        /* ZERO-FLICKER SIDEBAR CSS ARCHITECTURE */
+        /* Layar HP & Tablet (< 1280px): Sidebar tersembunyi secara default */
+        @media (max-width: 1279px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            #sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+            .main-content-layout {
+                padding-left: 0 !important;
+            }
+        }
+
+        /* Layar Desktop (>= 1280px): Sidebar terbuka, kecuali jika html memiliki class .sidebar-collapsed */
+        @media (min-width: 1280px) {
+            #sidebar {
+                transform: translateX(0);
+            }
+            html.sidebar-collapsed #sidebar {
+                transform: translateX(-100%) !important;
+            }
+            .main-content-layout {
+                padding-left: 16rem; /* 256px */
+            }
+            html.sidebar-collapsed .main-content-layout {
+                padding-left: 0 !important;
+            }
+        }
+
+        /* Aktifkan animasi transisi halus HANYA setelah render pertama selesai (mencegah blink saat load) */
+        body.app-ready #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.app-ready .main-content-layout {
+            transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         /* Style Scrollbar Chat */
         #chat-messages { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; scroll-behavior: smooth; }
@@ -65,14 +127,9 @@
     @livewireStyles
 </head>
 
-{{-- 
-    LOGIKA UTAMA (GABUNGAN SIDEBAR & DARK MODE):
-    1. sidebarOpen: Mengatur menu di HP/Laptop.
-    2. darkMode: Mengatur tema gelap/terang.
---}}
 <body class="bg-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:bg-slate-900 dark:text-slate-100"
       x-data="{ 
-          sidebarOpen: window.innerWidth >= 1024,
+          mobileSidebarOpen: false,
           darkMode: localStorage.getItem('darkMode') === 'true',
           
           toggleTheme() {
@@ -83,17 +140,36 @@
               } else {
                   document.documentElement.classList.remove('dark');
               }
+          },
+
+          toggleSidebar() {
+              if (window.innerWidth < 1280) {
+                  this.mobileSidebarOpen = !this.mobileSidebarOpen;
+              } else {
+                  const isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+                  localStorage.setItem('sidebarOpenDesktop', !isCollapsed);
+              }
           }
       }"
       x-init="
-          // Listener Resize Layar
-          window.addEventListener('resize', () => { sidebarOpen = window.innerWidth >= 1024 });
-          
-          // Init Dark Mode saat load
-          if (darkMode) document.documentElement.classList.add('dark');
-          
+          // Pastikan tema dark/light dan class html sinkron 100%
+          if (darkMode) {
+              document.documentElement.classList.add('dark');
+          } else {
+              document.documentElement.classList.remove('dark');
+          }
+
           // Watcher perubahan Dark Mode
-          $watch('darkMode', val => val ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark'));
+          $watch('darkMode', val => {
+              if (val) {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+          });
+
+          // Aktifkan animasi transisi setelah halaman selesai digambar di layar
+          setTimeout(() => { document.body.classList.add('app-ready'); }, 50);
       ">
 
     <div id="app-layout">
@@ -106,13 +182,6 @@
             <livewire:ai-chat />
         @endif
     @endauth
-
-    {{-- Backdrop Mobile untuk Sidebar --}}
-    <div x-show="sidebarOpen" 
-         @click="sidebarOpen = false"
-         x-transition.opacity
-         class="fixed inset-0 z-40 bg-black/50 lg:hidden backdrop-blur-sm">
-    </div>
 
     @livewireScripts
     @stack('scripts')
@@ -241,6 +310,72 @@
                 });
                 Toast.fire({ icon: type, title: message });
             });
+        });
+
+        // Global SweetAlert Logout Confirmation
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Konfirmasi Keluar',
+                text: 'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Ya, Keluar',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+                color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Sedang Keluar...',
+                        text: 'Mengamankan sesi Anda...',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                        background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+                        color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'
+                    });
+
+                    const form = document.getElementById('logout-form');
+                    if (form) {
+                        form.submit();
+                    } else {
+                        const dynamicForm = document.createElement('form');
+                        dynamicForm.method = 'POST';
+                        dynamicForm.action = "{{ route('logout') }}";
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = "{{ csrf_token() }}";
+                        dynamicForm.appendChild(csrfInput);
+                        document.body.appendChild(dynamicForm);
+                        dynamicForm.submit();
+                    }
+                }
+            });
+        }
+
+        // Sinkronisasi Tema & Layout saat navigasi SPA Livewire
+        document.addEventListener('livewire:navigated', function() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            if (window.innerWidth >= 1280) {
+                if (localStorage.getItem('sidebarOpenDesktop') === 'false') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                } else {
+                    document.documentElement.classList.remove('sidebar-collapsed');
+                }
+            }
         });
     </script>
 </body>

@@ -1,10 +1,7 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950" 
-     x-data="{ sidebarOpen: window.innerWidth >= 1280 }"
-     @resize.window="if (window.innerWidth >= 1280) { sidebarOpen = true } else { sidebarOpen = false }">
-
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     @include('livewire.includes.sidebar')
 
-    <div class="xl:pl-64 transition-all duration-300 flex flex-col min-h-screen">
+    <div class="main-content-layout flex flex-col min-h-screen">
         
         @include('livewire.includes.header', [
             'title' => 'Dashboard', 
@@ -176,7 +173,14 @@
                             Data Terkini
                         </div>
                     </div>
-                    <div wire:ignore id="salesChart" class="w-full h-[280px] sm:h-[320px]"></div>
+                    
+                    {{-- Wrapper tanpa wire:ignore untuk membawa data terbaru --}}
+                    <div id="salesChartWrapper" 
+                         data-labels='@json($chartLabels)' 
+                         data-values='@json($chartData)' 
+                         class="w-full h-[280px] sm:h-[320px]">
+                        <div wire:ignore id="salesChart" class="w-full h-full"></div>
+                    </div>
                 </div>
                 
                 {{-- Metode Pembayaran --}}
@@ -185,7 +189,13 @@
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Metode Pembayaran</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Proporsi transaksi hari ini</p>
                     </div>
-                    <div wire:ignore id="paymentChart" class="w-full flex justify-center h-[280px] sm:h-[320px] items-center"></div>
+
+                    {{-- Wrapper tanpa wire:ignore untuk membawa data terbaru --}}
+                    <div id="paymentChartWrapper" 
+                         data-stats='@json($paymentMethodStats)' 
+                         class="w-full flex justify-center h-[280px] sm:h-[320px] items-center">
+                        <div wire:ignore id="paymentChart" class="w-full flex justify-center h-full items-center"></div>
+                    </div>
                 </div>
             </div>
 
@@ -199,7 +209,7 @@
                         <a href="{{ route('transactions.index') }}" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">Lihat Semua</a>
                     </div>
                     <div class="p-4 flex-1">
-                        @if ($recentTransactions->count() > 0)
+                        @if ($recentTransactions && $recentTransactions->count() > 0)
                             <div class="space-y-3">
                                 @foreach ($recentTransactions as $transaction)
                                     <div class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-lg border border-slate-100 dark:border-slate-700/60 transition-colors gap-3">
@@ -221,16 +231,16 @@
                                         <div class="text-right shrink-0">
                                             <p class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Rp {{ number_format($transaction->total, 0, ',', '.') }}</p>
                                             @if($transaction->payment_method == 'cash')
-                                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mt-1">
+                                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 mt-1">
                                                     Tunai
                                                 </span>
-                                            @elseif($transaction->payment_method == 'transfer')
+                                            @elseif($transaction->payment_method == 'qris')
                                                 <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 mt-1">
-                                                    Transfer
+                                                    QRIS
                                                 </span>
                                             @else
-                                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50 mt-1">
-                                                    QRIS
+                                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 mt-1">
+                                                    Transfer
                                                 </span>
                                             @endif
                                         </div>
@@ -251,7 +261,7 @@
                         <h2 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Produk Terlaris</h2>
                     </div>
                     <div class="p-4 flex-1">
-                        @if ($topProducts->count() > 0)
+                        @if ($topProducts && $topProducts->count() > 0)
                             <div class="space-y-3">
                                 @foreach ($topProducts as $index => $product)
                                     <div class="flex items-center space-x-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-lg border border-slate-100 dark:border-slate-700/60 transition-colors">
@@ -260,7 +270,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <p class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">{{ $product->name }}</p>
-                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ $product->category->name }}</p>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ $product->category->name ?? '-' }}</p>
                                         </div>
                                         <div class="text-right shrink-0">
                                             <p class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{{ $product->total_sold }}</p>
@@ -288,23 +298,53 @@
     let salesChartInstance = null;
     let paymentChartInstance = null;
 
-    function initDashboardCharts() {
+    function getChartThemeOptions(isDark) {
+        return {
+            textColor: isDark ? '#94a3b8' : '#64748b',
+            gridColor: isDark ? '#334155' : '#e2e8f0',
+            strokeColor: isDark ? '#1e293b' : '#ffffff',
+            totalTextColor: isDark ? '#f8fafc' : '#0f172a'
+        };
+    }
+
+    function destroySalesChart() {
         if (salesChartInstance) {
-            salesChartInstance.destroy();
+            try { salesChartInstance.destroy(); } catch (e) {}
             salesChartInstance = null;
         }
+    }
+
+    function destroyPaymentChart() {
         if (paymentChartInstance) {
-            paymentChartInstance.destroy();
+            try { paymentChartInstance.destroy(); } catch (e) {}
             paymentChartInstance = null;
         }
+    }
+
+    function destroyDashboardCharts() {
+        destroySalesChart();
+        destroyPaymentChart();
+    }
+
+    function initDashboardCharts() {
+        const salesWrapper = document.querySelector("#salesChartWrapper");
+        const salesElement = document.querySelector("#salesChart");
+        const paymentWrapper = document.querySelector("#paymentChartWrapper");
+        const paymentElement = document.querySelector("#paymentChart");
+
+        if (!salesElement && !paymentElement) return;
 
         const isDark = document.documentElement.classList.contains('dark');
+        const theme = getChartThemeOptions(isDark);
 
-        const chartElement = document.querySelector("#salesChart");
-        if (chartElement) {
-            chartElement.innerHTML = "";
-            const labels = @json($chartLabels ?? []);
-            const data = @json($chartData ?? []);
+        // 1. BAR CHART: TREN PENJUALAN
+        if (salesElement && salesWrapper) {
+            let labels = [];
+            let data = [];
+            try {
+                labels = JSON.parse(salesWrapper.getAttribute('data-labels') || '[]');
+                data = JSON.parse(salesWrapper.getAttribute('data-values') || '[]');
+            } catch (e) {}
 
             const salesOptions = {
                 series: [{ name: 'Pendapatan', data: data }],
@@ -314,54 +354,82 @@
                     fontFamily: 'inherit',
                     toolbar: { show: false },
                     zoom: { enabled: false },
-                    background: 'transparent'
+                    background: 'transparent',
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 400,
+                        animateGradually: {
+                            enabled: true,
+                            delay: 40
+                        },
+                        dynamicAnimation: {
+                            enabled: true,
+                            speed: 250
+                        }
+                    }
                 },
                 plotOptions: {
                     bar: {
                         borderRadius: 6,
-                        columnWidth: '40%',
+                        columnWidth: '38%',
                     }
-                },
-                theme: {
-                    mode: isDark ? 'dark' : 'light'
                 },
                 colors: ['#3b82f6'],
                 dataLabels: { enabled: false },
                 xaxis: {
                     categories: labels,
-                    labels: { style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '11px' } },
+                    labels: { style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 } },
                     axisBorder: { show: false },
                     axisTicks: { show: false }
                 },
                 yaxis: {
+                    min: 0,
+                    tickAmount: 5,
+                    forceNiceScale: true,
                     labels: {
                         formatter: function (value) {
                             return "Rp " + new Intl.NumberFormat('id-ID').format(value / 1000) + "k";
                         },
-                        style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '11px' }
-                    },
-                    min: 0,
-                    tickAmount: 5
+                        style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 }
+                    }
                 },
                 grid: {
-                    borderColor: isDark ? '#334155' : '#f1f5f9',
+                    borderColor: theme.gridColor,
                     strokeDashArray: 4,
+                    yaxis: { lines: { show: true } },
+                    xaxis: { lines: { show: false } }
+                },
+                tooltip: {
+                    theme: isDark ? 'dark' : 'light',
+                    y: {
+                        formatter: function (val) {
+                            return "Rp " + new Intl.NumberFormat('id-ID').format(val);
+                        }
+                    }
                 }
             };
 
-            salesChartInstance = new ApexCharts(chartElement, salesOptions);
-            salesChartInstance.render();
+            if (salesChartInstance) {
+                salesChartInstance.updateOptions(salesOptions, true, true);
+            } else {
+                salesElement.innerHTML = "";
+                salesChartInstance = new ApexCharts(salesElement, salesOptions);
+                salesChartInstance.render();
+            }
         }
 
-        const paymentChartElement = document.querySelector("#paymentChart");
-        if (paymentChartElement) {
-            paymentChartElement.innerHTML = "";
-            const paymentData = @json($paymentMethodStats ?? []);
-            
-            if (paymentData.length > 0) {
-                const series = paymentData.map(item => item.count);
+        // 2. DONUT / PIE CHART: METODE PEMBAYARAN
+        if (paymentElement && paymentWrapper) {
+            let paymentData = [];
+            try {
+                paymentData = JSON.parse(paymentWrapper.getAttribute('data-stats') || '[]');
+            } catch (e) {}
+
+            if (paymentData && paymentData.length > 0) {
+                const series = paymentData.map(item => Number(item.count));
                 const labels = paymentData.map(item => item.payment_method.charAt(0).toUpperCase() + item.payment_method.slice(1));
-                
+
                 const donutOptions = {
                     series: series,
                     labels: labels,
@@ -369,37 +437,153 @@
                         type: 'donut',
                         height: 280,
                         fontFamily: 'inherit',
-                        background: 'transparent'
-                    },
-                    theme: {
-                        mode: isDark ? 'dark' : 'light'
+                        background: 'transparent',
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 350,
+                            dynamicAnimation: {
+                                enabled: true,
+                                speed: 200
+                            }
+                        }
                     },
                     colors: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6'],
                     plotOptions: {
                         pie: {
+                            expandOnClick: false,
                             donut: {
                                 size: '72%',
                                 labels: {
                                     show: true,
-                                    name: { show: true, fontSize: '12px' },
-                                    value: { show: true, fontSize: '18px', fontWeight: 'bold' }
+                                    name: { show: true, fontSize: '12px', color: theme.textColor },
+                                    value: { 
+                                        show: true, 
+                                        fontSize: '20px', 
+                                        fontWeight: '800', 
+                                        color: theme.totalTextColor 
+                                    },
+                                    total: {
+                                        show: true,
+                                        label: 'Total',
+                                        color: theme.textColor,
+                                        fontSize: '12px',
+                                        formatter: function (w) {
+                                            return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                        }
+                                    }
                                 }
                             }
                         }
                     },
                     dataLabels: { enabled: false },
-                    stroke: { show: true, colors: isDark ? ['#1e293b'] : ['#ffffff'], width: 2 },
-                    legend: { position: 'bottom', fontSize: '12px' }
+                    stroke: { show: true, colors: [theme.strokeColor], width: 2 },
+                    legend: { 
+                        position: 'bottom', 
+                        fontSize: '12px',
+                        labels: { colors: theme.textColor }
+                    },
+                    tooltip: {
+                        theme: isDark ? 'dark' : 'light'
+                    }
                 };
 
-                paymentChartInstance = new ApexCharts(paymentChartElement, donutOptions);
-                paymentChartInstance.render();
+                if (paymentChartInstance) {
+                    paymentChartInstance.updateOptions(donutOptions, true, true);
+                } else {
+                    paymentElement.innerHTML = "";
+                    paymentChartInstance = new ApexCharts(paymentElement, donutOptions);
+                    paymentChartInstance.render();
+                }
             } else {
-                paymentChartElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-xs sm:text-sm">Belum ada transaksi hari ini</div>';
+                destroyPaymentChart();
+                paymentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-xs sm:text-sm">Belum ada transaksi hari ini</div>';
             }
         }
     }
 
-    document.addEventListener('livewire:initialized', initDashboardCharts);
-    document.addEventListener('livewire:navigated', initDashboardCharts);
+    // UPDATE WARNA TEMA DENGAN FORMATTER & SKALA TETAP TERKUNCI (5000k)
+    function updateChartsThemeSmoothly() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const theme = getChartThemeOptions(isDark);
+
+        if (salesChartInstance) {
+            salesChartInstance.updateOptions({
+                tooltip: { 
+                    theme: isDark ? 'dark' : 'light',
+                    y: {
+                        formatter: function (val) {
+                            return "Rp " + new Intl.NumberFormat('id-ID').format(val);
+                        }
+                    }
+                },
+                xaxis: { 
+                    labels: { style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 } } 
+                },
+                yaxis: { 
+                    min: 0,
+                    tickAmount: 5,
+                    forceNiceScale: true,
+                    labels: { 
+                        formatter: function (value) {
+                            return "Rp " + new Intl.NumberFormat('id-ID').format(value / 1000) + "k";
+                        },
+                        style: { colors: theme.textColor, fontSize: '11px', fontWeight: 500 } 
+                    } 
+                },
+                grid: { borderColor: theme.gridColor }
+            }, false, false);
+        }
+
+        if (paymentChartInstance) {
+            paymentChartInstance.updateOptions({
+                tooltip: { theme: isDark ? 'dark' : 'light' },
+                stroke: { colors: [theme.strokeColor] },
+                legend: { labels: { colors: theme.textColor } },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                name: { color: theme.textColor },
+                                value: { color: theme.totalTextColor },
+                                total: { color: theme.textColor }
+                            }
+                        }
+                    }
+                }
+            }, false, false);
+        }
+    }
+
+    function queueChartRender() {
+        setTimeout(() => {
+            initDashboardCharts();
+        }, 30);
+    }
+
+    document.addEventListener('livewire:navigated', queueChartRender);
+    document.addEventListener('DOMContentLoaded', queueChartRender);
+    document.addEventListener('livewire:navigating', destroyDashboardCharts);
+
+    if (window.Livewire) {
+        Livewire.hook('morph.updated', () => {
+            queueChartRender();
+        });
+    }
+
+    if (!window.dashboardThemeObserverRegistered) {
+        let themeTimeout = null;
+        const themeObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class') {
+                    clearTimeout(themeTimeout);
+                    themeTimeout = setTimeout(() => {
+                        updateChartsThemeSmoothly();
+                    }, 10);
+                }
+            });
+        });
+        themeObserver.observe(document.documentElement, { attributes: true });
+        window.dashboardThemeObserverRegistered = true;
+    }
 </script>

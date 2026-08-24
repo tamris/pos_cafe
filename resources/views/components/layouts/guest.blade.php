@@ -1,49 +1,59 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Login - Femy Store' }}</title>
+    @php
+        $shopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe';
+    @endphp
+    <title>{{ $title ?? 'Masuk - ' . $shopName }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    
+    {{-- 1. CDN Tailwind & Config untuk Dark Mode --}}
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151f32',
+                            950: '#0a0f1d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .blob {
-            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-            animation: blob 8s ease-in-out infinite;
-        }
-
-        @keyframes blob {
-
-            0%,
-            100% {
-                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-            }
-
-            25% {
-                border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
-            }
-
-            50% {
-                border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
-            }
-
-            75% {
-                border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%;
-            }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+        * { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
     </style>
 
     @livewireStyles
 </head>
 
-<body class="bg-slate-50 antialiased min-h-screen flex items-center justify-center">
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300"
+      x-data="{ 
+          darkMode: localStorage.getItem('darkMode') === 'true',
+          toggleTheme() {
+              this.darkMode = !this.darkMode;
+              localStorage.setItem('darkMode', this.darkMode);
+              if (this.darkMode) {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+          }
+      }"
+      x-init="
+          if (darkMode) document.documentElement.classList.add('dark');
+          $watch('darkMode', val => val ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark'));
+      ">
+
     {{ $slot }}
 
     @livewireScripts

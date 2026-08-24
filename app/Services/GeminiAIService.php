@@ -8,7 +8,12 @@ use Illuminate\Support\Facades\Log;
 class GeminiAIService
 {
     private $apiKey;
-    private $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    protected array $candidateModels = [
+        'gemini-flash-lite-latest',
+        'gemini-3.7-flash',
+        'gemini-flash-latest',
+        'gemini-3.5-flash-lite',
+    ];
 
     public function __construct()
     {
@@ -18,25 +23,95 @@ class GeminiAIService
         Log::info('Gemini Service Initialized', ['api_key_exists' => !empty($this->apiKey)]);
     }
 
+    /**
+     * Menghasilkan respon khusus JSON array/object yang valid dan terstruktur
+     * dengan otomatis berpindah ke model cadangan jika model utama sibuk (503/429).
+     */
+    public function generateJson($prompt)
+    {
+        if (empty($this->apiKey)) {
+            Log::error('Gemini API Key is empty');
+            throw new \Exception('API Key Google Gemini belum dikonfigurasi.');
+        }
+
+        Log::info('Sending JSON request to Gemini API', ['prompt' => $prompt]);
+        $lastException = null;
+
+        foreach ($this->candidateModels as $index => $model) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$this->apiKey}";
+            
+            try {
+                Log::info("[Gemini AI] Mencoba model #{$index}: {$model}");
+
+                $response = Http::timeout(20)->post($url, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
+                        ]
+                    ],
+                    'generationConfig' => [
+                        'responseMimeType' => 'application/json',
+                        'temperature' => 0.2,
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $rawText = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    Log::info("[Gemini AI] Sukses dengan model {$model}", ['raw' => $rawText]);
+
+                    $decoded = json_decode($rawText, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        return $decoded;
+                    }
+
+                    // Fallback regex jika JSON dibungkus markdown
+                    $clean = preg_replace('/```json|```/', '', $rawText);
+                    $decoded = json_decode(trim($clean), true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+
+                $statusCode = $response->status();
+                $errorBody = $response->body();
+                Log::warning("[Gemini AI] Model {$model} mengembalikan status {$statusCode}. Mencoba model cadangan...", [
+                    'status' => $statusCode,
+                    'error' => substr($errorBody, 0, 200)
+                ]);
+
+                $lastException = new \Exception($this->getErrorMessage($statusCode, $errorBody));
+            } catch (\Exception $e) {
+                Log::warning("[Gemini AI] Exception pada model {$model}: {$e->getMessage()}. Mencoba model cadangan...");
+                $lastException = $e;
+            }
+        }
+
+        throw $lastException ?? new \Exception('Seluruh server model Gemini sedang sibuk. Silakan coba sesaat lagi.');
+    }
+
     public function generateResponse($prompt, $context = '')
     {
-        try {
-            // Validasi API key
-            if (empty($this->apiKey)) {
-                Log::error('Gemini API Key is empty');
-                return 'Maaf, konfigurasi AI belum lengkap. Silakan hubungi administrator.';
-            }
+        if (empty($this->apiKey)) {
+            Log::error('Gemini API Key is empty');
+            return 'Maaf, konfigurasi AI belum lengkap. Silakan hubungi administrator.';
+        }
 
-            $fullPrompt = $this->buildPrompt($prompt, $context);
+        $fullPrompt = $this->buildPrompt($prompt, $context);
+        Log::info('Sending request to Gemini API', [
+            'prompt_length' => strlen($prompt),
+            'context_length' => strlen($context)
+        ]);
 
-            Log::info('Sending request to Gemini API', [
-                'prompt_length' => strlen($prompt),
-                'context_length' => strlen($context)
-            ]);
+        $lastError = 'Maaf, server AI sedang mengalami masalah.';
 
-            $response = Http::timeout(60) // Increase timeout to 60 seconds
-                ->retry(3, 1000) // Retry 3 times with 1 second delay
-                ->post($this->baseUrl . '?key=' . $this->apiKey, [
+        foreach ($this->candidateModels as $model) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$this->apiKey}";
+
+            try {
+                $response = Http::timeout(30)->post($url, [
                     'contents' => [
                         [
                             'parts' => [
@@ -52,84 +127,56 @@ class GeminiAIService
                     ]
                 ]);
 
-            Log::info('Gemini API Response Status', [
-                'status' => $response->status(),
-                'successful' => $response->successful()
-            ]);
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $result = $this->extractResponse($data);
+                    Log::info("[Gemini AI] Chat sukses dengan model {$model}", ['response_length' => strlen($result)]);
+                    return $result;
+                }
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $result = $this->extractResponse($data);
-                Log::info('Gemini API Success', ['response_length' => strlen($result)]);
-                return $result;
+                $errorBody = $response->body();
+                $statusCode = $response->status();
+                $lastError = $this->getErrorMessage($statusCode, $errorBody);
+            } catch (\Exception $e) {
+                Log::warning("[Gemini AI Chat] Exception pada {$model}: {$e->getMessage()}");
             }
-
-            // Log detailed error information
-            $errorBody = $response->body();
-            $statusCode = $response->status();
-
-            Log::error('Gemini API Error', [
-                'status_code' => $statusCode,
-                'response_body' => $errorBody,
-                'api_key' => substr($this->apiKey, 0, 10) . '...' // Log partial key for debugging
-            ]);
-
-            return $this->getErrorMessage($statusCode, $errorBody);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error('Gemini API Connection Exception', [
-                'message' => $e->getMessage(),
-                'api_url' => $this->baseUrl
-            ]);
-            return 'Maaf, tidak dapat terhubung ke layanan AI. Periksa koneksi internet Anda.';
-        } catch (\Exception $e) {
-            Log::error('Gemini Service Exception', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return 'Maaf, terjadi kesalahan internal. Silakan coba lagi nanti.';
         }
+
+        return $lastError;
     }
 
     private function buildPrompt($prompt, $context)
     {
         $shopName = \App\Models\Setting::first()?->shop_name ?? 'POS Cafe & Eatery';
-        $systemPrompt = "Anda adalah asisten AI profesional untuk sistem {$shopName}. Anda ahli dalam analisis bisnis cafe & resto, penjualan menu (kopi, minuman, pastry, makanan), dan manajemen inventori.\n\n";
+        $systemPrompt = "Anda adalah Asisten AI Cerdas untuk {$shopName}. Anda adalah konsultan dan analis bisnis cafe & resto terpercaya yang ahli dalam analisis penjualan kopi, minuman kekinian, makanan ringan/berat, manajemen HPP & margin, serta rekapitulasi shift kasir.\n\n";
 
-        $systemPrompt .= "KEMAMPUAN ANDA:\n";
-        $systemPrompt .= "- Menganalisis data penjualan dan transaksi\n";
-        $systemPrompt .= "- Memberikan insight bisnis dan rekomendasi\n";
-        $systemPrompt .= "- Menjelaskan detail produk, stok, profit, dan kategori\n";
-        $systemPrompt .= "- Memberikan ringkasan laporan keuangan\n";
-        $systemPrompt .= "- Menjawab pertanyaan tentang performa penjualan\n\n";
+        $systemPrompt .= "KEAHLIAN ANDA:\n";
+        $systemPrompt .= "- Menganalisis omset penjualan, jumlah cup/porsi terjual, dan rata-rata per transaksi (AOV)\n";
+        $systemPrompt .= "- Memberikan wawasan performa menu (kopi terlaris, pastry, makanan) dan rekomendasi promo\n";
+        $systemPrompt .= "- Menjelaskan rekapitulasi shift kasir, rekonsiliasi kas laci, dan analisis selisih kas fisik\n";
+        $systemPrompt .= "- Menganalisis profit bersih dan margin keuntungan per menu/kategori\n";
+        $systemPrompt .= "- Memberikan ringkasan metode pembayaran (Tunai vs QRIS vs Transfer) dan mode pesanan (Makan di Tempat/Meja vs Bawa Pulang vs Delivery)\n\n";
 
         $systemPrompt .= "⚠️ PENTING TENTANG TANGGAL:\n";
-        $systemPrompt .= "- Jika user menyebut tanggal spesifik (contoh: '18 November 2025'), konteks data sudah disiapkan untuk tanggal tersebut\n";
-        $systemPrompt .= "- Lihat header konteks yang menyebutkan tanggal spesifik (contoh: 'DATA UNTUK TANGGAL 18 November 2025')\n";
+        $systemPrompt .= "- Jika user menyebut tanggal spesifik (contoh: '18 November 2025', 'kemarin', 'hari ini'), konteks data sudah disiapkan untuk periode tersebut\n";
+        $systemPrompt .= "- Lihat header konteks yang menyebutkan tanggal spesifik\n";
         $systemPrompt .= "- GUNAKAN data dari konteks tersebut, JANGAN katakan 'tidak tersedia data untuk tanggal X'\n";
-        $systemPrompt .= "- Jika konteks menunjukkan 'TIDAK ADA TRANSAKSI', sampaikan dengan jelas bahwa tidak ada aktivitas pada tanggal tersebut\n\n";
+        $systemPrompt .= "- Jika konteks menunjukkan 'TIDAK ADA TRANSAKSI', sampaikan dengan ramah bahwa belum ada transaksi pada tanggal tersebut\n\n";
 
-        // 🆕 TAMBAHKAN INSTRUKSI KHUSUS PROFIT
-        $systemPrompt .= "⚠️ PENTING TENTANG DATA PROFIT:\n";
-        $systemPrompt .= "- Database sudah memiliki kolom 'profit' di tabel transaction_details\n";
-        $systemPrompt .= "- Kolom profit berisi perhitungan profit yang SUDAH FINAL dan AKURAT\n";
-        $systemPrompt .= "- JANGAN PERNAH menghitung ulang profit dengan rumus apapun\n";
-        $systemPrompt .= "- JANGAN mengatakan 'saya tidak memiliki data profit' atau 'tidak dapat memberikan angka profit'\n";
-        $systemPrompt .= "- Jika konteks data berisi informasi profit (misalnya 'PROFIT hari ini: Rp X'), GUNAKAN DATA ITU LANGSUNG\n";
-        $systemPrompt .= "- Jawab pertanyaan profit dengan data yang tersedia di konteks\n\n";
+        $systemPrompt .= "⚠️ PENTING TENTANG DATA PROFIT & MARGIN:\n";
+        $systemPrompt .= "- Database sudah memiliki perhitungan profit yang FINAL dan AKURAT\n";
+        $systemPrompt .= "- JANGAN PERNAH menghitung ulang profit dengan rumus yang berbeda dari data yang diberikan\n";
+        $systemPrompt .= "- Jika konteks data berisi informasi profit, GUNAKAN DATA ITU LANGSUNG\n\n";
 
         if ($context) {
-            $systemPrompt .= "KONTEKS DATA TERKINI:\n{$context}\n\n";
+            $systemPrompt .= "KONTEKS DATA TERKINI DARI SISTEM CAFE:\n{$context}\n\n";
         }
 
-        $systemPrompt .= "INSTRUKSI PENTING:\n";
-        $systemPrompt .= "- Berikan jawaban yang detail, jelas, dan informatif\n";
-        $systemPrompt .= "- Gunakan data yang tersedia untuk memberikan analisis mendalam\n";
-        $systemPrompt .= "- Jika diminta detail transaksi atau profit, jelaskan semua informasi yang tersedia di konteks\n";
-        $systemPrompt .= "- Jika konteks berisi data profit, LANGSUNG gunakan data tersebut tanpa perhitungan ulang\n";
-        $systemPrompt .= "- Berikan rekomendasi bisnis jika relevan\n";
-        $systemPrompt .= "- Gunakan bahasa Indonesia yang profesional namun mudah dipahami\n";
-        $systemPrompt .= "- Format angka dengan pemisah ribuan (contoh: Rp 1.000.000)\n";
-        $systemPrompt .= "- Jika pertanyaan tentang profit, cari kata kunci seperti 'PROFIT hari ini', 'PROFIT bulan ini' di konteks\n\n";
+        $systemPrompt .= "GAYA JAWABAN & INSTRUKSI:\n";
+        $systemPrompt .= "- Berikan jawaban yang terstruktur, ramah, profesional ala konsultan bisnis cafe yang bersahabat (bisa gunakan emoji seperti ☕, 📊, 💡, 💰, 🕒, 🍽️ jika relevan)\n";
+        $systemPrompt .= "- Sajikan data dalam poin-poin rapi atau bullet list yang mudah dibaca cepat di layar kasir/owner\n";
+        $systemPrompt .= "- Format semua nominal mata uang dalam format Rupiah standar (contoh: Rp 25.000, Rp 1.500.000)\n";
+        $systemPrompt .= "- Berikan saran/actionable tips praktis untuk meningkatkan omset cafe jika diminta rekomendasi bisnis\n\n";
 
         $systemPrompt .= "Pertanyaan User: {$prompt}\n\nJawaban Lengkap:";
 

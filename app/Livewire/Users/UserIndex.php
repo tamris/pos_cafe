@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\User;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
@@ -15,20 +16,39 @@ class UserIndex extends Component
 {
     use WithPagination;
 
-    public $name, $email, $password, $role = 'kasir'; // Default role kasir
-    public $userId;
+    public $search = '';
+    public $roleFilter = '';
+    public $statusFilter = 'all'; // 'all', 'active', 'inactive', 'trashed'
+
+    public $name = '';
+    public $email = '';
+    public $password = '';
+    public $role = 'kasir';
+    public $is_active = true;
+    public $userId = null;
     public $isOpen = false;
     public $isEdit = false;
 
-    // Reset input saat modal ditutup
+    public function updatingSearch() { $this->resetPage(); }
+    public function updatingRoleFilter() { $this->resetPage(); }
+    public function updatingStatusFilter() { $this->resetPage(); }
+
+    public function setStatusFilter($filter)
+    {
+        $this->statusFilter = $filter;
+        $this->resetPage();
+    }
+
     public function resetFields()
     {
         $this->name = '';
         $this->email = '';
         $this->password = '';
         $this->role = 'kasir';
+        $this->is_active = true;
         $this->userId = null;
         $this->isEdit = false;
+        $this->resetValidation();
     }
 
     public function openModal()
@@ -40,20 +60,46 @@ class UserIndex extends Component
     public function closeModal()
     {
         $this->isOpen = false;
+        $this->resetFields();
+    }
+
+    public function toggleStatus($id)
+    {
+        if ($id == auth()->id()) {
+            session()->flash('error', 'Anda tidak bisa menonaktifkan akun yang sedang Anda gunakan saat ini!');
+            return;
+        }
+
+        $user = User::find($id);
+        if (!$user) return;
+
+        // Cek jika akun ini adalah satu-satunya admin aktif
+        if ($user->role === 'admin' && $user->is_active && User::where('role', 'admin')->where('is_active', true)->count() <= 1) {
+            session()->flash('error', 'Sistem membutuhkan minimal 1 Administrator aktif agar akses tidak terkunci!');
+            return;
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusText = $user->is_active ? 'Diaktifkan (Dapat login)' : 'Dinonaktifkan (Akses login dibekukan)';
+        session()->flash('success', "Akun '{$user->name}' berhasil {$statusText}.");
     }
 
     public function store()
     {
         $this->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email',
+            'name' => 'required|min:2',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'password' => 'required|min:6',
             'role' => 'required|in:admin,kasir',
+            'is_active' => 'boolean',
         ], [
             'name.required' => 'Nama pengguna wajib diisi.',
+            'name.min' => 'Nama minimal 2 karakter.',
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
-            'email.unique' => 'Email sudah terdaftar.',
+            'email.unique' => 'Email sudah terdaftar pada pengguna aktif.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 6 karakter.',
             'role.required' => 'Jabatan wajib dipilih.',
@@ -64,6 +110,7 @@ class UserIndex extends Component
             'email' => $this->email,
             'password' => Hash::make($this->password),
             'role' => $this->role,
+            'is_active' => (bool) $this->is_active,
         ]);
 
         session()->flash('success', 'Pengguna baru berhasil ditambahkan.');
@@ -72,11 +119,13 @@ class UserIndex extends Component
 
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::withTrashed()->findOrFail($id);
         $this->userId = $user->id;
         $this->name = $user->name;
         $this->email = $user->email;
         $this->role = $user->role;
+        $this->is_active = (bool) $user->is_active;
+        $this->password = '';
         $this->isEdit = true;
         $this->isOpen = true;
     }
@@ -84,9 +133,10 @@ class UserIndex extends Component
     public function update()
     {
         $this->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $this->userId,
+            'name' => 'required|min:2',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($this->userId)->whereNull('deleted_at')],
             'role' => 'required|in:admin,kasir',
+            'is_active' => 'boolean',
         ], [
             'name.required' => 'Nama pengguna wajib diisi.',
             'email.required' => 'Email wajib diisi.',
@@ -95,16 +145,33 @@ class UserIndex extends Component
             'role.required' => 'Jabatan wajib dipilih.',
         ]);
 
-        $user = User::findOrFail($this->userId);
+        $user = User::withTrashed()->findOrFail($this->userId);
+
+        // Jika mengubah akun diri sendiri
+        if ($user->id == auth()->id()) {
+            if ($this->role !== 'admin') {
+                session()->flash('error', 'Anda tidak dapat mengubah role akun Anda sendiri menjadi non-admin!');
+                return;
+            }
+            if (!$this->is_active) {
+                session()->flash('error', 'Anda tidak dapat menonaktifkan akun Anda sendiri!');
+                return;
+            }
+        }
         
         $data = [
             'name' => $this->name,
             'email' => $this->email,
             'role' => $this->role,
+            'is_active' => (bool) $this->is_active,
         ];
 
-        // Hanya update password jika diisi
         if (!empty($this->password)) {
+            $this->validate([
+                'password' => 'min:6'
+            ], [
+                'password.min' => 'Password minimal 6 karakter.'
+            ]);
             $data['password'] = Hash::make($this->password);
         }
 
@@ -121,14 +188,89 @@ class UserIndex extends Component
             return;
         }
 
-        User::find($id)->delete();
-        session()->flash('success', 'Pengguna berhasil dihapus.');
+        $user = User::find($id);
+        if (!$user) return;
+
+        // Cek jika akun ini adalah satu-satunya admin
+        if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+            session()->flash('error', 'Tidak dapat menghapus satu-satunya Administrator!');
+            return;
+        }
+
+        $hasTransactions = $user->transactions()->exists();
+        $hasShifts = $user->cashierShifts()->exists();
+
+        // Soft delete user
+        $user->delete();
+
+        if ($hasTransactions || $hasShifts) {
+            session()->flash('success', "Akun '{$user->name}' berhasil diarsipkan (Soft Delete). Riwayat transaksi dan shift masa lalu tetap 100% aman tersimpan.");
+        } else {
+            session()->flash('success', "Akun '{$user->name}' berhasil dipindahkan ke arsip.");
+        }
+    }
+
+    public function restore($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        $user->restore();
+        session()->flash('success', "Akun '{$user->name}' berhasil dipulihkan dari arsip.");
+    }
+
+    public function forceDelete($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        if ($user->transactions()->exists() || $user->cashierShifts()->exists()) {
+            session()->flash('error', "Akun '{$user->name}' tidak dapat dihapus permanen karena memiliki riwayat transaksi / shift kasir.");
+            return;
+        }
+
+        $user->forceDelete();
+        session()->flash('success', "Akun '{$user->name}' berhasil dihapus permanen.");
     }
 
     public function render()
     {
+        // Counter badge untuk tab
+        $countAll = User::count();
+        $countActive = User::where('is_active', true)->count();
+        $countInactive = User::where('is_active', false)->count();
+        $countTrashed = User::onlyTrashed()->count();
+
+        // Query berdasarkan filter status
+        if ($this->statusFilter === 'trashed') {
+            $query = User::onlyTrashed();
+        } elseif ($this->statusFilter === 'active') {
+            $query = User::where('is_active', true);
+        } elseif ($this->statusFilter === 'inactive') {
+            $query = User::where('is_active', false);
+        } else {
+            $query = User::query();
+        }
+
+        if (!empty(trim($this->search))) {
+            $term = '%' . trim($this->search) . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                  ->orWhere('email', 'like', $term);
+            });
+        }
+
+        if (!empty($this->roleFilter)) {
+            $query->where('role', $this->roleFilter);
+        }
+
+        $users = $query->orderByRaw("CASE WHEN role = 'admin' THEN 1 ELSE 2 END")
+            ->latest()
+            ->paginate(10);
+
         return view('livewire.users.user-index', [
-            'users' => User::latest()->paginate(10)
+            'users' => $users,
+            'countAll' => $countAll,
+            'countActive' => $countActive,
+            'countInactive' => $countInactive,
+            'countTrashed' => $countTrashed,
         ]);
     }
 }

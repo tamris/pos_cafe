@@ -78,13 +78,19 @@ Route::get('/test-gemini', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/pos', PosIndex::class)->name('pos.index');
     Route::get('/print-struk/{invoice}', [PosController::class, 'printStruk'])->name('print.struk');
+    Route::get('/rawbt-struk/{invoice}', [PosController::class, 'rawbtStruk'])->name('rawbt.struk');
+    Route::get('/print-kitchen/{invoice}', [PosController::class, 'printKitchen'])->name('print.kitchen');
+    Route::get('/rawbt-kitchen/{invoice}', [PosController::class, 'rawbtKitchen'])->name('rawbt.kitchen');
+    Route::get('/print-shift/{id}', [PosController::class, 'printShift'])->name('print.shift');
+    Route::get('/rawbt-shift/{id}', [PosController::class, 'rawbtShift'])->name('rawbt.shift');
     Route::get('/transactions', TransactionIndex::class)->name('transactions.index');
+    Route::get('/shifts', \App\Livewire\Reports\ShiftIndex::class)->name('shifts.index');
 
     Route::post('/logout', function () {
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-        return redirect('/');
+        return redirect('/')->with('success', 'Anda telah berhasil keluar dari sistem POS.');
     })->name('logout');
 
     Route::middleware(IsAdmin::class)->group(function () {

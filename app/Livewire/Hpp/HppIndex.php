@@ -37,6 +37,95 @@ class HppIndex extends Component
     public $kenaikan_persen = 0; // slider
     public $selected_tier = 'standar'; // 'kompetitif' | 'standar' | 'premium'
 
+    // Alokasi Biaya Tetap / Operasional Bulanan State
+    public $mode_alokasi_ops = 'rincian'; // 'rincian' | 'manual'
+    public $target_penjualan_bulanan = 3000; // Estimasi total porsi seluruh menu terjual/bulan (basis pembagi beban tetap)
+    public $biaya_tetap_items = [
+        ['nama' => 'Biaya Sewa Dapur / Tempat Usaha', 'nominal' => 1000000],
+        ['nama' => 'Biaya Listrik, Air & Gas', 'nominal' => 300000],
+        ['nama' => 'Biaya Gaji Barista / Karyawan', 'nominal' => 1500000],
+        ['nama' => 'Biaya Penyusutan Alat / Mesin Kopi', 'nominal' => 200000],
+    ];
+
+    // Target & Proyeksi Penjualan State
+    public $target_laba_bulanan = 5000000; // Default kosong agar user input sendiri
+    public $hari_operasional_sebulan = 30; // 30 hari
+
+    public function addBiayaTetapItem()
+    {
+        $this->mode_alokasi_ops = 'rincian';
+        $this->biaya_tetap_items[] = [
+            'nama' => '',
+            'nominal' => '',
+        ];
+        $this->updatePriceFromSelectedTier();
+    }
+
+    public function removeBiayaTetapItem($index)
+    {
+        $this->mode_alokasi_ops = 'rincian';
+        unset($this->biaya_tetap_items[$index]);
+        $this->biaya_tetap_items = array_values($this->biaya_tetap_items);
+        $this->updatePriceFromSelectedTier();
+    }
+
+    public function resetBiayaTetapPreset()
+    {
+        $this->mode_alokasi_ops = 'rincian';
+        $this->biaya_tetap_items = [
+            ['nama' => 'Biaya Sewa Dapur / Tempat Usaha', 'nominal' => 1000000],
+            ['nama' => 'Biaya Listrik, Air & Gas', 'nominal' => 300000],
+            ['nama' => 'Biaya Gaji Barista / Karyawan', 'nominal' => 1500000],
+            ['nama' => 'Biaya Penyusutan Alat / Mesin Kopi', 'nominal' => 200000],
+        ];
+        $this->updatePriceFromSelectedTier();
+        $this->notify('info', 'Preset biaya operasional cafe berhasil dimuat.');
+    }
+
+    public function updated($property = null)
+    {
+        if (!$property) return;
+
+        if ($property === 'price') {
+            $this->syncSelectedTier();
+            return;
+        }
+
+        if (
+            str_starts_with($property, 'biaya_tetap_items') ||
+            str_starts_with($property, 'bahan_baku') ||
+            in_array($property, [
+                'target_penjualan_bulanan',
+                'kenaikan_persen',
+                'mode_alokasi_ops',
+                'alokasi_biaya_tetap',
+                'selected_tier',
+                'target_laba_bulanan',
+                'hari_operasional_sebulan',
+            ])
+        ) {
+            $this->updatePriceFromSelectedTier();
+        }
+    }
+
+    public function updatePriceFromSelectedTier()
+    {
+        unset($this->hppCalculation);
+        unset($this->pricingTiers);
+        unset($this->salesProjection);
+
+        $tiers = $this->pricingTiers();
+        if (!empty($this->selected_tier) && isset($tiers[$this->selected_tier])) {
+            $this->price = (float) $tiers[$this->selected_tier]['harga'];
+        }
+    }
+
+    public function setModeAlokasi($mode)
+    {
+        $this->mode_alokasi_ops = $mode;
+        $this->updatePriceFromSelectedTier();
+    }
+
     public function selectTier($tierKey)
     {
         $this->selected_tier = $tierKey;
@@ -77,10 +166,36 @@ class HppIndex extends Component
                 $this->nama_produk = $product->name;
                 $this->category_id = $product->category_id;
                 $this->price = (float) $product->price;
-                $cost = (float) ($product->operational_cost ?? 0);
-                $this->alokasi_biaya_tetap = $cost > 0 ? $cost : '';
-                $this->kenaikan_persen = 0;
-                $this->selected_tier = 'standar';
+                
+                // Muat konfigurasi alokasi biaya operasional yang tersimpan
+                $meta = $product->ai_pricing_data;
+                if (is_array($meta) && isset($meta['mode_alokasi_ops'])) {
+                    $this->mode_alokasi_ops = $meta['mode_alokasi_ops'];
+                    if ($this->mode_alokasi_ops === 'manual') {
+                        $this->alokasi_biaya_tetap = !empty($meta['manual_alokasi_nominal']) 
+                            ? (float) $meta['manual_alokasi_nominal'] 
+                            : ((float) $product->operational_cost ?: '');
+                    } else {
+                        // Jika mode Rekomendasi/Rincian, kosongkan input manual agar tidak tercampur
+                        $this->alokasi_biaya_tetap = '';
+                    }
+
+                    if (isset($meta['target_penjualan_bulanan'])) {
+                        $this->target_penjualan_bulanan = $meta['target_penjualan_bulanan'];
+                    }
+                    if (isset($meta['selected_tier'])) {
+                        $this->selected_tier = $meta['selected_tier'];
+                    }
+                    if (isset($meta['kenaikan_persen'])) {
+                        $this->kenaikan_persen = $meta['kenaikan_persen'];
+                    }
+                } else {
+                    // Default untuk produk yang belum memiliki metadata
+                    $this->mode_alokasi_ops = 'rincian';
+                    $this->alokasi_biaya_tetap = '';
+                    $this->kenaikan_persen = 0;
+                    $this->selected_tier = 'standar';
+                }
                 
                 if ($product->ingredients->count() > 0) {
                     $this->bahan_baku = [];
@@ -110,6 +225,7 @@ class HppIndex extends Component
             $this->category_id = '';
             $this->price = 0;
             $this->alokasi_biaya_tetap = '';
+            $this->mode_alokasi_ops = 'rincian';
             $this->kenaikan_persen = 0;
             $this->selected_tier = 'standar';
             $this->bahan_baku = [];
@@ -198,6 +314,7 @@ class HppIndex extends Component
     {
         unset($this->bahan_baku[$index]);
         $this->bahan_baku = array_values($this->bahan_baku); // reindex
+        $this->updatePriceFromSelectedTier();
     }
 
     public function calculateSubtotal($index)
@@ -222,6 +339,7 @@ class HppIndex extends Component
         
         $subtotal = $amount * $multiplier * $pricePerBuyUnit;
         $this->bahan_baku[$index]['subtotal'] = $subtotal;
+        $this->updatePriceFromSelectedTier();
     }
 
     public function analyzeWithAI()
@@ -233,28 +351,48 @@ class HppIndex extends Component
         ]);
 
         try {
-            $service = app(\App\Services\GeminiAIService::class);
-            $prompt = "Buatkan estimasi takaran bahan standar cafe untuk menu: {$this->nama_produk}. 
-            Kembalikan HANYA dalam format JSON array yang valid, tanpa markdown, tanpa penjelasan lain.
-            Gunakan satuan standar cafe:
-            - Satuan takaran porsi: 'gram', 'ml', 'pcs', atau 'sachet'.
-            - Satuan pembelian: 'kg', 'liter', 'pack', 'pcs', 'botol', atau 'kaleng'.
-            Struktur JSON array:
-            [
-                {\"nama\": \"Bahan A\", \"takaran\": 15, \"satuan_takaran\": \"gram\", \"harga_beli\": 85000, \"jumlah_beli\": 1, \"satuan_beli\": \"kg\"}
-            ]";
-            
-            $response = $service->generateResponse($prompt);
-            
-            // Bersihkan markdown jika AI mengembalikan markdown format (misal ```json ... ```)
-            $response = preg_replace('/```json|```/', '', $response);
-            $response = trim($response);
+            \Illuminate\Support\Facades\Log::info('=== [HPP AI DEBUG] START ANALISIS RESEP ===', [
+                'nama_produk' => $this->nama_produk,
+                'timestamp' => now()->toDateTimeString()
+            ]);
 
-            $data = json_decode($response, true);
+            $service = app(\App\Services\GeminiAIService::class);
+            $prompt = "Buatkan estimasi takaran bahan standar cafe untuk menu: {$this->nama_produk}.
+            ATURAN SATUAN & JUMLAH BELI:
+            1. Bahan per butir/lembar/pcs (Paper Filter, Cup, Tutup, Sedotan, Drip Bag, dll):
+               - Wajib gunakan 'satuan_takaran': 'pcs'
+               - Wajib gunakan 'satuan_beli': 'pcs'
+               - Pada 'jumlah_beli': Wajib isi dengan TOTAL ISI PCS dalam 1 kemasan beli (Contoh: Paper Filter 1 pack isi 100 lembar harga 45000 -> harga_beli: 45000, jumlah_beli: 100, satuan_beli: 'pcs'. Cup 1 pack isi 50 pcs harga 30000 -> harga_beli: 30000, jumlah_beli: 50, satuan_beli: 'pcs').
+            2. Bahan bubuk/kopi/gula/es:
+               - 'satuan_takaran': 'gram'
+               - 'satuan_beli': 'kg' (atau 'gram'), 'jumlah_beli': 1 (jika kg) atau 1000 (jika gram)
+            3. Bahan cair/susu/sirup/air:
+               - 'satuan_takaran': 'ml'
+               - 'satuan_beli': 'liter' (atau 'ml'), 'jumlah_beli': 1 (jika liter) atau 1000 (jika ml). Jika air galon 19L harga 20000 -> harga_beli: 20000, jumlah_beli: 19, satuan_beli: 'liter'.
+
+            Gunakan format JSON array dengan keys:
+            - nama: nama bahan baku (string)
+            - takaran: angka takaran per porsi (number)
+            - satuan_takaran: salah satu dari 'gram', 'ml', 'pcs', 'sachet'
+            - harga_beli: estimasi harga beli pasaran dalam Rupiah (number)
+            - jumlah_beli: total isi kemasan yang dibeli sesuai satuan_beli (number)
+            - satuan_beli: salah satu dari 'kg', 'liter', 'gram', 'ml', 'pcs', 'sachet'";
+            
+            \Illuminate\Support\Facades\Log::info('[HPP AI DEBUG] Mengirim prompt ke Gemini...');
+            $startTime = microtime(true);
+            
+            $data = $service->generateJson($prompt);
+            $duration = round(microtime(true) - $startTime, 2);
+
+            \Illuminate\Support\Facades\Log::info('[HPP AI DEBUG] Respons AI diterima!', [
+                'durasi_detik' => $duration,
+                'jumlah_bahan' => is_array($data) ? count($data) : 0,
+                'data_mentah' => $data
+            ]);
 
             if (is_array($data) && count($data) > 0) {
                 $this->bahan_baku = [];
-                foreach ($data as $item) {
+                foreach ($data as $idx => $item) {
                     $item['subtotal'] = 0;
                     $item['takaran'] = !empty($item['takaran']) ? $item['takaran'] : '';
                     $item['harga_beli'] = !empty($item['harga_beli']) ? $item['harga_beli'] : '';
@@ -262,12 +400,23 @@ class HppIndex extends Component
                     $this->calculateSubtotal(count($this->bahan_baku) - 1);
                 }
                 $this->syncSelectedTier();
-                $this->notify('success', 'Berhasil mendapatkan rekomendasi resep AI untuk ' . $this->nama_produk);
+                $this->updatePriceFromSelectedTier();
+
+                \Illuminate\Support\Facades\Log::info('=== [HPP AI DEBUG] BERHASIL DIMUAT KE FORM ===', [
+                    'total_bahan' => count($this->bahan_baku)
+                ]);
+
+                $this->notify('success', 'Berhasil! ' . count($this->bahan_baku) . ' bahan baku dimuat untuk ' . $this->nama_produk . ' (waktu: ' . $duration . 's)');
             } else {
-                $this->notify('error', 'Gagal mem-parsing respons AI. Pastikan nama produk spesifik (misal: "Kopi Susu Gula Aren").');
+                \Illuminate\Support\Facades\Log::warning('[HPP AI DEBUG] Data array kosong / format tidak sesuai');
+                $this->notify('error', 'Resep AI kosong. Pastikan nama produk spesifik (misal: "Kopi Susu Gula Aren").');
             }
         } catch (\Exception $e) {
-            $this->notify('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('=== [HPP AI DEBUG] ERROR TERJADI ===', [
+                'pesan_error' => $e->getMessage(),
+                'file' => $e->getFile() . ':' . $e->getLine()
+            ]);
+            $this->notify('error', 'Gagal memproses AI: ' . $e->getMessage());
         }
     }
 
@@ -275,7 +424,19 @@ class HppIndex extends Component
     public function hppCalculation()
     {
         $totalVariable = collect($this->bahan_baku)->sum('subtotal');
-        $biayaTetap = !empty($this->alokasi_biaya_tetap) ? (float) $this->alokasi_biaya_tetap : 0;
+        
+        $totalBiayaTetapBulanan = collect($this->biaya_tetap_items)->sum(function ($item) {
+            return !empty($item['nominal']) ? (float) $item['nominal'] : 0;
+        });
+
+        $targetUnits = max(1, (int) $this->target_penjualan_bulanan);
+
+        if ($this->mode_alokasi_ops === 'rincian') {
+            $biayaTetap = $totalBiayaTetapBulanan > 0 ? round($totalBiayaTetapBulanan / $targetUnits) : 0;
+        } else {
+            $biayaTetap = !empty($this->alokasi_biaya_tetap) ? (float) $this->alokasi_biaya_tetap : 0;
+        }
+
         $totalHpp = $totalVariable + $biayaTetap;
         
         $kenaikan = (float) $this->kenaikan_persen;
@@ -283,6 +444,8 @@ class HppIndex extends Component
 
         return [
             'totalVariable' => $totalVariable,
+            'totalBiayaTetapBulanan' => $totalBiayaTetapBulanan,
+            'targetUnits' => $targetUnits,
             'biayaTetap' => $biayaTetap,
             'totalHpp' => $totalHpp,
             'simulatedHpp' => $simulatedHpp
@@ -321,6 +484,58 @@ class HppIndex extends Component
                 'margin' => (($premium - $baseHpp) / $premium) * 100,
                 'profit' => $premium - $baseHpp
             ]
+        ];
+    }
+
+    #[Computed]
+    public function salesProjection()
+    {
+        $hppData = $this->hppCalculation();
+        $variableCost = (float) ($hppData['totalVariable'] ?? 0);
+        $kenaikan = (float) $this->kenaikan_persen;
+        $simulatedVariable = $variableCost * (1 + $kenaikan / 100);
+        
+        $opCostPerUnit = (float) ($hppData['biayaTetap'] ?? 0);
+        $unitCost = (float) ($hppData['simulatedHpp'] ?? ($simulatedVariable + $opCostPerUnit));
+        
+        $sellingPrice = (float) $this->price;
+        if ($sellingPrice <= 0) {
+            $tiers = $this->pricingTiers();
+            $sellingPrice = (float) ($tiers[$this->selected_tier]['harga'] ?? ($tiers['standar']['harga'] ?? 0));
+        }
+        $targetProfit = (float) $this->target_laba_bulanan;
+        $days = (int) $this->hari_operasional_sebulan > 0 ? (int) $this->hari_operasional_sebulan : 30;
+
+        // Margin bersih per porsi (Harga Jual - Biaya Bahan - Biaya Operasional)
+        $netMarginPerUnit = max(0, $sellingPrice - $unitCost);
+
+        if ($netMarginPerUnit > 0 && $targetProfit > 0) {
+            $totalUnitsMonth = ceil($targetProfit / $netMarginPerUnit);
+        } else {
+            $totalUnitsMonth = 0;
+        }
+
+        $targetUnitsDay = $days > 0 ? (int) ceil($totalUnitsMonth / $days) : 0;
+        $potensiOmzet = $totalUnitsMonth * $sellingPrice;
+        $totalBiayaProduksi = $totalUnitsMonth * $simulatedVariable;
+        $totalBiayaTetap = $totalUnitsMonth * $opCostPerUnit;
+        $proyeksiLabaBersih = $potensiOmzet - $totalBiayaProduksi - $totalBiayaTetap;
+
+        return [
+            'variableCost' => $simulatedVariable,
+            'opCostPerUnit' => $opCostPerUnit,
+            'unitCost' => $unitCost,
+            'sellingPrice' => $sellingPrice,
+            'unitMargin' => $netMarginPerUnit,
+            'netMarginPerUnit' => $netMarginPerUnit,
+            'targetProfit' => $targetProfit,
+            'days' => $days,
+            'targetUnitsDay' => $targetUnitsDay,
+            'totalUnitsMonth' => $totalUnitsMonth,
+            'potensiOmzet' => $potensiOmzet,
+            'totalBiayaProduksi' => $totalBiayaProduksi,
+            'totalBiayaTetap' => $totalBiayaTetap,
+            'proyeksiLabaBersih' => $proyeksiLabaBersih,
         ];
     }
 
@@ -368,22 +583,39 @@ class HppIndex extends Component
             if (strlen($skuPrefix) < 3) $skuPrefix = 'CFE';
             $sku = $skuPrefix . '-' . rand(1000, 9999);
 
+            $pricingMetadata = [
+                'mode_alokasi_ops' => $this->mode_alokasi_ops,
+                'manual_alokasi_nominal' => ($this->mode_alokasi_ops === 'manual') ? (float) $this->alokasi_biaya_tetap : '',
+                'selected_tier' => $this->selected_tier,
+                'kenaikan_persen' => $this->kenaikan_persen,
+                'target_penjualan_bulanan' => $this->target_penjualan_bulanan,
+            ];
+
             $product = Product::create([
                 'name' => $this->nama_produk,
                 'category_id' => $categoryId,
                 'sku' => $sku,
                 'harga_beli' => $totalHpp,
-                'operational_cost' => (float) $this->alokasi_biaya_tetap,
+                'operational_cost' => (float) ($hppData['biayaTetap'] ?? 0),
+                'ai_pricing_data' => $pricingMetadata,
                 'price' => $sellingPrice,
-                'stock' => 999,
                 'description' => 'Menu racikan via Kalkulator HPP & AI Pricing Strategy',
             ]);
         } else {
             // UPDATE PRODUK YANG SUDAH ADA
+            $pricingMetadata = [
+                'mode_alokasi_ops' => $this->mode_alokasi_ops,
+                'manual_alokasi_nominal' => ($this->mode_alokasi_ops === 'manual') ? (float) $this->alokasi_biaya_tetap : '',
+                'selected_tier' => $this->selected_tier,
+                'kenaikan_persen' => $this->kenaikan_persen,
+                'target_penjualan_bulanan' => $this->target_penjualan_bulanan,
+            ];
+
             $updateData = [
                 'name' => $this->nama_produk,
                 'harga_beli' => $totalHpp,
-                'operational_cost' => (float) $this->alokasi_biaya_tetap,
+                'operational_cost' => (float) ($hppData['biayaTetap'] ?? 0),
+                'ai_pricing_data' => $pricingMetadata,
             ];
             
             if (!empty($this->category_id)) {

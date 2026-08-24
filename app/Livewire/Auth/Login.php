@@ -3,7 +3,9 @@
 namespace App\Livewire\Auth;
 
 use Livewire\Component;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
@@ -29,18 +31,10 @@ class Login extends Component
 
     public function login()
     {
-
         $this->validate();
 
-        // Tambahkan debug log ke laravel.log
-        logger()->info('DEBUG LOGIN INPUT', [
-            'email' => $this->email,
-            'password' => $this->password,
-            'password_length' => strlen($this->password),
-            'remember' => $this->remember,
-        ]);
-
-        if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        // 1. Cek apakah pengguna mencoba login dengan akun aktif
+        if (Auth::attempt(['email' => $this->email, 'password' => $this->password, 'is_active' => true], $this->remember)) {
             session()->regenerate();
 
             $user = Auth::user();
@@ -53,9 +47,15 @@ class Login extends Component
             return redirect()->intended('/pos');
         }
 
+        // 2. Cek apakah password benar namun akun berstatus Non-aktif
+        $inactiveUser = User::where('email', $this->email)->where('is_active', false)->first();
+        if ($inactiveUser && Hash::check($this->password, $inactiveUser->password)) {
+            $this->addError('email', 'Akun Anda telah dinonaktifkan oleh Administrator. Silakan hubungi pemilik cafe.');
+            return;
+        }
+
         logger()->warning('LOGIN FAILED', [
             'email' => $this->email,
-            'password_length' => strlen($this->password),
         ]);
 
         $this->addError('email', 'Email atau password salah.');

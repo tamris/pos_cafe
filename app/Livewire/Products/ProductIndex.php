@@ -10,6 +10,7 @@ use Livewire\WithFileUploads;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 #[Layout('components.layouts.app')]
 #[Title('Produk Menu - POS Cafe')]
@@ -19,35 +20,25 @@ class ProductIndex extends Component
 
     public $search = '';
     public $categoryFilter = '';
+    public $statusFilter = 'all'; // 'all', 'active', 'inactive', 'trashed'
     public $productId;
     public $name = '';
     public $sku = '';
     public $category_id = '';
     public $description = '';
     public $price = '';
-    public $stock = 999; // Default 999 for Cafe Unlimited Mode
     public $image;
     public $oldImage;
     public $barcode = '';
-    public $harga_beli = 0;
+    public $harga_beli = '';
+    public $is_active = true;
     public $isEdit = false;
     public $showModal = false;
-
-    protected $rules = [
-        'name' => 'required|min:3',
-        'sku' => 'required|unique:products,sku',
-        'barcode' => 'nullable|string|unique:products,barcode',
-        'category_id' => 'required|exists:categories,id',
-        'price' => 'required|numeric|min:0',
-        'harga_beli' => 'required|numeric|min:0',
-        'description' => 'nullable',
-        'image' => 'nullable|image|max:2048'
-    ];
 
     protected $messages = [
         'name.required' => 'Nama menu wajib diisi',
         'sku.required' => 'SKU wajib diisi',
-        'sku.unique' => 'SKU sudah digunakan',
+        'sku.unique' => 'SKU sudah digunakan pada menu aktif',
         'category_id.required' => 'Kategori wajib dipilih',
         'barcode.unique' => 'Barcode ini sudah terdaftar di menu lain.',
         'price.required' => 'Harga jual wajib diisi',
@@ -65,6 +56,17 @@ class ProductIndex extends Component
 
     public function updatingCategoryFilter()
     {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function setStatusFilter($filter)
+    {
+        $this->statusFilter = $filter;
         $this->resetPage();
     }
 
@@ -104,8 +106,8 @@ class ProductIndex extends Component
             }
         }
 
-        // Cari nomor urut terbesar dari SKU dengan prefix tersebut
-        $existingSkus = Product::where('sku', 'LIKE', $prefix . '%')->pluck('sku');
+        // Cari nomor urut terbesar dari SKU dengan prefix tersebut (termasuk yang soft deleted untuk menghindari duplikasi)
+        $existingSkus = Product::withTrashed()->where('sku', 'LIKE', $prefix . '%')->pluck('sku');
         $maxNum = 0;
         foreach ($existingSkus as $existingSku) {
             if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $existingSku, $matches)) {
@@ -119,7 +121,7 @@ class ProductIndex extends Component
         $nextNum = $maxNum + 1;
         $newSku = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
 
-        while (Product::where('sku', $newSku)->exists()) {
+        while (Product::withTrashed()->where('sku', $newSku)->exists()) {
             $nextNum++;
             $newSku = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
         }
@@ -134,6 +136,10 @@ class ProductIndex extends Component
 
     public function openModal()
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menambah menu baru.');
+            return;
+        }
         $this->resetForm();
         $this->sku = $this->generateSku();
         $this->showModal = true;
@@ -148,22 +154,62 @@ class ProductIndex extends Component
     public function resetForm()
     {
         $this->reset(['name', 'sku', 'category_id', 'description', 'price', 'harga_beli', 'image', 'oldImage', 'productId', 'isEdit', 'barcode']);
-        $this->stock = 999;
+        $this->price = '';
+        $this->harga_beli = '';
+        $this->is_active = true;
         $this->resetValidation();
+    }
+
+    public function toggleStatus($id)
+    {
+        $product = Product::find($id);
+        if ($product) {
+            $product->is_active = !$product->is_active;
+            $product->save();
+            $statusLabel = $product->is_active ? 'Diaktifkan (Tersedia di POS)' : 'Dinonaktifkan (Disembunyikan dari POS)';
+            session()->flash('message', "Menu '{$product->name}' berhasil {$statusLabel}.");
+        }
     }
 
     public function save()
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses ditolak. Hanya Administrator yang dapat menyimpan perubahan menu.');
+            return;
+        }
+
         if (empty(trim($this->sku))) {
             $this->sku = $this->generateSku($this->category_id);
         }
 
-        if ($this->isEdit) {
-            $this->rules['sku'] = 'required|unique:products,sku,' . $this->productId;
-            $this->rules['barcode'] = 'nullable|string|unique:products,barcode,' . $this->productId;
+        // Parse format numerik
+        if ($this->price !== '' && !is_numeric($this->price)) {
+            $this->price = (float) preg_replace('/[^\d.]/', '', (string)$this->price);
+        }
+        if ($this->harga_beli !== '' && !is_numeric($this->harga_beli)) {
+            $this->harga_beli = (float) preg_replace('/[^\d.]/', '', (string)$this->harga_beli);
         }
 
-        $this->validate();
+        $skuRule = Rule::unique('products', 'sku')->whereNull('deleted_at');
+        $barcodeRule = Rule::unique('products', 'barcode')->whereNull('deleted_at');
+
+        if ($this->isEdit && $this->productId) {
+            $skuRule = $skuRule->ignore($this->productId);
+            $barcodeRule = $barcodeRule->ignore($this->productId);
+        }
+
+        $this->validate([
+            'name' => 'required|min:3',
+            'sku' => ['required', $skuRule],
+            'barcode' => ['nullable', 'string', $barcodeRule],
+            'category_id' => 'required|exists:categories,id',
+            'price' => 'required|numeric|min:0',
+            'harga_beli' => 'required|numeric|min:0',
+            'description' => 'nullable',
+            'image' => 'nullable|image|max:2048',
+            'is_active' => 'boolean',
+        ], $this->messages);
+
         $barcodeValue = empty(trim($this->barcode)) ? null : $this->barcode;
 
         $data = [
@@ -174,6 +220,7 @@ class ProductIndex extends Component
             'description' => $this->description,
             'price' => $this->price,
             'harga_beli' => $this->harga_beli,
+            'is_active' => (bool) $this->is_active,
         ];
 
         if ($this->image) {
@@ -190,8 +237,6 @@ class ProductIndex extends Component
             $product->update($data);
             session()->flash('message', 'Menu cafe berhasil diupdate');
         } else {
-            $data['stock'] = 999;
-
             $product = Product::create($data);
             session()->flash('message', 'Menu cafe berhasil ditambahkan');
         }
@@ -201,16 +246,23 @@ class ProductIndex extends Component
 
     public function edit($id)
     {
-        $product = Product::find($id);
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat mengedit data menu.');
+            return;
+        }
+
+        $product = Product::withTrashed()->find($id);
+        if (!$product) return;
+
         $this->productId = $product->id;
         $this->name = $product->name;
         $this->sku = $product->sku;
         $this->barcode = $product->barcode;
         $this->category_id = $product->category_id;
         $this->description = $product->description;
-        $this->price = $product->price;
-        $this->harga_beli = $product->harga_beli;
-        $this->stock = $product->stock;
+        $this->price = (int) $product->price;
+        $this->harga_beli = (int) $product->harga_beli;
+        $this->is_active = (bool) $product->is_active;
         $this->oldImage = $product->image;
         $this->isEdit = true;
         $this->showModal = true;
@@ -218,20 +270,89 @@ class ProductIndex extends Component
 
     public function delete($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menghapus menu.');
+            return;
+        }
+
         $product = Product::find($id);
+        if (!$product) return;
+
+        $hasTransactions = $product->transactionDetails()->exists();
+        
+        // Soft delete menu
+        $product->delete();
+
+        if ($hasTransactions) {
+            session()->flash('message', "Menu '{$product->name}' berhasil diarsipkan (Soft Delete). Riwayat transaksi dan omset masa lalu tetap 100% aman.");
+        } else {
+            session()->flash('message', "Menu '{$product->name}' berhasil dipindahkan ke Tong Sampah / Arsip.");
+        }
+    }
+
+    public function restore($id)
+    {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat memulihkan menu.');
+            return;
+        }
+
+        $product = Product::onlyTrashed()->find($id);
+        if ($product) {
+            $product->restore();
+            session()->flash('message', "Menu '{$product->name}' berhasil dipulihkan dari arsip.");
+        }
+    }
+
+    public function forceDelete($id)
+    {
+        if (auth()->user()->role !== 'admin') {
+            session()->flash('error', 'Akses dibatasi. Hanya Administrator yang dapat menghapus menu permanen.');
+            return;
+        }
+
+        $product = Product::onlyTrashed()->find($id);
+        if (!$product) return;
+
+        if ($product->transactionDetails()->exists()) {
+            session()->flash('error', "Menu '{$product->name}' tidak dapat dihapus permanen karena memiliki riwayat transaksi.");
+            return;
+        }
 
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
 
-        $product->delete();
-        session()->flash('message', 'Menu cafe berhasil dihapus');
+        $product->forceDelete();
+        session()->flash('message', "Menu '{$product->name}' berhasil dihapus permanen.");
     }
 
     public function render()
     {
-        $query = Product::with('category')
-            ->where('name', 'like', '%' . $this->search . '%');
+        // Counts for tab filters
+        $countAll = Product::count();
+        $countActive = Product::where('is_active', true)->count();
+        $countInactive = Product::where('is_active', false)->count();
+        $countTrashed = Product::onlyTrashed()->count();
+
+        // Build query based on status filter
+        if ($this->statusFilter === 'trashed') {
+            $query = Product::onlyTrashed()->with('category');
+        } elseif ($this->statusFilter === 'active') {
+            $query = Product::with('category')->where('is_active', true);
+        } elseif ($this->statusFilter === 'inactive') {
+            $query = Product::with('category')->where('is_active', false);
+        } else {
+            $query = Product::with('category');
+        }
+
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('sku', 'like', '%' . $this->search . '%')
+                    ->orWhere('barcode', 'like', '%' . $this->search . '%');
+            });
+        }
 
         if ($this->categoryFilter) {
             $query->where('category_id', $this->categoryFilter);
@@ -242,7 +363,11 @@ class ProductIndex extends Component
 
         return view('livewire.products.product-index', [
             'products' => $products,
-            'categories' => $categories
+            'categories' => $categories,
+            'countAll' => $countAll,
+            'countActive' => $countActive,
+            'countInactive' => $countInactive,
+            'countTrashed' => $countTrashed,
         ]);
     }
 }

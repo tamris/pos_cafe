@@ -16,27 +16,27 @@ class CategorySeeder extends Seeder
         $categories = [
             [
                 'id' => 1,
-                'name' => '☕ Espresso & Coffee',
+                'name' => 'Espresso & Coffee',
                 'description' => 'Kopi racikan barista khas cafe (Hot & Iced)'
             ],
             [
                 'id' => 2,
-                'name' => '🍵 Non-Coffee & Tea',
+                'name' => 'Non-Coffee & Tea',
                 'description' => 'Minuman non-kopi segar, matcha, cokelat, dan artisan tea'
             ],
             [
                 'id' => 3,
-                'name' => '🥐 Pastry & Bakery',
+                'name' => 'Pastry & Bakery',
                 'description' => 'Croissant, roti panggang, dan dessert manis pendamping kopi'
             ],
             [
                 'id' => 4,
-                'name' => '🍝 Main Course & Food',
+                'name' => 'Main Course & Food',
                 'description' => 'Makanan berat pilihan (Rice Bowl, Pasta, Nasi Goreng)'
             ],
             [
                 'id' => 5,
-                'name' => '🍟 Snacks & Appetizers',
+                'name' => 'Snacks & Appetizers',
                 'description' => 'Camilan gurih dan finger food untuk bersantai'
             ]
         ];
