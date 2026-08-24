@@ -76,6 +76,13 @@ class PosIndex extends Component
     public $lastInvoice = '';
     public $lastTransaction = null;
 
+    // Self-Order State
+    public $showSelfOrdersModal = false;
+    public $selfOrdersSearch = '';
+    public $selfOrdersStatusFilter = 'active'; // 'active', 'processing', 'ready', 'completed', 'all'
+    public $lastNotifiedOnlineOrderId = null;
+    public $newOnlineOrderAlert = null;
+
     public function isCashierRole(): bool
     {
         return in_array(auth()->user()?->role, ['kasir', 'cashier']);
@@ -85,6 +92,53 @@ class PosIndex extends Component
     {
         $this->loadProducts();
         $this->checkActiveShift();
+
+        // Initialize latest known paid self order ID to avoid notifying past orders
+        $latestPaid = Transaction::where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->max('id');
+        $this->lastNotifiedOnlineOrderId = $latestPaid ?? 0;
+    }
+
+    public function checkNewOnlineOrders()
+    {
+        $newOrder = Transaction::with(['details.product'])
+            ->where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->where('id', '>', (int) $this->lastNotifiedOnlineOrderId)
+            ->oldest()
+            ->first();
+
+        if ($newOrder) {
+            $this->lastNotifiedOnlineOrderId = $newOrder->id;
+            $this->newOnlineOrderAlert = [
+                'id' => $newOrder->id,
+                'invoice' => $newOrder->invoice_number,
+                'customer_name' => $newOrder->customer_name,
+                'table_number' => $newOrder->table_number,
+                'order_type' => $newOrder->order_type,
+                'total' => $newOrder->total,
+                'items_count' => $newOrder->details->count(),
+            ];
+
+            $this->dispatch('play-online-order-sound', [
+                'invoice' => $newOrder->invoice_number,
+                'name' => $newOrder->customer_name,
+                'total' => number_format($newOrder->total, 0, ',', '.'),
+            ]);
+        }
+    }
+
+    public function dismissOnlineOrderAlert()
+    {
+        $this->newOnlineOrderAlert = null;
+    }
+
+    public function viewOnlineOrderFromAlert()
+    {
+        $this->newOnlineOrderAlert = null;
+        $this->showSelfOrdersModal = true;
+        $this->selfOrdersStatusFilter = 'active';
     }
 
     public function checkActiveShift()
@@ -932,16 +986,82 @@ class PosIndex extends Component
         }
     }
 
+    public function openSelfOrdersModal()
+    {
+        $this->showSelfOrdersModal = true;
+        $this->selfOrdersSearch = '';
+    }
+
+    public function closeSelfOrdersModal()
+    {
+        $this->showSelfOrdersModal = false;
+    }
+
+    public function setSelfOrdersStatusFilter($filter)
+    {
+        $this->selfOrdersStatusFilter = $filter;
+    }
+
+    public function updateSelfOrderStatus($transactionId, $newStatus)
+    {
+        $transaction = Transaction::where('order_source', 'self_order')->find($transactionId);
+        if (!$transaction) {
+            $this->notify('error', 'Pesanan online tidak ditemukan.');
+            return;
+        }
+
+        $validStatuses = ['pending', 'processing', 'ready', 'completed', 'cancelled'];
+        if (!in_array($newStatus, $validStatuses)) {
+            $this->notify('error', 'Status tidak valid.');
+            return;
+        }
+
+        $updateData = ['status' => $newStatus];
+
+        // Assign handling cashier
+        if (auth()->check()) {
+            $updateData['user_id'] = auth()->id();
+        }
+
+        if ($this->activeShift) {
+            $updateData['shift_id'] = $this->activeShift->id;
+        }
+
+        if ($newStatus === 'cancelled') {
+            $updateData['cancelled_reason'] = 'Dibatalkan oleh Kasir';
+            $updateData['cancelled_by'] = auth()->id();
+            $updateData['cancelled_at'] = now();
+        }
+
+        $transaction->update($updateData);
+
+        // Recalculate shift totals if shift is active
+        if ($this->activeShift) {
+            $this->activeShift->recalculateTotals();
+        }
+
+        $statusLabels = [
+            'processing' => 'Sedang Disiapkan (Dapur/Bar)',
+            'ready' => 'Siap Diambil / Diantar',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+        ];
+
+        $label = $statusLabels[$newStatus] ?? $newStatus;
+        $this->notify('success', "Status pesanan {$transaction->invoice_number} diubah menjadi: {$label}.");
+    }
+
     public function render()
     {
         $categories = Category::where('is_active', true)->withCount('products')->orderBy('name', 'asc')->get();
         $allCategories = Category::withCount('products')->orderBy('name', 'asc')->get();
 
-        $openBillsCount = Transaction::where('status', 'pending')->count();
+        $openBillsCount = Transaction::where('status', 'pending')->where('order_source', '!=', 'self_order')->count();
         $openBills = [];
         if ($this->showOpenBillsModal) {
             $query = Transaction::with(['details.product', 'user'])
                 ->where('status', 'pending')
+                ->where('order_source', '!=', 'self_order')
                 ->latest();
 
             if ($this->openBillsSearch) {
@@ -952,6 +1072,36 @@ class PosIndex extends Component
                 });
             }
             $openBills = $query->get();
+        }
+
+        // Self-Order Query for Kasir
+        $selfOrdersCount = Transaction::where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->whereIn('status', ['pending', 'processing', 'ready'])
+            ->count();
+
+        $selfOrders = [];
+        if ($this->showSelfOrdersModal) {
+            $selfQuery = Transaction::with(['details.product'])
+                ->where('order_source', 'self_order')
+                ->where('payment_status', 'paid')
+                ->latest();
+
+            if ($this->selfOrdersStatusFilter === 'active') {
+                $selfQuery->whereIn('status', ['pending', 'processing', 'ready']);
+            } elseif ($this->selfOrdersStatusFilter !== 'all') {
+                $selfQuery->where('status', $this->selfOrdersStatusFilter);
+            }
+
+            if ($this->selfOrdersSearch) {
+                $selfQuery->where(function ($q) {
+                    $q->where('table_number', 'like', '%' . $this->selfOrdersSearch . '%')
+                      ->orWhere('customer_name', 'like', '%' . $this->selfOrdersSearch . '%')
+                      ->orWhere('invoice_number', 'like', '%' . $this->selfOrdersSearch . '%');
+                });
+            }
+
+            $selfOrders = $selfQuery->get();
         }
 
         $availabilityProducts = [];
@@ -980,6 +1130,8 @@ class PosIndex extends Component
             'allCategories' => $allCategories,
             'openBillsCount' => $openBillsCount,
             'openBills' => $openBills,
+            'selfOrdersCount' => $selfOrdersCount,
+            'selfOrders' => $selfOrders,
             'occupiedTables' => $occupiedTables,
             'availabilityProducts' => $availabilityProducts,
         ]);

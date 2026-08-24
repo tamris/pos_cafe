@@ -11,7 +11,16 @@ use App\Livewire\Transactions\TransactionIndex;
 use App\Livewire\Pos\PosIndex;
 use App\Livewire\Reports\ReportIndex;
 use App\Livewire\StockManagement\StockIndex;
+use App\Livewire\OnlineOrders\OnlineOrderIndex;
+use App\Livewire\Customer\CustomerOrder;
+use App\Livewire\Customer\CustomerPayment;
+use App\Livewire\Customer\CustomerStatus;
 use App\Http\Middleware\IsAdmin;
+
+// Customer Self-Order Routes (Public)
+Route::get('/order', CustomerOrder::class)->name('customer.order');
+Route::get('/order/pay/{token}', CustomerPayment::class)->name('customer.payment');
+Route::get('/order/status/{token}', CustomerStatus::class)->name('customer.status');
 
 // Guest routes
 Route::middleware('guest')->group(function () {
@@ -77,6 +86,7 @@ Route::get('/test-gemini', function () {
 // Auth routes
 Route::middleware('auth')->group(function () {
     Route::get('/pos', PosIndex::class)->name('pos.index');
+    Route::get('/online-orders', OnlineOrderIndex::class)->name('online-orders.index');
     Route::get('/print-struk/{invoice}', [PosController::class, 'printStruk'])->name('print.struk');
     Route::get('/rawbt-struk/{invoice}', [PosController::class, 'rawbtStruk'])->name('rawbt.struk');
     Route::get('/print-kitchen/{invoice}', [PosController::class, 'printKitchen'])->name('print.kitchen');
