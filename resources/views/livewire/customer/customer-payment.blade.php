@@ -1,50 +1,31 @@
-<div class="min-h-screen bg-[#f8faf9] flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-10 sm:pt-6">
+<div class="min-h-screen bg-[#f8faf9] flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-8 sm:pt-6 pb-10"
+     wire:poll.3s="checkPaymentStatus">
 
-    {{-- Midtrans Snap JS --}}
-    @if(!empty($clientKey))
-        <script src="{{ $isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" 
-                data-client-key="{{ $clientKey }}"></script>
-    @endif
-
-    {{-- Top Header (With Back/Cancel Button) --}}
+    {{-- Top Header (Original Style) --}}
     <div class="max-w-md mx-auto w-full flex items-center justify-between pb-3.5 border-b border-slate-200/80">
         <button type="button" 
                 onclick="confirmCancelOrder()"
-                class="w-9 h-9 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:text-rose-600 flex items-center justify-center text-xs shadow-2xs cursor-pointer">
+                class="w-9 h-9 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:text-rose-600 flex items-center justify-center text-xs shadow-2xs cursor-pointer transition">
             <i class="fas fa-arrow-left"></i>
         </button>
         <span class="text-xs font-black text-slate-900 uppercase tracking-widest font-heading">
-            Pembayaran Online
+            Pembayaran QRIS
         </span>
-        <div class="w-9"></div> {{-- Spacer for perfect centering --}}
+        <div class="w-9"></div> {{-- Spacer for perfect balance --}}
     </div>
 
-    {{-- Main Payment Container (Centered for Mobile & Tablet) --}}
-    <div class="max-w-md mx-auto w-full my-auto py-4 space-y-4">
+    {{-- Main Payment Container --}}
+    <div class="max-w-md mx-auto w-full my-auto py-3 space-y-3.5">
 
-        {{-- Midtrans & QRIS Payment Card --}}
-        <div class="bg-white rounded-3xl p-6 shadow-md border border-slate-200/80 text-center relative overflow-hidden">
+        {{-- Main Payment Card --}}
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-200/80 text-center relative overflow-hidden">
             
-            {{-- Sandbox Mode Badge --}}
-            @if(!$isProduction)
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-800 border border-amber-300/60 text-[10px] font-black uppercase tracking-wider mb-3">
-                    <i class="fas fa-flask text-[10px] text-amber-600"></i> Midtrans Sandbox Mode
+            {{-- Payment Expiry Countdown Timer --}}
+            <div x-data="paymentTimer({{ $expiresAtTimestamp }})" x-init="start()" class="mb-4">
+                <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-bold shadow-2xs">
+                    <i class="far fa-clock text-amber-600 animate-pulse"></i>
+                    <span>Selesaikan dalam <strong class="font-mono text-amber-950 font-black tracking-wider" x-text="formattedTime">15:00</strong></span>
                 </div>
-            @endif
-
-            {{-- Clean Centered Payment Gateways Header --}}
-            <div class="flex items-center justify-center gap-2 pb-3.5 border-b border-slate-100 mb-4">
-                <span class="text-2xl font-black text-[#0e382c] tracking-tight font-heading">Midtrans</span>
-                <span class="text-xs px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">Snap Gateway</span>
-            </div>
-
-            {{-- Supported Payment Methods Logos / Badges --}}
-            <div class="flex flex-wrap items-center justify-center gap-1.5 mb-4 text-[11px] font-bold text-slate-600">
-                <span class="px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 text-slate-700">QRIS</span>
-                <span class="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-700">GoPay</span>
-                <span class="px-2.5 py-1 rounded-xl bg-orange-50 border border-orange-200 text-orange-700">ShopeePay</span>
-                <span class="px-2.5 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700">BCA / VA</span>
-                <span class="px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">DANA</span>
             </div>
 
             {{-- Invoice & Table Info --}}
@@ -67,100 +48,67 @@
             </div>
 
             {{-- Total Amount Display --}}
-            <div class="bg-gradient-to-br from-slate-50 to-emerald-50/40 py-3.5 px-4 rounded-2xl border border-emerald-200/60 mb-5">
-                <span class="text-[11px] text-slate-500 font-medium block mb-0.5">Total Tagihan Pembayaran</span>
-                <span class="text-2xl sm:text-3xl font-black text-[#0e382c] font-heading">
+            <div class="bg-slate-50 py-3.5 px-4 rounded-2xl border border-slate-200/60 mb-4">
+                <span class="text-[11px] text-slate-500 font-medium block mb-0.5">Total yang Harus Dibayar</span>
+                <span class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">
                     Rp {{ number_format($transaction->total, 0, ',', '.') }}
                 </span>
             </div>
 
-            {{-- Snap Error Alert if any --}}
-            @if($snapError)
-                <div class="p-3.5 mb-4 rounded-2xl bg-rose-50 border border-rose-200 text-left text-xs text-rose-950 flex items-start gap-2.5">
-                    <i class="fas fa-exclamation-triangle text-rose-600 mt-0.5"></i>
-                    <div>
-                        <strong class="block font-bold">Peringatan:</strong>
-                        <span>{{ $snapError }}</span>
-                    </div>
+            {{-- The Authentic QRIS Frame (Kopken Style Frame inside Original Theme) --}}
+            <div class="bg-white rounded-2xl p-4 sm:p-5 border-2 border-slate-200 shadow-xs text-center relative overflow-hidden max-w-[270px] sm:max-w-[290px] mx-auto">
+                
+                {{-- Left Red Chevron Accent --}}
+                <div class="absolute left-0 top-1/4 -translate-y-2 w-3.5 h-20 bg-[#e5252d] clip-chevron-left"></div>
+
+                {{-- Bottom Right Red Chevron Accent --}}
+                <div class="absolute right-0 bottom-0 w-10 h-10 bg-[#e5252d] clip-chevron-corner"></div>
+
+                {{-- QRIS Official Header Logo (Official National Standard) --}}
+                <div class="flex items-center justify-center pt-1 pb-2">
+                    <img src="{{ asset('images/qris-logo.png') }}" 
+                         alt="QRIS - QR Code Standar Pembayaran Nasional" 
+                         class="h-7 sm:h-8 w-auto object-contain">
                 </div>
-            @endif
 
-            {{-- Primary Action: Open Midtrans Snap Popup --}}
-            @if($snapToken)
-                <button type="button" 
-                        onclick="payWithMidtrans()"
-                        class="w-full py-4 px-4 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-sm shadow-lg shadow-[#0e382c]/25 flex items-center justify-center gap-2.5 transition cursor-pointer">
-                    <i class="fas fa-shield-alt text-emerald-400 text-base"></i>
-                    <span>Bayar Sekarang (Midtrans Snap)</span>
-                    <i class="fas fa-arrow-right text-xs ml-1"></i>
-                </button>
-            @else
-                <button type="button" 
-                        wire:click="initSnap"
-                        class="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-                    <i class="fas fa-redo"></i>
-                    <span>Muat Ulang Sesi Pembayaran</span>
-                </button>
-            @endif
+                {{-- Direct Midtrans QR Code Image --}}
+                <div class="relative inline-block my-1 bg-white p-1">
+                    @if($qrisUrl)
+                        <img id="qrisImageElement" 
+                             src="{{ $qrisUrl }}" 
+                             alt="Kode QRIS" 
+                             class="w-52 h-52 sm:w-56 sm:h-56 mx-auto object-contain">
+                    @else
+                        <div class="w-52 h-52 sm:w-56 sm:h-56 flex flex-col items-center justify-center bg-slate-50 rounded-lg text-slate-400">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2 text-[#0e382c]"></i>
+                            <span class="text-xs font-semibold">Memuat Kode QRIS...</span>
+                        </div>
+                    @endif
+                </div>
 
-            {{-- Manual Status Sync Button --}}
-            <div class="mt-3">
-                <button type="button"
-                        wire:click="checkPaymentStatus"
-                        wire:loading.attr="disabled"
-                        class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-                    <i class="fas fa-sync-alt text-[10px]" wire:loading.class="fa-spin"></i>
-                    <span wire:loading.remove>Saya Sudah Bayar (Cek Status)</span>
-                    <span wire:loading>Memverifikasi Pembayaran...</span>
-                </button>
             </div>
 
-            {{-- Sandbox Quick Simulator Notice & Button --}}
-            @if(!$isProduction)
-                <div class="mt-5 pt-4 border-t border-slate-100">
-                    <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-left flex items-start gap-2.5 mb-2.5">
-                        <div class="w-5 h-5 rounded-md bg-amber-600 text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                            <i class="fas fa-vial"></i>
-                        </div>
-                        <div class="text-[11px] text-amber-950">
-                            <strong class="font-bold block">Testing Sandbox Mode:</strong>
-                            Gunakan popup Midtrans di atas, atau klik tombol simulasi di bawah untuk langsung menguji alur dapur tanpa pembayaran asli.
-                        </div>
-                    </div>
-
-                    <button type="button" 
-                            wire:click="simulatePaymentSuccess"
-                            wire:loading.attr="disabled"
-                            class="w-full py-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-                        <i class="fas fa-check-circle text-emerald-600"></i>
-                        <span>Simulasi Bayar Instan (Bypass Test)</span>
-                    </button>
-                </div>
-            @endif
+            {{-- Minimalist & Clean Payment Note --}}
+            <div class="mt-3 text-[10.5px] text-slate-400 font-medium max-w-[260px] mx-auto leading-snug">
+                Scan dengan <span class="text-slate-600 font-bold">BCA, GoPay, OVO, DANA, ShopeePay</span> & semua Mobile Banking.
+            </div>
 
         </div>
 
-        {{-- Cancel Order Button with SweetAlert2 --}}
-        <div>
-            <button type="button" 
-                    onclick="confirmCancelOrder()"
-                    class="w-full py-3 rounded-2xl bg-white border border-slate-200/90 text-rose-600 hover:bg-rose-50 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs cursor-pointer">
-                <i class="fas fa-times-circle text-xs"></i>
-                <span>Batalkan Pesanan & Kembali ke Menu</span>
-            </button>
-        </div>
-
-        {{-- Accordion Order Items Breakdown --}}
+        {{-- Accordion Order Items Breakdown (Original Style) --}}
         <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs" x-data="{ open: false }">
-            <button type="button" @click="open = !open" class="w-full flex items-center justify-between text-xs font-black text-slate-800">
-                <span>Rincian Item ({{ $transaction->details->count() }} menu)</span>
-                <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+            <button type="button" @click="open = !open" class="w-full flex items-center justify-between text-xs font-black text-slate-800 cursor-pointer">
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-receipt text-slate-400 text-xs"></i>
+                    <span>Rincian Pesanan ({{ $transaction->details->count() }} menu)</span>
+                </span>
+                <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
             </button>
 
-            <div x-show="open" x-cloak class="mt-3 pt-3 border-t border-slate-100 space-y-2 text-xs">
+            <div x-show="open" x-cloak class="mt-3 pt-3 border-t border-slate-100 space-y-2.5 text-xs">
                 @foreach($transaction->details as $d)
                     <div class="flex justify-between items-start">
-                        <div>
+                        <div class="pr-2">
                             <span class="font-bold text-slate-900">{{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}</span>
                             @if(!empty($d->notes))
                                 <div class="text-[11px] text-slate-500 font-medium mt-0.5">
@@ -168,7 +116,7 @@
                                 </div>
                             @endif
                         </div>
-                        <span class="font-black text-slate-900">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
+                        <span class="font-black text-slate-900 shrink-0">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
                     </div>
                 @endforeach
                 
@@ -181,14 +129,77 @@
             </div>
         </div>
 
+        {{-- Primary Action: Saya Sudah Membayar (Original Emerald Theme) --}}
+        <div>
+            <button type="button" 
+                    wire:click="manualCheckPayment"
+                    wire:loading.attr="disabled"
+                    wire:target="manualCheckPayment"
+                    class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-md shadow-[#0e382c]/20 flex items-center justify-center gap-2 transition cursor-pointer">
+                <i class="fas fa-check-circle text-xs" wire:loading.remove wire:target="manualCheckPayment"></i>
+                <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="manualCheckPayment"></i>
+                <span wire:loading.remove wire:target="manualCheckPayment">Saya Sudah Membayar</span>
+                <span wire:loading wire:target="manualCheckPayment">Memverifikasi Pembayaran...</span>
+            </button>
+        </div>
+
+        {{-- Cancel Order Button with SweetAlert2 (Original Style) --}}
+        <div>
+            <button type="button" 
+                    onclick="confirmCancelOrder()"
+                    class="w-full py-3 rounded-2xl bg-white border border-slate-200/90 text-rose-600 hover:bg-rose-50 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs cursor-pointer">
+                <i class="fas fa-times-circle text-xs"></i>
+                <span>Batalkan Pesanan & Kembali ke Menu</span>
+            </button>
+        </div>
+
     </div>
 
     {{-- Footer Info --}}
     <div class="max-w-md mx-auto w-full text-center text-[11px] text-slate-400 pb-safe">
-        Pembayaran diamankan otomatis oleh Midtrans. Pesanan langsung masuk antrean kasir setelah pembayaran lunas.
+        Pembayaran diamankan otomatis. Pesanan langsung masuk antrean dapur setelah pembayaran lunas.
     </div>
 
+    {{-- CSS Helpers for Red Geometric Chevron Accents on QR Frame --}}
+    <style>
+        .clip-chevron-left {
+            clip-path: polygon(0% 0%, 100% 15%, 100% 85%, 0% 100%, 0% 50%);
+        }
+        .clip-chevron-corner {
+            clip-path: polygon(100% 0%, 100% 100%, 0% 100%, 30% 70%);
+        }
+    </style>
+
     <script>
+        function paymentTimer(expiresTimestamp) {
+            return {
+                expiry: expiresTimestamp,
+                formattedTime: '15:00',
+                timer: null,
+                start() {
+                    this.calcTime();
+                    this.timer = setInterval(() => {
+                        this.calcTime();
+                    }, 1000);
+                },
+                calcTime() {
+                    let now = Math.floor(Date.now() / 1000);
+                    let diff = this.expiry - now;
+                    if (diff <= 0) {
+                        this.formattedTime = '00:00 (Habis)';
+                        clearInterval(this.timer);
+                        if (window.Livewire && typeof @this !== 'undefined') {
+                            @this.call('expireOrder');
+                        }
+                        return;
+                    }
+                    let m = Math.floor(diff / 60);
+                    let s = diff % 60;
+                    this.formattedTime = (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+                }
+            };
+        }
+
         (function() {
             let token = '{{ $transaction->order_token }}';
             if (token) {
@@ -206,46 +217,6 @@
             tokens = tokens.filter(t => t !== removeToken);
             localStorage.setItem('self_order_tokens', JSON.stringify(tokens));
         });
-
-        function payWithMidtrans() {
-            let snapToken = '{{ $snapToken }}';
-            if (!snapToken) {
-                alert('Sesi pembayaran Midtrans belum siap. Silakan muat ulang halaman.');
-                return;
-            }
-
-            if (typeof window.snap === 'undefined') {
-                alert('Modul pembayaran Midtrans sedang dimuat. Mohon tunggu beberapa detik lalu coba lagi.');
-                return;
-            }
-
-            window.snap.pay(snapToken, {
-                onSuccess: function(result) {
-                    console.log('Midtrans Payment Success:', result);
-                    window.location.href = "{{ route('customer.status', ['token' => $transaction->order_token]) }}";
-                },
-                onPending: function(result) {
-                    console.log('Midtrans Payment Pending:', result);
-                    window.location.href = "{{ route('customer.status', ['token' => $transaction->order_token]) }}";
-                },
-                onError: function(result) {
-                    console.error('Midtrans Payment Error:', result);
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Pembayaran Gagal / Ditolak',
-                            text: result.status_message || 'Terjadi kendala dalam proses pembayaran.',
-                            confirmButtonColor: '#e11d48'
-                        });
-                    } else {
-                        alert('Pembayaran Gagal: ' + (result.status_message || ''));
-                    }
-                },
-                onClose: function() {
-                    console.log('Customer closed Midtrans Snap without completing payment.');
-                }
-            });
-        }
 
         function confirmCancelOrder() {
             if (typeof Swal === 'undefined') {

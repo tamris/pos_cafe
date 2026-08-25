@@ -61,7 +61,7 @@
                 <div class="w-16 h-16 rounded-2xl bg-emerald-600 text-white text-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-600/30 animate-bounce">
                     <i class="fas fa-bell"></i>
                 </div>
-                <h2 class="text-xl font-black font-heading text-emerald-950">Pesanan Siap! 🎉</h2>
+                <h2 class="text-xl font-black font-heading text-emerald-950">Pesanan Siap!</h2>
                 <p class="text-xs text-emerald-800 mt-1.5 max-w-xs mx-auto font-medium leading-relaxed">
                     @if($transaction->order_type === 'dine_in')
                         Pesanan Anda sedang diantarkan ke <strong>Meja {{ $transaction->table_number ?? '-' }}</strong> atau dapat diambil di pick-up counter.

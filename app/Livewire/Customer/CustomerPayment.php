@@ -10,15 +10,14 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
 #[Layout('components.layouts.customer')]
-#[Title('Pembayaran Midtrans & QRIS - Self Order')]
+#[Title('Pembayaran QRIS - Self Order')]
 class CustomerPayment extends Component
 {
     public $token;
     public $transaction;
-    public $snapToken = null;
-    public $snapError = null;
+    public $qrisUrl = null;
+    public $qrString = null;
     public $isSimulating = false;
-    public $isCheckingStatus = false;
 
     public function mount($token)
     {
@@ -27,56 +26,87 @@ class CustomerPayment extends Component
             ->where('order_token', $token)
             ->firstOrFail();
 
-        // If already paid, go straight to order status
-        if ($this->transaction->payment_status === 'paid') {
+        // If already paid or already cancelled, go straight to order status
+        if ($this->transaction->payment_status === 'paid' || $this->transaction->status === 'cancelled') {
             return redirect()->route('customer.status', ['token' => $this->token]);
         }
 
-        $this->initSnap();
+        // Check if 15 minutes have already passed since creation
+        if ($this->transaction->created_at && $this->transaction->created_at->addMinutes(15)->isPast()) {
+            return $this->expireOrder();
+        }
+
+        $this->loadQris();
     }
 
-    public function initSnap()
+    public function loadQris()
     {
         try {
             $midtransService = app(MidtransService::class);
-            $this->snapToken = $midtransService->getSnapToken($this->transaction);
+            $qrisData = $midtransService->generateQris($this->transaction);
 
-            if (!$this->snapToken) {
-                $this->snapError = 'Tidak dapat memuat sesi pembayaran online Midtrans. Silakan coba lagi atau gunakan simulasi.';
-            }
+            $this->qrisUrl = $qrisData['qris_url'] ?? null;
+            $this->qrString = $qrisData['qr_string'] ?? null;
         } catch (\Throwable $e) {
-            $this->snapError = 'Koneksi Payment Gateway: ' . $e->getMessage();
+            $this->qrisUrl = 'https://api.sandbox.midtrans.com/v2/qris/' . $this->transaction->invoice_number . '/qr-code';
         }
     }
 
     /**
-     * Cek status pembayaran langsung ke server Midtrans (Fallback / Instant Sync)
+     * Silent Background Polling: mengecek status transaksi di latar belakang tanpa efek loading di tombol
      */
     public function checkPaymentStatus()
     {
-        $this->isCheckingStatus = true;
+        try {
+            $midtransService = app(MidtransService::class);
+            $midtransService->checkTransactionStatus($this->transaction->invoice_number);
 
-        $midtransService = app(MidtransService::class);
-        $status = $midtransService->checkTransactionStatus($this->transaction->invoice_number);
+            $this->transaction = Transaction::with(['details.product'])
+                ->where('order_token', $this->token)
+                ->firstOrFail();
 
-        // Reload data transaksi
-        $this->transaction = Transaction::with(['details.product'])
-            ->where('order_token', $this->token)
-            ->firstOrFail();
+            if ($this->transaction->payment_status === 'paid') {
+                return redirect()->route('customer.status', ['token' => $this->token]);
+            }
 
-        $this->isCheckingStatus = false;
+            // Jika status dari Midtrans sudah expire / cancel
+            if ($this->transaction->payment_status === 'failed' || ($this->transaction->created_at && $this->transaction->created_at->addMinutes(15)->isPast())) {
+                return $this->expireOrder();
+            }
+        } catch (\Throwable $e) {
+            // Silently continue
+        }
+    }
 
-        if ($this->transaction->payment_status === 'paid') {
-            return redirect()->route('customer.status', ['token' => $this->token]);
+    /**
+     * Menandai pesanan kadaluarsa otomatis saat timer 15 menit habis
+     */
+    public function expireOrder()
+    {
+        $transaction = Transaction::where('order_token', $this->token)->first();
+        if ($transaction && $transaction->payment_status === 'unpaid') {
+            $transaction->update([
+                'status' => 'cancelled',
+                'payment_status' => 'failed',
+                'cancelled_reason' => 'Batas waktu pembayaran QRIS telah kadaluarsa.',
+                'cancelled_at' => now(),
+            ]);
+
+            $this->dispatch('remove-token-localstorage', token: $this->token);
         }
 
-        $transactionStatus = $status['transaction_status'] ?? 'pending';
-        if ($transactionStatus === 'pending') {
-            $this->dispatch('alert', type: 'info', message: 'Pembayaran belum terdeteksi. Silakan selesaikan pembayaran pada popup Midtrans.');
-        } elseif (in_array($transactionStatus, ['expire', 'cancel', 'deny'])) {
-            $this->dispatch('alert', type: 'error', message: 'Status pembayaran: ' . strtoupper($transactionStatus) . '. Silakan buat pesanan baru.');
-        } else {
-            $this->dispatch('alert', type: 'warning', message: 'Status pembayaran belum berubah (Status: ' . ($transactionStatus ?: 'Belum dibayar') . ').');
+        return redirect()->route('customer.status', ['token' => $this->token]);
+    }
+
+    /**
+     * Manual Trigger saat pelanggan klik tombol "Saya Sudah Membayar"
+     */
+    public function manualCheckPayment()
+    {
+        $this->checkPaymentStatus();
+
+        if ($this->transaction->payment_status !== 'paid') {
+            $this->dispatch('alert', type: 'info', message: 'Pembayaran belum terdeteksi. Silakan selesaikan scan & bayar di aplikasi mobile banking / e-wallet Anda.');
         }
     }
 
@@ -88,6 +118,7 @@ class CustomerPayment extends Component
         
         $transaction->update([
             'payment_status' => 'paid',
+            'payment_method' => 'qris',
             'paid' => (float) $transaction->total,
             'change' => 0,
             'status' => 'processing',
@@ -117,10 +148,11 @@ class CustomerPayment extends Component
     public function render()
     {
         $setting = Setting::first();
+        $expiresAtTimestamp = $this->transaction->created_at ? $this->transaction->created_at->addMinutes(15)->timestamp : now()->addMinutes(15)->timestamp;
+        
         return view('livewire.customer.customer-payment', [
             'setting' => $setting,
-            'clientKey' => config('midtrans.client_key'),
-            'isProduction' => config('midtrans.is_production', false),
+            'expiresAtTimestamp' => $expiresAtTimestamp,
         ]);
     }
 }

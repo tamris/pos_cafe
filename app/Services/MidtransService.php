@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Log;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Midtrans\CoreApi;
 use Midtrans\Transaction as MidtransTransaction;
 
 class MidtransService
@@ -28,7 +29,155 @@ class MidtransService
     }
 
     /**
-     * Dapatkan Snap Token untuk pembayaran
+     * Generate Dynamic QRIS resmi langsung dari Midtrans Core API
+     */
+    public function generateQris(Transaction $transaction): array
+    {
+        self::init();
+
+        // Jika sudah ada data QRIS resmi Midtrans yang tersimpan, gunakan kembali
+        if (!empty($transaction->qris_url) && str_contains($transaction->qris_url, 'midtrans.com')) {
+            return [
+                'qris_url' => $transaction->qris_url,
+                'qr_string' => $transaction->qris_string,
+            ];
+        }
+
+        $grossAmount = (int) round($transaction->total);
+
+        // Susun item details
+        $itemDetails = [];
+        $calculatedSum = 0;
+
+        foreach ($transaction->details as $detail) {
+            $price = (int) round($detail->price);
+            $qty = (int) $detail->quantity;
+            $calculatedSum += ($price * $qty);
+
+            $itemDetails[] = [
+                'id' => (string) $detail->product_id,
+                'price' => $price,
+                'quantity' => $qty,
+                'name' => mb_substr($detail->product?->name ?? 'Menu Item', 0, 50),
+            ];
+        }
+
+        // Diskon jika ada
+        if ((float) $transaction->discount > 0) {
+            $discountAmount = (int) round($transaction->discount);
+            $calculatedSum -= $discountAmount;
+            $itemDetails[] = [
+                'id' => 'DISC',
+                'price' => -$discountAmount,
+                'quantity' => 1,
+                'name' => 'Diskon Promo',
+            ];
+        }
+
+        // Pajak jika ada
+        if ((float) $transaction->tax > 0) {
+            $taxAmount = (int) round($transaction->tax);
+            $calculatedSum += $taxAmount;
+            $itemDetails[] = [
+                'id' => 'TAX',
+                'price' => $taxAmount,
+                'quantity' => 1,
+                'name' => 'Pajak PB1',
+            ];
+        }
+
+        // Pastikan sum(item_details) sama persis dengan gross_amount
+        if ($calculatedSum !== $grossAmount) {
+            $diff = $grossAmount - $calculatedSum;
+            $itemDetails[] = [
+                'id' => 'ADJ',
+                'price' => $diff,
+                'quantity' => 1,
+                'name' => 'Penyesuaian Total',
+            ];
+        }
+
+        $params = [
+            'payment_type' => 'qris',
+            'transaction_details' => [
+                'order_id' => $transaction->invoice_number,
+                'gross_amount' => $grossAmount,
+            ],
+            'qris' => [
+                'acquirer' => 'gopay',
+            ],
+            'customer_details' => [
+                'first_name' => $transaction->customer_name ?: 'Pelanggan Cafe',
+                'phone' => $transaction->customer_phone ?: '08123456789',
+            ],
+            'item_details' => $itemDetails,
+        ];
+
+        $baseUrl = config('midtrans.is_production', false) ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com';
+
+        try {
+            $charge = CoreApi::charge($params);
+            $qrString = $charge->qr_string ?? null;
+            $transactionId = $charge->transaction_id ?? null;
+            
+            $qrisUrl = $transactionId ? "{$baseUrl}/v2/qris/{$transactionId}/qr-code" : null;
+
+            if (!$qrisUrl && isset($charge->actions) && is_array($charge->actions)) {
+                foreach ($charge->actions as $action) {
+                    if ($action->name === 'generate-qr-code') {
+                        $qrisUrl = $action->url;
+                        break;
+                    }
+                }
+            }
+
+            if (!$qrisUrl && $qrString) {
+                $qrisUrl = "{$baseUrl}/v2/qris/" . ($charge->transaction_id ?? '') . "/qr-code";
+            }
+
+            $transaction->update([
+                'qris_url' => $qrisUrl,
+                'qris_string' => $qrString,
+            ]);
+
+            return [
+                'qris_url' => $qrisUrl,
+                'qr_string' => $qrString,
+            ];
+        } catch (\Throwable $e) {
+            Log::warning("Midtrans generateQris Error [{$transaction->invoice_number}]: " . $e->getMessage());
+
+            // Jika order sudah terdaftar di Midtrans (HTTP 406), ambil status langsung dari server Midtrans
+            try {
+                $statusObj = MidtransTransaction::status($transaction->invoice_number);
+                if (!empty($statusObj->transaction_id)) {
+                    $qrisUrl = "{$baseUrl}/v2/qris/{$statusObj->transaction_id}/qr-code";
+                    $qrString = $statusObj->qr_string ?? null;
+
+                    $transaction->update([
+                        'qris_url' => $qrisUrl,
+                        'qris_string' => $qrString,
+                    ]);
+
+                    return [
+                        'qris_url' => $qrisUrl,
+                        'qr_string' => $qrString,
+                    ];
+                }
+            } catch (\Throwable $ex) {
+                Log::warning("Midtrans status check fallback failed: " . $ex->getMessage());
+            }
+
+            $fallbackQr = "{$baseUrl}/v2/qris/{$transaction->invoice_number}/qr-code";
+            return [
+                'qris_url' => $fallbackQr,
+                'qr_string' => null,
+            ];
+        }
+    }
+
+    /**
+     * Dapatkan Snap Token untuk pembayaran (jika mode Snap digunakan)
      */
     public function getSnapToken(Transaction $transaction): ?string
     {
@@ -89,7 +238,6 @@ class MidtransService
 
         // Pastikan sum(item_details) sama persis dengan gross_amount (Aturan ketat Midtrans)
         if ($calculatedSum !== $grossAmount) {
-            // Jika ada selisih pembulatan, sesuaikan dengan item penyesuaian
             $diff = $grossAmount - $calculatedSum;
             $itemDetails[] = [
                 'id' => 'ADJ',
@@ -150,7 +298,7 @@ class MidtransService
 
             $transactionStatus = $statusData['transaction_status'] ?? null;
             $fraudStatus = $statusData['fraud_status'] ?? null;
-            $paymentType = $statusData['payment_type'] ?? 'midtrans';
+            $paymentType = $statusData['payment_type'] ?? 'qris';
 
             $transaction = Transaction::where('invoice_number', $orderId)->first();
 
@@ -194,7 +342,7 @@ class MidtransService
         $signatureKey = $payload['signature_key'] ?? null;
         $transactionStatus = $payload['transaction_status'] ?? null;
         $fraudStatus = $payload['fraud_status'] ?? null;
-        $paymentType = $payload['payment_type'] ?? 'midtrans';
+        $paymentType = $payload['payment_type'] ?? 'qris';
 
         if (!$orderId || !$statusCode || !$grossAmount || !$signatureKey) {
             return ['status' => 'error', 'message' => 'Invalid notification payload data'];
