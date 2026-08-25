@@ -557,10 +557,56 @@ class CustomerOrder extends Component
 
         $isOnlineOrderActive = (bool) ($setting->is_online_order_active ?? true);
 
+        // Calculate dynamic Best Seller (1 Top Product) & Top Order (2 Runner-up Products) from actual completed sales
+        $bestSellerIds = \App\Models\TransactionDetail::select('product_id', DB::raw('SUM(quantity) as total_qty'))
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->where('transactions.status', 'completed')
+            ->groupBy('product_id')
+            ->orderByDesc('total_qty')
+            ->take(1)
+            ->pluck('product_id')
+            ->toArray();
+
+        $topOrderIds = \App\Models\TransactionDetail::select('product_id', DB::raw('COUNT(DISTINCT transaction_id) as order_count'))
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->where('transactions.status', 'completed')
+            ->where('transactions.created_at', '>=', now()->subDays(14))
+            ->whereNotIn('product_id', $bestSellerIds)
+            ->groupBy('product_id')
+            ->orderByDesc('order_count')
+            ->take(2)
+            ->pluck('product_id')
+            ->toArray();
+
+        if (empty($topOrderIds)) {
+            $topOrderIds = \App\Models\TransactionDetail::select('product_id', DB::raw('SUM(quantity) as total_qty'))
+                ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+                ->where('transactions.status', 'completed')
+                ->whereNotIn('product_id', $bestSellerIds)
+                ->groupBy('product_id')
+                ->orderByDesc('total_qty')
+                ->take(2)
+                ->pluck('product_id')
+                ->toArray();
+        }
+
+        // Smart Pinning: Put Best Seller at position #1, Top Orders at #2 & #3, then remaining products
+        $products = $products->sortBy(function ($product) use ($bestSellerIds, $topOrderIds) {
+            if (in_array($product->id, $bestSellerIds)) {
+                return 0;
+            }
+            if (in_array($product->id, $topOrderIds)) {
+                return 1;
+            }
+            return 2;
+        })->values();
+
         return view('livewire.customer.customer-order', [
             'setting' => $setting,
             'categories' => $categories,
             'products' => $products,
+            'bestSellerIds' => $bestSellerIds,
+            'topOrderIds' => $topOrderIds,
             'totalItemsInCart' => $totalItemsInCart,
             'isStoreOpen' => $isStoreOpen,
             'isOnlineOrderActive' => $isOnlineOrderActive,

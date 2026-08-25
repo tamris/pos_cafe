@@ -85,10 +85,7 @@
             <div class="flex items-center justify-between pt-2 pb-0.5 text-xs text-emerald-200/90 border-t border-white/10">
                 <div class="truncate flex items-center gap-1 text-[11px] sm:text-xs">
                     <span class="text-emerald-300/80">Pemesan:</span>
-                    <strong class="text-white font-bold truncate max-w-[150px] sm:max-w-xs">{{ $customerName ?: 'Belum diisi' }}</strong>
-                    @if($orderType === 'take_away')
-                        <span class="text-blue-200 font-bold ml-1">• Takeaway</span>
-                    @endif
+                    <strong class="text-white font-bold truncate max-w-[170px] sm:max-w-xs">{{ $customerName ?: 'Belum diisi' }}</strong>
                 </div>
                 <button type="button" 
                         wire:click="openIdentityModal" 
@@ -228,15 +225,28 @@
                             <div wire:click="openCustomizeModal({{ $product->id }})"
                                  class="bg-white rounded-3xl p-3 border border-slate-200/80 shadow-xs flex flex-col justify-between relative cursor-pointer select-none">
                                 
-                                {{-- In-Cart Badge Indicator --}}
-                                @if($inCartCount > 0)
-                                    <div class="absolute top-3 right-3 z-10 bg-[#0e382c] text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
-                                        {{ $inCartCount }}x
-                                    </div>
-                                @endif
-
-                                {{-- Image Thumbnail --}}
+                                {{-- Image Thumbnail Container --}}
                                 <div class="w-full aspect-square rounded-2xl bg-slate-100 overflow-hidden relative mb-2.5">
+                                    {{-- Best Seller / Top Order Badge --}}
+                                    @if(in_array($product->id, $bestSellerIds ?? []))
+                                        <div class="absolute top-2 left-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9.5px] font-black px-2.5 py-1 rounded-xl shadow-sm shadow-orange-500/30 border border-white/30 flex items-center gap-1.5 leading-none">
+                                            <i class="fas fa-fire text-[9.5px] text-amber-100"></i>
+                                            <span>Best Seller</span>
+                                        </div>
+                                    @elseif(in_array($product->id, $topOrderIds ?? []))
+                                        <div class="absolute top-2 left-2 z-10 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9.5px] font-black px-2.5 py-1 rounded-xl shadow-sm shadow-emerald-600/30 border border-white/30 flex items-center gap-1.5 leading-none">
+                                            <i class="fas fa-star text-[9px] text-emerald-100"></i>
+                                            <span>Top Order</span>
+                                        </div>
+                                    @endif
+
+                                    {{-- In-Cart Badge Indicator --}}
+                                    @if($inCartCount > 0)
+                                        <div class="absolute top-2 right-2 z-10 bg-[#0e382c] text-white text-[10.5px] font-black px-2 py-0.5 rounded-xl border border-emerald-400/40 shadow-sm flex items-center justify-center leading-none">
+                                            {{ $inCartCount }}x
+                                        </div>
+                                    @endif
+
                                     @if(!empty($product->image))
                                         <img src="{{ asset('storage/' . $product->image) }}" 
                                              alt="{{ $product->name }}" 
@@ -402,12 +412,12 @@
                                     <i class="fas fa-pause-circle text-xs"></i>
                                     <span>Dapur Padat • Pesanan Dijeda</span>
                                 </button>
-                            @elseif(empty($customerName) || ($orderType === 'dine_in' && empty($tableNumber)))
+                            @elseif(empty($customerName))
                                 <button type="button" 
                                         wire:click="openIdentityModal"
                                         class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2">
-                                    <i class="fas fa-exclamation-circle"></i>
-                                    <span>Lengkapi Nama / Meja Dulu</span>
+                                    <i class="fas fa-user-edit"></i>
+                                    <span>Isi Nama Pemesan Dulu</span>
                                 </button>
                             @else
                                 <button type="button" 
@@ -553,9 +563,20 @@
 
                 <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
                     <div>
-                        <span class="text-[10px] uppercase font-black text-emerald-800">
-                            {{ $editingCartKey ? 'Ubah Pesanan • ' : '' }}{{ $selectedProduct->category?->name }}
-                        </span>
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="text-[10px] uppercase font-black text-emerald-800">
+                                {{ $editingCartKey ? 'Ubah Pesanan • ' : '' }}{{ $selectedProduct->category?->name }}
+                            </span>
+                            @if(in_array($selectedProduct->id, $bestSellerIds ?? []))
+                                <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.2 rounded-full shadow-2xs flex items-center gap-0.5">
+                                    <i class="fas fa-fire text-[8px]"></i> Best Seller
+                                </span>
+                            @elseif(in_array($selectedProduct->id, $topOrderIds ?? []))
+                                <span class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] font-black px-2 py-0.2 rounded-full shadow-2xs flex items-center gap-0.5">
+                                    <i class="fas fa-star text-[8px]"></i> Top Order
+                                </span>
+                            @endif
+                        </div>
                         <h3 class="font-black text-slate-900 text-base font-heading">{{ $selectedProduct->name }}</h3>
                         <span class="text-sm font-black text-slate-900 block mt-0.5 font-heading">
                             Rp {{ number_format($selectedProduct->price, 0, ',', '.') }}
