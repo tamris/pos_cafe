@@ -1,17 +1,16 @@
 <div class="min-h-screen bg-[#f8faf9] flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-8 sm:pt-6 pb-10"
      wire:poll.3s="checkPaymentStatus">
 
-    {{-- Top Header (Original Style) --}}
-    <div class="max-w-md mx-auto w-full flex items-center justify-between pb-3.5 border-b border-slate-200/80">
-        <button type="button" 
-                onclick="confirmCancelOrder()"
-                class="w-9 h-9 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:text-rose-600 flex items-center justify-center text-xs shadow-2xs cursor-pointer transition">
+    {{-- Top Header --}}
+    <div class="max-w-md mx-auto w-full flex items-center justify-between pb-3 border-b border-slate-200/80">
+        <a href="{{ route('customer.order') }}" 
+           class="w-9 h-9 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-[#0e382c] hover:border-emerald-300 active:scale-95 flex items-center justify-center text-xs shadow-2xs transition">
             <i class="fas fa-arrow-left"></i>
-        </button>
+        </a>
         <span class="text-xs font-black text-slate-900 uppercase tracking-widest font-heading">
             Pembayaran QRIS
         </span>
-        <div class="w-9"></div> {{-- Spacer for perfect balance --}}
+        <div class="w-9"></div>
     </div>
 
     {{-- Main Payment Container --}}

@@ -64,6 +64,12 @@ class TransactionIndex extends Component
     public function viewDetail($id)
     {
         $query = Transaction::with(['details.product', 'user', 'cancelledBy', 'shift']);
+        
+        $query->where(function($q) {
+            $q->where('order_source', '!=', 'self_order')
+              ->orWhere('payment_status', 'paid');
+        });
+
         if (auth()->check() && auth()->user()->role !== 'admin') {
             $query->where(function($q) {
                 $q->where('user_id', auth()->id())
@@ -85,6 +91,12 @@ class TransactionIndex extends Component
     public function openCancelModal($id)
     {
         $query = Transaction::with(['shift', 'user']);
+        
+        $query->where(function($q) {
+            $q->where('order_source', '!=', 'self_order')
+              ->orWhere('payment_status', 'paid');
+        });
+
         if (auth()->check() && auth()->user()->role !== 'admin') {
             $query->where(function($q) {
                 $q->where('user_id', auth()->id())
@@ -201,6 +213,13 @@ class TransactionIndex extends Component
 
         $query = Transaction::with(['user', 'cancelledBy', 'shift'])->latest();
 
+        // Hanya tampilkan transaksi POS kasir langsung ATAU Self-Order yang sudah lunas (paid)
+        // Self-order yang belum bayar / batal sebelum bayar tidak masuk ke jurnal transaksi
+        $query->where(function($q) {
+            $q->where('order_source', '!=', 'self_order')
+              ->orWhere('payment_status', 'paid');
+        });
+
         // Jika bukan admin (kasir), tampilkan transaksi kasir yang bersangkutan + transaksi self-order
         if (!$isAdmin) {
             $query->where(function($q) use ($userId) {
@@ -240,7 +259,13 @@ class TransactionIndex extends Component
         $cancelledCount = (clone $cancelledQuery)->count();
 
         // Omset Hari ini & Kemarin (disesuaikan berdasarkan kasir jika non-admin)
-        $todayQuery = Transaction::whereDate('created_at', today())->where('status', 'completed');
+        $todayQuery = Transaction::whereDate('created_at', today())
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            });
+
         if (!$isAdmin) {
             $todayQuery->where(function($q) use ($userId) {
                 $q->where('user_id', $userId)
@@ -252,7 +277,13 @@ class TransactionIndex extends Component
         }
         $todayOmset = $todayQuery->sum('total');
 
-        $yesterdayQuery = Transaction::whereDate('created_at', now()->subDay())->where('status', 'completed');
+        $yesterdayQuery = Transaction::whereDate('created_at', now()->subDay())
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            });
+
         if (!$isAdmin) {
             $yesterdayQuery->where(function($q) use ($userId) {
                 $q->where('user_id', $userId)
@@ -273,7 +304,13 @@ class TransactionIndex extends Component
         $prevTo = $from->copy()->subDay()->endOfDay();
         $prevFrom = $prevTo->copy()->subDays($diffInDays - 1)->startOfDay();
 
-        $prevQuery = Transaction::whereBetween('created_at', [$prevFrom, $prevTo])->where('status', 'completed');
+        $prevQuery = Transaction::whereBetween('created_at', [$prevFrom, $prevTo])
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            });
+
         if (!$isAdmin) {
             $prevQuery->where(function($q) use ($userId) {
                 $q->where('user_id', $userId)

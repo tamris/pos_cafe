@@ -81,17 +81,22 @@
                 @endif
             </div>
 
-            {{-- Customer Name & Table Strip (Mobile) --}}
-            <div class="flex items-center justify-between pt-2.5 pb-0.5 text-xs text-emerald-200/80 border-t border-white/10 sm:hidden">
-                <div class="truncate">
-                    <span>Pemesan: </span>
-                    <strong class="text-white font-bold">{{ $customerName ?: 'Belum diisi' }}</strong>
-                    @if($orderType === 'dine_in' && !empty($tableNumber))
-                        <span class="text-emerald-300 font-bold">• Meja {{ $tableNumber }}</span>
+            {{-- Customer Name & Table Strip (Responsive Bar) --}}
+            <div class="flex items-center justify-between pt-2 pb-0.5 text-xs text-emerald-200/90 border-t border-white/10">
+                <div class="truncate flex items-center gap-1 text-[11px] sm:text-xs">
+                    <span class="text-emerald-300/80">Pemesan:</span>
+                    <strong class="text-white font-bold truncate max-w-[140px] sm:max-w-xs">{{ $customerName ?: 'Belum diisi' }}</strong>
+                    @if($orderType === 'dine_in')
+                        <span class="text-emerald-300 font-bold ml-1">• Meja {{ $tableNumber ?: '-' }}</span>
+                    @else
+                        <span class="text-blue-200 font-bold ml-1">• Takeaway</span>
                     @endif
                 </div>
-                <button type="button" wire:click="openIdentityModal" class="text-emerald-300 font-black shrink-0 ml-2 hover:underline">
-                    {{ empty($customerName) ? '+ Isi Nama / Meja' : 'Ubah' }}
+                <button type="button" 
+                        wire:click="openIdentityModal" 
+                        class="px-2.5 py-1 rounded-lg sm:rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-emerald-200 hover:text-white font-bold text-[11px] shrink-0 border border-white/10 transition cursor-pointer flex items-center gap-1">
+                    <i class="fas fa-pen-to-square text-[10px]"></i>
+                    <span>{{ empty($customerName) ? 'Isi Data' : 'Ubah' }}</span>
                 </button>
             </div>
 
@@ -498,13 +503,17 @@
                         <div>
                             <label class="block text-xs font-black text-slate-700 mb-1.5">Nomor Meja <span class="text-rose-500">*</span></label>
                             <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-sm">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
                                     <i class="fas fa-chair"></i>
                                 </span>
                                 <input type="text" 
-                                       wire:model="tableNumber" 
-                                       placeholder="Contoh: 01, Meja 5, VIP-2" 
-                                       class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
+                                       inputmode="numeric"
+                                       pattern="[0-9]*"
+                                       maxlength="4"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                       wire:model.blur="tableNumber" 
+                                       placeholder="01" 
+                                       class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
                             </div>
                             @error('tableNumber') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                         </div>
@@ -514,28 +523,28 @@
                     <div>
                         <label class="block text-xs font-black text-slate-700 mb-1.5">Nama Pemesan <span class="text-rose-500">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-sm">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
                                 <i class="fas fa-user"></i>
                             </span>
                             <input type="text" 
                                    wire:model="customerName" 
-                                   placeholder="Masukkan nama Anda..." 
-                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
+                                   placeholder="Nama Anda" 
+                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
                         </div>
                         @error('customerName') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     {{-- Customer Phone (Optional) --}}
                     <div>
-                        <label class="block text-xs font-black text-slate-700 mb-1.5">No. WhatsApp / HP <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                        <label class="block text-xs font-black text-slate-700 mb-1.5">No. WhatsApp <span class="text-slate-400 font-normal text-[11px]">(Opsional)</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-sm">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
                                 <i class="fab fa-whatsapp"></i>
                             </span>
                             <input type="tel" 
                                    wire:model="customerPhone" 
-                                   placeholder="08123456789" 
-                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
+                                   placeholder="081234567890" 
+                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
                         </div>
                     </div>
                 </div>
@@ -826,7 +835,7 @@
                         </div>
                         <div>
                             <h3 class="font-extrabold text-slate-900 text-base font-heading leading-tight">Riwayat Pesanan Saya</h3>
-                            <span class="text-[11px] text-slate-400">Daftar pesanan aktif & riwayat di HP ini</span>
+                            <span class="text-[11px] text-slate-400">Daftar pesanan aktif & riwayat</span>
                         </div>
                     </div>
                     <button type="button" wire:click="closeHistoryModal" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">

@@ -62,7 +62,12 @@ class CustomerOrder extends Component
     {
         // Populate from URL query parameters if present
         if (!empty($this->tableParam)) {
-            $this->tableNumber = $this->tableParam;
+            $param = trim($this->tableParam);
+            if (is_numeric($param) && (int) $param > 0) {
+                $this->tableNumber = sprintf('%02d', (int) $param);
+            } else {
+                $this->tableNumber = $param;
+            }
             $this->orderType = 'dine_in';
         }
 
@@ -74,6 +79,16 @@ class CustomerOrder extends Component
         $setting = Setting::first();
         if ($setting && isset($setting->tax_percentage)) {
             $this->taxRate = (float) $setting->tax_percentage;
+        }
+    }
+
+    public function updatedTableNumber($val)
+    {
+        $clean = preg_replace('/\D/', '', (string) $val);
+        if (!empty($clean)) {
+            $this->tableNumber = sprintf('%02d', (int) $clean);
+        } else {
+            $this->tableNumber = '';
         }
     }
 
@@ -207,18 +222,18 @@ class CustomerOrder extends Component
 
         if (str_contains($notes, 'Less Ice')) {
             $this->iceLevel = 'Less Ice';
-        } elseif (str_contains($notes, 'No Ice')) {
+        } elseif (str_contains($notes, 'No Ice') || str_contains($notes, 'Tanpa Es')) {
             $this->iceLevel = 'No Ice';
         } else {
             $this->iceLevel = 'Normal';
         }
 
         // Clean extra custom notes if any
-        $parts = array_filter(explode('|', $notes), function($p) {
+        $parts = array_filter(preg_split('/[|•]/', $notes), function($p) {
             $t = trim($p);
-            return !in_array($t, ['Ice', 'Hot', 'Less Sugar', 'No Sugar', 'Normal', 'Less Ice', 'No Ice']);
+            return !in_array($t, ['Ice', 'Hot', 'Less Sugar', 'No Sugar', 'Normal', 'Less Ice', 'No Ice', 'Ice (Tanpa Es)', 'Ice (No Ice)', 'Ice (Less Ice)']);
         });
-        $this->itemNotes = trim(implode(' | ', $parts));
+        $this->itemNotes = trim(implode(' • ', $parts));
 
         // Hide Cart Drawer while editing item so there is no visual overlap
         $this->showCartDrawer = false;
@@ -261,14 +276,22 @@ class CustomerOrder extends Component
                       str_contains($categoryName, 'drink');
 
         if ($isBeverage) {
-            $notesParts[] = $this->drinkType === 'Hot' ? 'Hot' : 'Ice';
-
-            if ($this->drinkType === 'Ice' && $this->iceLevel !== 'Normal') {
-                $notesParts[] = $this->iceLevel;
+            if ($this->drinkType === 'Hot') {
+                $notesParts[] = 'Hot';
+            } else {
+                if ($this->iceLevel === 'No Ice') {
+                    $notesParts[] = 'Ice (Tanpa Es)';
+                } elseif ($this->iceLevel === 'Less Ice') {
+                    $notesParts[] = 'Ice (Less Ice)';
+                } else {
+                    $notesParts[] = 'Ice';
+                }
             }
 
-            if ($this->sugarLevel !== 'Normal') {
-                $notesParts[] = $this->sugarLevel;
+            if ($this->sugarLevel === 'Less Sugar') {
+                $notesParts[] = 'Less Sugar';
+            } elseif ($this->sugarLevel === 'No Sugar') {
+                $notesParts[] = 'No Sugar';
             }
         }
 
@@ -276,7 +299,7 @@ class CustomerOrder extends Component
             $notesParts[] = trim($this->itemNotes);
         }
 
-        $finalNotes = implode(' | ', $notesParts);
+        $finalNotes = implode(' • ', $notesParts);
         $cartKey = $this->selectedProduct->id . '-' . md5($finalNotes);
 
         if ($this->editingCartKey && $this->editingCartKey !== $cartKey) {
@@ -435,14 +458,20 @@ class CustomerOrder extends Component
         ];
 
         if ($this->orderType === 'dine_in') {
-            $rules['tableNumber'] = 'required|max:20';
+            $rules['tableNumber'] = ['required', 'regex:/^[0-9]+$/', 'max:5'];
         }
 
         $this->validate($rules, [
             'customerName.required' => 'Mohon isi nama pemesan terlebih dahulu.',
             'customerName.min' => 'Nama pemesan minimal 2 karakter.',
             'tableNumber.required' => 'Mohon isi nomor meja untuk pesanan Makan di Tempat (Dine In).',
+            'tableNumber.regex' => 'Nomor meja harus berupa angka (contoh: 01, 02).',
         ]);
+
+        if ($this->orderType === 'dine_in') {
+            $clean = preg_replace('/\D/', '', (string) $this->tableNumber);
+            $this->tableNumber = !empty($clean) ? sprintf('%02d', (int) $clean) : null;
+        }
 
         DB::beginTransaction();
         try {
