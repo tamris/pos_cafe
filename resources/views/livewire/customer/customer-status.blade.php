@@ -63,10 +63,10 @@
                 </div>
                 <h2 class="text-xl font-black font-heading text-emerald-950">Pesanan Siap!</h2>
                 <p class="text-xs text-emerald-800 mt-1.5 max-w-xs mx-auto font-medium leading-relaxed">
-                    @if($transaction->order_type === 'dine_in')
-                        Pesanan Anda sedang diantarkan ke <strong>Meja {{ $transaction->table_number ?? '-' }}</strong> atau dapat diambil di pick-up counter.
+                    @if($transaction->order_type === 'dine_in' && !empty($transaction->table_number))
+                        Pesanan Anda sedang diantarkan ke <strong>Meja {{ $transaction->table_number }}</strong> atau dapat diambil di pick-up counter.
                     @else
-                        Pesanan Takeaway Anda sudah siap. Silakan ambil di pick-up counter kasir.
+                        Pesanan Anda sudah siap! Silakan ambil di <strong>Pick-up Counter</strong> kasir/bar.
                     @endif
                 </p>
             </div>
@@ -166,8 +166,8 @@
         <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-card border border-stone-200/80 space-y-3">
             <div class="flex items-center justify-between pb-3 border-b border-stone-100">
                 <div>
-                    <span class="text-[10px] text-stone-400 font-semibold uppercase tracking-wider block">Faktur</span>
-                    <span class="text-xs font-black text-stone-900 font-mono">{{ $transaction->invoice_number }}</span>
+                    <span class="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">No. Pesanan</span>
+                    <span class="text-sm font-black text-stone-900 font-heading">{{ $transaction->short_order_number }}</span>
                 </div>
                 <div class="text-right">
                     <span class="text-[10px] text-stone-400 font-semibold uppercase tracking-wider block">Waktu Pesan</span>
@@ -180,8 +180,8 @@
                 <span>Pemesan: <strong class="text-stone-900">{{ $transaction->customer_name }}</strong></span>
                 <span>
                     @if($transaction->order_type === 'dine_in')
-                        <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold text-[11px] border border-amber-200">
-                            Meja {{ $transaction->table_number ?? '-' }}
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0e382c] font-bold text-[11px] border border-emerald-200">
+                            {{ !empty($transaction->table_number) ? 'Meja ' . $transaction->table_number : 'Makan di Tempat' }}
                         </span>
                     @else
                         <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 font-bold text-[11px] border border-blue-200">
@@ -223,8 +223,8 @@
                     </div>
                 @endif
                 <div class="flex justify-between text-sm font-extrabold text-stone-900 pt-2 border-t border-stone-100">
-                    <span>Total Tagihan ({{ strtoupper($transaction->payment_method ?: 'Online') }})</span>
-                    <span class="text-amber-700 font-heading">Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
+                    <span>Total Pembayaran ({{ strtoupper($transaction->payment_method ?: 'QRIS') }})</span>
+                    <span class="text-emerald-800 font-heading">Rp {{ number_format($transaction->total, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>

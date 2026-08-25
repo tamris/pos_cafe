@@ -117,6 +117,21 @@ class Transaction extends Model
         return $this->payment_status === 'paid';
     }
 
+    public function getShortOrderNumberAttribute(): string
+    {
+        if (empty($this->invoice_number)) {
+            return '#' . sprintf('%02d', $this->id ?? 1);
+        }
+
+        $parts = explode('-', $this->invoice_number);
+        $last = end($parts);
+        if (is_numeric($last)) {
+            return '#' . sprintf('%02d', (int) $last);
+        }
+
+        return '#' . $this->invoice_number;
+    }
+
     protected static function boot()
     {
         parent::boot();

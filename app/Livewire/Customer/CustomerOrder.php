@@ -445,9 +445,9 @@ class CustomerOrder extends Component
         }
 
         // Check if customer identity is complete
-        if (empty(trim($this->customerName)) || ($this->orderType === 'dine_in' && empty(trim($this->tableNumber)))) {
+        if (empty(trim($this->customerName))) {
             $this->openIdentityModal();
-            $this->dispatch('alert', type: 'warning', message: 'Mohon lengkapi nama pemesan ' . ($this->orderType === 'dine_in' ? 'dan nomor meja' : '') . ' terlebih dahulu.');
+            $this->dispatch('alert', type: 'warning', message: 'Mohon isi nama pemesan terlebih dahulu.');
             return;
         }
 
@@ -455,22 +455,16 @@ class CustomerOrder extends Component
         $rules = [
             'customerName' => 'required|min:2|max:50',
             'orderType' => 'required|in:dine_in,take_away',
+            'tableNumber' => 'nullable|max:10',
         ];
-
-        if ($this->orderType === 'dine_in') {
-            $rules['tableNumber'] = ['required', 'regex:/^[0-9]+$/', 'max:5'];
-        }
 
         $this->validate($rules, [
             'customerName.required' => 'Mohon isi nama pemesan terlebih dahulu.',
             'customerName.min' => 'Nama pemesan minimal 2 karakter.',
-            'tableNumber.required' => 'Mohon isi nomor meja untuk pesanan Makan di Tempat (Dine In).',
-            'tableNumber.regex' => 'Nomor meja harus berupa angka (contoh: 01, 02).',
         ]);
 
-        if ($this->orderType === 'dine_in') {
-            $clean = preg_replace('/\D/', '', (string) $this->tableNumber);
-            $this->tableNumber = !empty($clean) ? sprintf('%02d', (int) $clean) : null;
+        if (!empty($this->tableNumber) && is_numeric($this->tableNumber)) {
+            $this->tableNumber = sprintf('%02d', (int) $this->tableNumber);
         }
 
         DB::beginTransaction();

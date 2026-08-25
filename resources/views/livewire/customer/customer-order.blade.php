@@ -81,14 +81,12 @@
                 @endif
             </div>
 
-            {{-- Customer Name & Table Strip (Responsive Bar) --}}
+            {{-- Customer Name Strip (Responsive Bar) --}}
             <div class="flex items-center justify-between pt-2 pb-0.5 text-xs text-emerald-200/90 border-t border-white/10">
                 <div class="truncate flex items-center gap-1 text-[11px] sm:text-xs">
                     <span class="text-emerald-300/80">Pemesan:</span>
-                    <strong class="text-white font-bold truncate max-w-[140px] sm:max-w-xs">{{ $customerName ?: 'Belum diisi' }}</strong>
-                    @if($orderType === 'dine_in')
-                        <span class="text-emerald-300 font-bold ml-1">• Meja {{ $tableNumber ?: '-' }}</span>
-                    @else
+                    <strong class="text-white font-bold truncate max-w-[150px] sm:max-w-xs">{{ $customerName ?: 'Belum diisi' }}</strong>
+                    @if($orderType === 'take_away')
                         <span class="text-blue-200 font-bold ml-1">• Takeaway</span>
                     @endif
                 </div>
@@ -498,27 +496,6 @@
                         </div>
                     </div>
 
-                    {{-- Table Number (if Dine In) --}}
-                    @if($orderType === 'dine_in')
-                        <div>
-                            <label class="block text-xs font-black text-slate-700 mb-1.5">Nomor Meja <span class="text-rose-500">*</span></label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
-                                    <i class="fas fa-chair"></i>
-                                </span>
-                                <input type="text" 
-                                       inputmode="numeric"
-                                       pattern="[0-9]*"
-                                       maxlength="4"
-                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                       wire:model.blur="tableNumber" 
-                                       placeholder="01" 
-                                       class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
-                            </div>
-                            @error('tableNumber') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                    @endif
-
                     {{-- Customer Name --}}
                     <div>
                         <label class="block text-xs font-black text-slate-700 mb-1.5">Nama Pemesan <span class="text-rose-500">*</span></label>
@@ -546,6 +523,12 @@
                                    placeholder="081234567890" 
                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
                         </div>
+                    </div>
+
+                    {{-- Info Banner Pick-Up Counter --}}
+                    <div class="p-3 bg-emerald-50/80 border border-emerald-200/70 rounded-2xl flex items-start gap-2.5 text-xs text-[#0e382c]">
+                        <i class="fas fa-bullhorn text-emerald-600 mt-0.5 text-[11px]"></i>
+                        <span class="leading-snug">Pesanan yang sudah siap dapat diambil di <strong>Pick-up Counter</strong> saat nomor pesananmu dipanggil.</span>
                     </div>
                 </div>
 
@@ -772,7 +755,7 @@
                         </div>
                     @endif
                     <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
-                        <span>Total Tagihan</span>
+                        <span>Total Pembayaran</span>
                         <span class="text-[#0e382c] font-heading">Rp {{ number_format($total, 0, ',', '.') }}</span>
                     </div>
                 </div>
@@ -793,12 +776,12 @@
                             <i class="fas fa-pause-circle text-xs"></i>
                             <span>Dapur Padat • Pesanan Dijeda</span>
                         </button>
-                    @elseif(empty($customerName) || ($orderType === 'dine_in' && empty($tableNumber)))
+                    @elseif(empty($customerName))
                         <button type="button" 
                                 wire:click="openIdentityModal"
                                 class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>Lengkapi Nama / Meja Dulu</span>
+                            <i class="fas fa-user-edit"></i>
+                            <span>Isi Nama Pemesan Dulu</span>
                         </button>
                     @else
                         <button type="button" 
@@ -875,7 +858,7 @@
                                                 Takeaway
                                             </span>
                                         @endif
-                                        <span class="font-mono font-bold text-slate-700 text-[11px]">{{ $hist->invoice_number }}</span>
+                                        <span class="font-bold text-slate-800 text-xs">Pesanan {{ $hist->short_order_number }}</span>
                                     </div>
 
                                     <div>
