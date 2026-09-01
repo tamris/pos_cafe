@@ -100,14 +100,13 @@ class CustomerPayment extends Component
 
     /**
      * Manual Trigger saat pelanggan klik tombol "Saya Sudah Membayar"
+     * [DEV MODE SIMULASI]: Mensimulasikan pembayaran QRIS berhasil secara langsung untuk kebutuhan testing.
+     * [CATATAN]: Saat Go-Live Production, ubah kembali method ini untuk memanggil $this->checkPaymentStatus()!
      */
     public function manualCheckPayment()
     {
-        $this->checkPaymentStatus();
-
-        if ($this->transaction->payment_status !== 'paid') {
-            $this->dispatch('alert', type: 'info', message: 'Pembayaran belum terdeteksi. Silakan selesaikan scan & bayar di aplikasi mobile banking / e-wallet Anda.');
-        }
+        // Dev Simulation Mode: Langsung ubah status transaksi menjadi PAID (Lunas) & masuk antrean dapur
+        return $this->simulatePaymentSuccess();
     }
 
     public function simulatePaymentSuccess()
