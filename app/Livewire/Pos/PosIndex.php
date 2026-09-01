@@ -206,10 +206,17 @@ class PosIndex extends Component
             return;
         }
 
-        // GUARD: Cek apakah masih ada Bill Aktif (Open Bill / Pending) yang belum diselesaikan
-        $pendingBillsCount = Transaction::where('status', 'pending')->count();
+        // GUARD: Cek apakah masih ada Bill Aktif (Open Bill / Pending) pada shift ini yang belum diselesaikan
+        $pendingBillsCount = Transaction::where('status', 'pending')
+            ->where('shift_id', $this->activeShift->id)
+            ->where(function ($q) {
+                $q->whereNull('order_source')
+                  ->orWhere('order_source', '!=', 'self_order');
+            })
+            ->count();
+            
         if ($pendingBillsCount > 0) {
-            $this->notify('error', "Tidak dapat menutup shift! Masih ada {$pendingBillsCount} Bill Aktif (Open Bill) yang belum diselesaikan.");
+            $this->notify('error', "Tidak dapat menutup shift! Masih ada {$pendingBillsCount} Bill Aktif (Open Bill) pada shift ini yang belum diselesaikan.");
             $this->openOpenBillsModal();
             return;
         }
@@ -250,9 +257,16 @@ class PosIndex extends Component
         }
 
         // GUARD: Cek kembali saat submit endShift
-        $pendingBillsCount = Transaction::where('status', 'pending')->count();
+        $pendingBillsCount = Transaction::where('status', 'pending')
+            ->where('shift_id', $this->activeShift->id)
+            ->where(function ($q) {
+                $q->whereNull('order_source')
+                  ->orWhere('order_source', '!=', 'self_order');
+            })
+            ->count();
+
         if ($pendingBillsCount > 0) {
-            $this->notify('error', "Tidak dapat menutup shift! Masih ada {$pendingBillsCount} Bill Aktif (Open Bill) yang belum diselesaikan.");
+            $this->notify('error', "Tidak dapat menutup shift! Masih ada {$pendingBillsCount} Bill Aktif (Open Bill) pada shift ini yang belum diselesaikan.");
             $this->showEndShiftModal = false;
             $this->openOpenBillsModal();
             return;
