@@ -92,7 +92,7 @@ class PosApiController extends Controller
             'phone' => $setting->phone ?? '',
             'shop_logo_url' => $shopLogoUrl,
             'show_logo_receipt' => (bool) ($setting->show_logo_receipt ?? true),
-            'receipt_footer' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungan Anda!',
+            'receipt_footer' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungannya!',
             'auto_print_receipt' => (bool) ($setting->auto_print_receipt ?? true),
             'auto_print_kitchen' => (bool) ($setting->auto_print_kitchen ?? false),
             'wifi_name' => $setting->wifi_name ?? '',
@@ -997,7 +997,7 @@ class PosApiController extends Controller
                 'change' => (float) $transaction->change,
             ],
             'footer' => [
-                'message' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungan Anda!',
+                'message' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungannya!',
                 'wifi_name' => $setting->wifi_name ?? '',
                 'wifi_password' => $setting->wifi_password ?? '',
             ],
