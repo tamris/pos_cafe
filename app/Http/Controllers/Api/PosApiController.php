@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\CashierShift;
 use App\Models\Setting;
+use App\Services\ReceiptPrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -30,7 +31,7 @@ class PosApiController extends Controller
             ->get();
 
         // 2. Active Products
-        $products = Product::where('is_active', true)
+        $products = Product::query()
             ->whereHas('category', function ($q) {
                 $q->where('is_active', true);
             })
@@ -1034,5 +1035,571 @@ class PosApiController extends Controller
             'notes' => $shift->notes ?? '',
             'paper_width' => 58,
         ];
+    }
+
+    /**
+     * Get Menu & Category Availability List.
+     */
+    public function getAvailability(Request $request)
+    {
+        $search = $request->input('search');
+        $categoryId = $request->input('category_id');
+
+        $categories = Category::withCount('products')->orderBy('name', 'asc')->get()->map(function ($cat) {
+            return [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'is_active' => (bool) ($cat->is_active ?? true),
+                'products_count' => (int) $cat->products_count,
+            ];
+        });
+
+        $productQuery = Product::with('category')->orderBy('name', 'asc');
+
+        if ($search) {
+            $productQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhere('barcode', 'like', "%{$search}%");
+            });
+        }
+
+        if ($categoryId) {
+            $productQuery->where('category_id', $categoryId);
+        }
+
+        $products = $productQuery->get()->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'category_id' => $p->category_id,
+                'category_name' => $p->category?->name ?? 'Menu',
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'barcode' => $p->barcode,
+                'price' => (float) $p->price,
+                'image_url' => $p->image ? asset('storage/' . $p->image) : null,
+                'is_active' => (bool) $p->is_active,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'categories' => $categories,
+                'products' => $products,
+            ],
+        ]);
+    }
+
+    /**
+     * Toggle Product Availability.
+     */
+    public function toggleProductAvailability($id)
+    {
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan.',
+            ], 404);
+        }
+
+        $product->is_active = !$product->is_active;
+        $product->save();
+
+        $statusLabel = $product->is_active ? 'Tersedia di Kasir' : 'Habis / Kosong';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Menu '{$product->name}' berhasil diubah menjadi {$statusLabel}.",
+            'data' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'is_active' => (bool) $product->is_active,
+            ],
+        ]);
+    }
+
+    /**
+     * Toggle Category Availability.
+     */
+    public function toggleCategoryAvailability($id)
+    {
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kategori tidak ditemukan.',
+            ], 404);
+        }
+
+        $category->is_active = !($category->is_active ?? true);
+        $category->save();
+
+        $statusLabel = $category->is_active ? 'Aktif di POS' : 'Non-Aktif (Disembunyikan)';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Kategori '{$category->name}' berhasil diubah menjadi {$statusLabel}.",
+            'data' => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'is_active' => (bool) $category->is_active,
+            ],
+        ]);
+    }
+
+    // ==========================================
+    // ONLINE ORDERS (PESANAN MASUK SELF-ORDER)
+    // ==========================================
+
+    /**
+     * Get list of incoming online orders with status filters, search, and live stats.
+     */
+    public function getOnlineOrders(Request $request)
+    {
+        $status = $request->input('status', 'active'); // 'active', 'pending', 'processing', 'ready', 'completed', 'cancelled', 'all'
+        $search = trim($request->input('search', ''));
+        $date = $request->input('date');
+
+        // 1. Stats Counter (Online Orders Today)
+        $todayOnlineQuery = Transaction::where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->whereDate('created_at', today());
+
+        $statsPending = (clone $todayOnlineQuery)->where('status', 'pending')->count();
+        $statsProcessing = (clone $todayOnlineQuery)->where('status', 'processing')->count();
+        $statsReady = (clone $todayOnlineQuery)->where('status', 'ready')->count();
+        $statsActive = (clone $todayOnlineQuery)->whereIn('status', ['pending', 'processing', 'ready'])->count();
+        $statsCompleted = (clone $todayOnlineQuery)->where('status', 'completed')->count();
+        $statsRevenueToday = (float) (clone $todayOnlineQuery)->where('status', 'completed')->sum('total');
+
+        $setting = Setting::first();
+        $isOnlineOrderActive = (bool) ($setting->is_online_order_active ?? true);
+
+        // 2. Query Orders List
+        $query = Transaction::with(['details.product', 'user', 'shift'])
+            ->where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->latest('id');
+
+        if ($status === 'active') {
+            $query->whereIn('status', ['pending', 'processing', 'ready']);
+        } elseif ($status === 'pending') {
+            $query->where('status', 'pending');
+        } elseif ($status === 'processing') {
+            $query->where('status', 'processing');
+        } elseif ($status === 'ready') {
+            $query->where('status', 'ready');
+        } elseif ($status === 'completed') {
+            $query->where('status', 'completed');
+            if ($date) {
+                $query->whereDate('created_at', $date);
+            } else {
+                $query->whereDate('created_at', today());
+            }
+        } elseif ($status === 'cancelled') {
+            $query->where('status', 'cancelled');
+            if ($date) {
+                $query->whereDate('created_at', $date);
+            }
+        } elseif ($date) {
+            $query->whereDate('created_at', $date);
+        }
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('table_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%")
+                  ->orWhere('invoice_number', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = (int) $request->input('per_page', 0);
+        if ($perPage > 0) {
+            $paginator = $query->paginate($perPage);
+            $ordersCollection = $paginator->getCollection();
+            $paginationMeta = [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ];
+        } else {
+            $ordersCollection = $query->limit(50)->get();
+            $paginationMeta = null;
+        }
+
+        $formattedOrders = $ordersCollection->map(function ($tx) {
+            return $this->formatOnlineOrder($tx);
+        });
+
+        return response()->json([
+            'success' => true,
+            'stats' => [
+                'active' => $statsActive,
+                'pending' => $statsPending,
+                'processing' => $statsProcessing,
+                'ready' => $statsReady,
+                'completed_today' => $statsCompleted,
+                'revenue_today' => $statsRevenueToday,
+                'is_online_order_active' => $isOnlineOrderActive,
+            ],
+            'data' => $formattedOrders,
+            'pagination' => $paginationMeta,
+        ]);
+    }
+
+    /**
+     * Check / Poll for incoming new online orders for Sound & Alert notifications.
+     */
+    public function checkNewOnlineOrders(Request $request)
+    {
+        $lastOrderId = (int) $request->input('last_order_id', 0);
+
+        $newOrders = Transaction::with(['details.product'])
+            ->where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->where('id', '>', $lastOrderId)
+            ->oldest('id')
+            ->get();
+
+        $hasNew = $newOrders->isNotEmpty();
+        $latestOrder = Transaction::where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->max('id');
+
+        $setting = Setting::first();
+        $isOnlineOrderActive = (bool) ($setting->is_online_order_active ?? true);
+
+        // Active count
+        $activeCount = Transaction::where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->whereIn('status', ['pending', 'processing', 'ready'])
+            ->count();
+
+        $formattedNewOrders = $newOrders->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'invoice_number' => $order->invoice_number,
+                'short_order_number' => $order->short_order_number,
+                'customer_name' => $order->customer_name ?? 'Pelanggan',
+                'customer_phone' => $order->customer_phone ?? '',
+                'table_number' => $order->table_number ?? null,
+                'order_type' => $order->order_type,
+                'total' => (float) $order->total,
+                'formatted_total' => 'Rp ' . number_format($order->total, 0, ',', '.'),
+                'items_count' => $order->details->count(),
+                'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+                'time_ago' => $order->created_at->diffForHumans(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'has_new_orders' => $hasNew,
+            'new_orders_count' => $newOrders->count(),
+            'latest_order_id' => $latestOrder ?? $lastOrderId,
+            'active_orders_count' => $activeCount,
+            'is_online_order_active' => $isOnlineOrderActive,
+            'new_orders' => $formattedNewOrders,
+        ]);
+    }
+
+    /**
+     * Get live statistics of Online Orders.
+     */
+    public function getOnlineOrdersStats(Request $request)
+    {
+        $todayOnlineQuery = Transaction::where('order_source', 'self_order')
+            ->where('payment_status', 'paid')
+            ->whereDate('created_at', today());
+
+        $statsPending = (clone $todayOnlineQuery)->where('status', 'pending')->count();
+        $statsProcessing = (clone $todayOnlineQuery)->where('status', 'processing')->count();
+        $statsReady = (clone $todayOnlineQuery)->where('status', 'ready')->count();
+        $statsActive = (clone $todayOnlineQuery)->whereIn('status', ['pending', 'processing', 'ready'])->count();
+        $statsCompleted = (clone $todayOnlineQuery)->where('status', 'completed')->count();
+        $statsCancelled = (clone $todayOnlineQuery)->where('status', 'cancelled')->count();
+        $statsRevenueToday = (float) (clone $todayOnlineQuery)->where('status', 'completed')->sum('total');
+
+        $setting = Setting::first();
+        $isOnlineOrderActive = (bool) ($setting->is_online_order_active ?? true);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'active' => $statsActive,
+                'pending' => $statsPending,
+                'processing' => $statsProcessing,
+                'ready' => $statsReady,
+                'completed_today' => $statsCompleted,
+                'cancelled_today' => $statsCancelled,
+                'revenue_today' => $statsRevenueToday,
+                'formatted_revenue_today' => 'Rp ' . number_format($statsRevenueToday, 0, ',', '.'),
+                'is_online_order_active' => $isOnlineOrderActive,
+            ],
+        ]);
+    }
+
+    /**
+     * Get full details of a specific Online Order.
+     */
+    public function getOnlineOrderDetail($id)
+    {
+        $transaction = Transaction::with(['details.product', 'user', 'shift', 'cancelledBy'])
+            ->where('order_source', 'self_order')
+            ->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan online tidak ditemukan.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->formatOnlineOrder($transaction, true),
+        ]);
+    }
+
+    /**
+     * Update status of an Online Order (processing, ready, completed, cancelled).
+     */
+    public function updateOnlineOrderStatus(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,processing,ready,completed,cancelled',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $transaction = Transaction::where('order_source', 'self_order')->find($id);
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan online tidak ditemukan.',
+            ], 404);
+        }
+
+        $user = $request->user();
+        $newStatus = $request->input('status');
+
+        $activeShift = CashierShift::where('user_id', $user->id)
+            ->where('status', 'open')
+            ->latest()
+            ->first();
+
+        $updateData = [
+            'status' => $newStatus,
+            'user_id' => $user->id,
+        ];
+
+        if ($activeShift) {
+            $updateData['shift_id'] = $activeShift->id;
+        }
+
+        if ($newStatus === 'cancelled') {
+            $updateData['cancelled_reason'] = $request->input('reason') ?: 'Dibatalkan oleh Kasir via Mobile POS';
+            $updateData['cancelled_by'] = $user->id;
+            $updateData['cancelled_at'] = now();
+        }
+
+        $transaction->update($updateData);
+
+        if ($activeShift) {
+            $activeShift->recalculateTotals();
+        }
+
+        $statusLabels = [
+            'pending' => 'Menunggu Diproses',
+            'processing' => 'Sedang Disiapkan di Dapur',
+            'ready' => 'Siap Diambil / Diantar',
+            'completed' => 'Pesanan Selesai',
+            'cancelled' => 'Pesanan Dibatalkan',
+        ];
+
+        $label = $statusLabels[$newStatus] ?? $newStatus;
+
+        return response()->json([
+            'success' => true,
+            'message' => "Pesanan {$transaction->invoice_number} berhasil diubah ke status: {$label}.",
+            'data' => $this->formatOnlineOrder($transaction->fresh(['details.product', 'user', 'shift'])),
+        ]);
+    }
+
+    /**
+     * Toggle or set Store Acceptance for Online Orders.
+     */
+    public function toggleOnlineOrderActive(Request $request)
+    {
+        $setting = Setting::first();
+        if (!$setting) {
+            $setting = Setting::create(['is_online_order_active' => true]);
+        }
+
+        if ($request->has('is_active')) {
+            $isActive = filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $isActive = !((bool) ($setting->is_online_order_active ?? true));
+        }
+
+        $setting->update(['is_online_order_active' => $isActive]);
+
+        $message = $isActive
+            ? 'Pesanan Online DIBUKA (Toko menerima pesanan online).'
+            : 'Pesanan Online DIJEDA SEMENTARA (Toko sedang sibuk).';
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'is_online_order_active' => $isActive,
+        ]);
+    }
+
+    /**
+     * Get Receipt Data & ESC/POS RawBT for Online Order.
+     */
+    public function getOnlineOrderReceipt($id)
+    {
+        $transaction = Transaction::with(['details.product', 'user', 'shift'])
+            ->where('order_source', 'self_order')
+            ->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan online tidak ditemukan.',
+            ], 404);
+        }
+
+        $setting = Setting::first();
+        $rawbt = base64_encode(ReceiptPrintService::buildTransactionEscPos($transaction, $setting));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'receipt_payload' => $this->buildCustomerReceiptPayload($transaction),
+                'rawbt_base64' => $rawbt,
+            ],
+        ]);
+    }
+
+    /**
+     * Get Kitchen Slip Data & ESC/POS RawBT for Online Order.
+     */
+    public function getOnlineOrderKitchenSlip($id)
+    {
+        $transaction = Transaction::with(['details.product', 'user', 'shift'])
+            ->where('order_source', 'self_order')
+            ->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan online tidak ditemukan.',
+            ], 404);
+        }
+
+        $setting = Setting::first();
+        $rawbtKitchen = base64_encode(ReceiptPrintService::buildKitchenEscPos($transaction, $setting));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'invoice_number' => $transaction->invoice_number,
+                'table_number' => $transaction->table_number,
+                'customer_name' => $transaction->customer_name,
+                'order_type' => $transaction->order_type,
+                'items' => $transaction->details->map(function ($d) {
+                    return [
+                        'name' => $d->product?->name ?? 'Menu',
+                        'quantity' => (int) $d->quantity,
+                        'notes' => $d->notes ?? '',
+                    ];
+                }),
+                'rawbt_base64' => $rawbtKitchen,
+            ],
+        ]);
+    }
+
+    /**
+     * Helper: Format Online Order resource payload.
+     */
+    private function formatOnlineOrder(Transaction $tx, bool $isDetail = false): array
+    {
+        $statusLabels = [
+            'pending' => 'Menunggu Diproses',
+            'processing' => 'Sedang Disiapkan',
+            'ready' => 'Siap Diambil/Diantar',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+        ];
+
+        $items = $tx->details->map(function ($d) {
+            $product = $d->product;
+            $imageUrl = null;
+            if ($product && $product->image) {
+                $imageUrl = Str::startsWith($product->image, 'http')
+                    ? $product->image
+                    : asset('storage/' . $product->image);
+            }
+
+            return [
+                'id' => $d->id,
+                'product_id' => $d->product_id,
+                'product_name' => $product?->name ?? 'Menu',
+                'product_image' => $imageUrl,
+                'quantity' => (int) $d->quantity,
+                'price' => (float) $d->price,
+                'subtotal' => (float) $d->subtotal,
+                'notes' => $d->notes ?? '',
+            ];
+        });
+
+        $totalQty = $tx->details->sum('quantity');
+
+        $data = [
+            'id' => $tx->id,
+            'invoice_number' => $tx->invoice_number,
+            'short_order_number' => $tx->short_order_number,
+            'order_token' => $tx->order_token,
+            'order_source' => $tx->order_source ?? 'self_order',
+            'order_type' => $tx->order_type ?? 'dine_in',
+            'table_number' => $tx->table_number ?? null,
+            'customer_name' => $tx->customer_name ?? 'Pelanggan',
+            'customer_phone' => $tx->customer_phone ?? '',
+            'status' => $tx->status,
+            'status_label' => $statusLabels[$tx->status] ?? $tx->status,
+            'payment_status' => $tx->payment_status ?? 'paid',
+            'payment_method' => $tx->payment_method ?? 'midtrans',
+            'subtotal' => (float) $tx->subtotal,
+            'discount' => (float) $tx->discount,
+            'tax' => (float) $tx->tax,
+            'total' => (float) $tx->total,
+            'paid' => (float) $tx->paid,
+            'change' => (float) $tx->change,
+            'total_qty' => (int) $totalQty,
+            'items_count' => $tx->details->count(),
+            'items' => $items,
+            'cashier_name' => $tx->user?->name ?? null,
+            'shift_id' => $tx->shift_id ?? null,
+            'cancelled_reason' => $tx->cancelled_reason ?? null,
+            'cancelled_at' => $tx->cancelled_at?->format('Y-m-d H:i:s'),
+            'created_at' => $tx->created_at->format('Y-m-d H:i:s'),
+            'created_at_human' => $tx->created_at->format('d M Y, H:i'),
+            'time_ago' => $tx->created_at->diffForHumans(),
+        ];
+
+        return $data;
     }
 }

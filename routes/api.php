@@ -37,6 +37,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/open-bills/{id}', [PosApiController::class, 'getOpenBillDetail']);
         Route::post('/open-bills/{id}/cancel', [PosApiController::class, 'cancelOpenBill']);
 
+        // Menu & Category Availability (Item 86 / Menu Habis)
+        Route::get('/availability', [PosApiController::class, 'getAvailability']);
+        Route::post('/products/{id}/toggle-availability', [PosApiController::class, 'toggleProductAvailability']);
+        Route::post('/categories/{id}/toggle-availability', [PosApiController::class, 'toggleCategoryAvailability']);
+
+        // Online Orders Management (Pesanan Masuk Self-Order)
+        Route::prefix('online-orders')->group(function () {
+            Route::get('/', [PosApiController::class, 'getOnlineOrders']);
+            Route::get('/check-new', [PosApiController::class, 'checkNewOnlineOrders']);
+            Route::get('/stats', [PosApiController::class, 'getOnlineOrdersStats']);
+            Route::post('/toggle-active', [PosApiController::class, 'toggleOnlineOrderActive']);
+            Route::get('/{id}', [PosApiController::class, 'getOnlineOrderDetail']);
+            Route::post('/{id}/status', [PosApiController::class, 'updateOnlineOrderStatus']);
+            Route::get('/{id}/receipt', [PosApiController::class, 'getOnlineOrderReceipt']);
+            Route::get('/{id}/kitchen', [PosApiController::class, 'getOnlineOrderKitchenSlip']);
+        });
+
         // Offline Batch Sync
         Route::post('/sync-offline', [PosApiController::class, 'syncOffline']);
     });
