@@ -17,7 +17,16 @@ class TransactionDetail extends Model
         'subtotal',
         'harga_beli',
         'profit',
-        'notes'
+        'notes',
+        'addons'
+    ];
+
+    protected $casts = [
+        'addons' => 'array',
+        'price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'harga_beli' => 'decimal:2',
+        'profit' => 'decimal:2',
     ];
 
     public function transaction()

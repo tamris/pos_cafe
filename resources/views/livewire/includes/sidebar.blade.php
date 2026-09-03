@@ -12,7 +12,7 @@
         return str_starts_with($currentPath, $prefix);
     };
 
-    $isMasterData = $isPath('products') || $isPath('categories') || $isPath('hpp') || $isPath('barcodes');
+    $isMasterData = $isPath('products') || $isPath('categories') || $isPath('addons') || $isPath('hpp') || $isPath('barcodes');
     $isReports    = $isPath('stock-management') || $isPath('reports') || $isPath('shifts');
     $isSettings   = $isPath('users') || $isPath('settings');
 
@@ -147,6 +147,10 @@
                     <a href="{{ route('categories.index') }}" wire:navigate @click="if(window.innerWidth < 1280) mobileSidebarOpen = false"
                         class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-colors {{ $isPath('categories') ? 'text-slate-900 font-semibold bg-slate-100 dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">
                         <span>Kategori</span>
+                    </a>
+                    <a href="{{ route('addons.index') }}" wire:navigate @click="if(window.innerWidth < 1280) mobileSidebarOpen = false"
+                        class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-colors {{ $isPath('addons') ? 'text-slate-900 font-semibold bg-slate-100 dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">
+                        <span>Add-ons & Topping</span>
                     </a>
                     <a href="{{ route('hpp.index') }}" wire:navigate @click="if(window.innerWidth < 1280) mobileSidebarOpen = false"
                         class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-colors {{ $isPath('hpp') ? 'text-slate-900 font-semibold bg-slate-100 dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">

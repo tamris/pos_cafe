@@ -7,6 +7,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\Products\ProductIndex;
 use App\Livewire\Categories\CategoryIndex;
+use App\Livewire\Addons\AddonIndex;
 use App\Livewire\Transactions\TransactionIndex;
 use App\Livewire\Pos\PosIndex;
 use App\Livewire\Reports\ReportIndex;
@@ -112,6 +113,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', Dashboard::class)->name('dashboard');
         Route::get('/products', ProductIndex::class)->name('products.index');
         Route::get('/categories', CategoryIndex::class)->name('categories.index');
+        Route::get('/addons', AddonIndex::class)->name('addons.index');
         Route::get('/stock-management', StockIndex::class)->name('stock-management.index');
         Route::get('/hpp-management', \App\Livewire\Hpp\HppIndex::class)->name('hpp.index');
         Route::get('/reports', ReportIndex::class)->name('reports.index');

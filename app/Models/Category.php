@@ -25,4 +25,9 @@ class Category extends Model
     {
         return $this->hasManyThrough(TransactionDetail::class, Product::class);
     }
+
+    public function addons()
+    {
+        return $this->belongsToMany(Addon::class, 'addon_category')->withTimestamps();
+    }
 }

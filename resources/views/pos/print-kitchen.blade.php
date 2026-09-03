@@ -198,6 +198,13 @@
                 @php $totalItems += (int) $detail->quantity; @endphp
                 <div class="item-row">
                     <div class="item-name">{{ $detail->quantity }}x  {{ $detail->product->name ?? 'Item' }}</div>
+                    @if(!empty($detail->addons))
+                        <div style="font-size: 11px; font-weight: bold; color: #1e293b; padding-left: 12px; margin: 2px 0;">
+                            @foreach($detail->addons as $addon)
+                                <div>[+] {{ $addon['name'] }}</div>
+                            @endforeach
+                        </div>
+                    @endif
                     @if(!empty($detail->notes))
                         <div class="item-note">>> CATATAN: {{ $detail->notes }}</div>
                     @endif

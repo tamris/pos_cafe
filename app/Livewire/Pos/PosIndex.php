@@ -5,6 +5,7 @@ namespace App\Livewire\Pos;
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Addon;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\CashierShift;
@@ -54,6 +55,8 @@ class PosIndex extends Component
     public $tempItemNotes = '';
     public $tempSugarLevel = 'Normal';
     public $tempIceLevel = 'Normal';
+    public $tempSelectedAddonIds = [];
+    public $availableAddonsForEditing = [];
 
     // State Modals
     public $showPaymentModal = false;
@@ -352,7 +355,9 @@ class PosIndex extends Component
         $query = Product::whereHas('category', function ($q) {
                 $q->where('is_active', true);
             })
-            ->with('category');
+            ->with(['category.addons' => function($q) {
+                $q->where('addons.is_active', true);
+            }]);
 
         if ($this->selectedCategory) {
             $query->where('category_id', $this->selectedCategory);
@@ -378,7 +383,7 @@ class PosIndex extends Component
         // 1. Cari produk langsung dari koleksi memory yang sudah dimuat (Super Cepat 0 ms query)
         $product = $this->products ? $this->products->firstWhere('id', $productId) : null;
         if (!$product) {
-            $product = Product::with('category')->find($productId);
+            $product = Product::with(['category.addons' => fn($q) => $q->where('addons.is_active', true)])->find($productId);
         }
 
         if (!$product || !$product->category || !$product->category->is_active) {
@@ -391,10 +396,10 @@ class PosIndex extends Component
             return;
         }
 
-        // 2. Cek apakah produk sudah ada di keranjang
+        // 2. Cek apakah produk sudah ada di keranjang dengan tanpa catatan dan tanpa add-on
         $existingIndex = null;
         foreach ($this->cart as $index => $item) {
-            if ($item['id'] === $productId && empty($item['notes'])) {
+            if ($item['id'] === $productId && empty($item['notes']) && empty($item['addons'])) {
                 $existingIndex = $index;
                 break;
             }
@@ -408,11 +413,17 @@ class PosIndex extends Component
                 'id' => $product->id,
                 'name' => $product->name,
                 'category_name' => $product->category->name ?? '',
-                'price' => $product->price,
-                'harga_beli' => $product->harga_beli,
+                'base_price' => (float) $product->price,
+                'base_harga_beli' => (float) ($product->harga_beli ?? 0),
+                'price' => (float) $product->price,
+                'harga_beli' => (float) ($product->harga_beli ?? 0),
                 'quantity' => 1,
-                'subtotal' => $product->price,
-                'notes' => ''
+                'subtotal' => (float) $product->price,
+                'sugar_level' => 'Normal',
+                'ice_level' => 'Normal',
+                'custom_notes' => '',
+                'notes' => '',
+                'addons' => []
             ];
         }
 
@@ -451,23 +462,78 @@ class PosIndex extends Component
         if (!isset($this->cart[$index])) return;
 
         $this->editingItemIndex = $index;
-        $currentNotes = $this->cart[$index]['notes'] ?? '';
-        
-        $this->tempItemNotes = $currentNotes;
-        $this->tempSugarLevel = 'Normal';
-        $this->tempIceLevel = 'Normal';
+        $item = $this->cart[$index];
+        $currentNotes = $item['notes'] ?? '';
 
-        // Parse existing preset options if present
-        if (str_contains($currentNotes, 'Sugar:')) {
-            preg_match('/Sugar:\s*([^,|]+)/', $currentNotes, $sugarMatch);
-            if (!empty($sugarMatch[1])) $this->tempSugarLevel = trim($sugarMatch[1]);
+        // 1. Resolve Sugar Level
+        if (!empty($item['sugar_level'])) {
+            $this->tempSugarLevel = $item['sugar_level'];
+        } elseif (str_contains($currentNotes, 'No Sugar')) {
+            $this->tempSugarLevel = 'No Sugar';
+        } elseif (str_contains($currentNotes, 'Less Sugar')) {
+            $this->tempSugarLevel = 'Less Sugar';
+        } else {
+            $this->tempSugarLevel = 'Normal';
         }
-        if (str_contains($currentNotes, 'Ice:')) {
-            preg_match('/Ice:\s*([^,|]+)/', $currentNotes, $iceMatch);
-            if (!empty($iceMatch[1])) $this->tempIceLevel = trim($iceMatch[1]);
+
+        // 2. Resolve Ice Level
+        if (!empty($item['ice_level'])) {
+            $this->tempIceLevel = $item['ice_level'];
+        } elseif (str_contains($currentNotes, 'No Ice') || str_contains($currentNotes, 'Tanpa Es')) {
+            $this->tempIceLevel = 'No Ice';
+        } elseif (str_contains($currentNotes, 'Less Ice')) {
+            $this->tempIceLevel = 'Less Ice';
+        } elseif (str_contains($currentNotes, 'Hot') || str_contains($currentNotes, 'Panas')) {
+            $this->tempIceLevel = 'Hot';
+        } else {
+            $this->tempIceLevel = 'Normal';
         }
+
+        // 3. Resolve Pure Custom Free-Text Notes (textarea)
+        if (isset($item['custom_notes'])) {
+            $this->tempItemNotes = $item['custom_notes'];
+        } else {
+            // Strip out all preset modifier words so textarea does NOT duplicate them
+            $parts = array_filter(preg_split('/[|•,]/', $currentNotes), function($p) {
+                $t = trim($p);
+                return !in_array($t, [
+                    'Normal', 'Less Sugar', 'No Sugar',
+                    'Less Ice', 'No Ice', 'Hot', 'Ice', 'Tanpa Es'
+                ]) && !empty($t);
+            });
+            $this->tempItemNotes = trim(implode(' | ', $parts));
+        }
+
+        // Load Addons for this product category
+        $productId = $item['id'];
+        $product = Product::with(['category.addons' => fn($q) => $q->where('addons.is_active', true)])->find($productId);
+        $this->availableAddonsForEditing = $product && $product->category ? $product->category->addons->where('is_active', true)->values()->toArray() : [];
+
+        // Pre-select current addons on this item
+        $currentAddons = $item['addons'] ?? [];
+        $this->tempSelectedAddonIds = array_map('intval', array_column($currentAddons, 'id'));
 
         $this->showItemNotesModal = true;
+    }
+
+    public function setSugarLevel($level)
+    {
+        $this->tempSugarLevel = $level;
+    }
+
+    public function setIceLevel($level)
+    {
+        $this->tempIceLevel = $level;
+    }
+
+    public function toggleAddonInModal($addonId)
+    {
+        $addonId = (int)$addonId;
+        if (in_array($addonId, $this->tempSelectedAddonIds)) {
+            $this->tempSelectedAddonIds = array_values(array_diff($this->tempSelectedAddonIds, [$addonId]));
+        } else {
+            $this->tempSelectedAddonIds[] = $addonId;
+        }
     }
 
     public function saveItemNotes()
@@ -485,20 +551,56 @@ class PosIndex extends Component
             }
         }
 
-        if (!empty(trim($this->tempItemNotes))) {
-            $notesParts[] = trim($this->tempItemNotes);
+        $cleanCustomNotes = trim($this->tempItemNotes);
+        if (!empty($cleanCustomNotes)) {
+            $notesParts[] = $cleanCustomNotes;
         }
 
+        // Process Selected Addons
+        $addonsList = [];
+        $totalAddonPrice = 0;
+        $totalAddonCost = 0;
+
+        if (!empty($this->tempSelectedAddonIds)) {
+            $addonModels = Addon::whereIn('id', $this->tempSelectedAddonIds)->where('is_active', true)->get();
+            foreach ($addonModels as $ad) {
+                $addonsList[] = [
+                    'id' => $ad->id,
+                    'name' => $ad->name,
+                    'price' => (float) $ad->price,
+                    'harga_beli' => (float) $ad->harga_beli,
+                ];
+                $totalAddonPrice += (float) $ad->price;
+                $totalAddonCost += (float) $ad->harga_beli;
+            }
+        }
+
+        $basePrice = (float) ($this->cart[$this->editingItemIndex]['base_price'] ?? $this->cart[$this->editingItemIndex]['price']);
+        $baseCost = (float) ($this->cart[$this->editingItemIndex]['base_harga_beli'] ?? $this->cart[$this->editingItemIndex]['harga_beli']);
+
+        $this->cart[$this->editingItemIndex]['base_price'] = $basePrice;
+        $this->cart[$this->editingItemIndex]['base_harga_beli'] = $baseCost;
+        $this->cart[$this->editingItemIndex]['price'] = $basePrice + $totalAddonPrice;
+        $this->cart[$this->editingItemIndex]['harga_beli'] = $baseCost + $totalAddonCost;
+        $this->cart[$this->editingItemIndex]['subtotal'] = $this->cart[$this->editingItemIndex]['quantity'] * $this->cart[$this->editingItemIndex]['price'];
+        $this->cart[$this->editingItemIndex]['addons'] = $addonsList;
+        $this->cart[$this->editingItemIndex]['sugar_level'] = $this->tempSugarLevel;
+        $this->cart[$this->editingItemIndex]['ice_level'] = $this->tempIceLevel;
+        $this->cart[$this->editingItemIndex]['custom_notes'] = $cleanCustomNotes;
         $this->cart[$this->editingItemIndex]['notes'] = implode(' | ', $notesParts);
+
+        $this->calculateTotal();
         $this->showItemNotesModal = false;
         $this->editingItemIndex = null;
-        $this->notify('success', 'Catatan pesanan diperbarui.');
+        $this->notify('success', 'Catatan & opsi menu berhasil diperbarui.');
     }
 
     public function closeItemNotesModal()
     {
         $this->showItemNotesModal = false;
         $this->editingItemIndex = null;
+        $this->tempSelectedAddonIds = [];
+        $this->availableAddonsForEditing = [];
     }
 
     public function updateQuantity($index, $action)
@@ -747,6 +849,7 @@ class PosIndex extends Component
                     'subtotal' => $item['subtotal'],
                     'profit' => $profit,
                     'notes' => $item['notes'] ?? null,
+                    'addons' => !empty($item['addons']) ? $item['addons'] : null,
                 ]);
             }
 
@@ -792,16 +895,22 @@ class PosIndex extends Component
 
         $this->cart = [];
         foreach ($transaction->details as $d) {
+            $basePrice = (float) ($d->product->price ?? $d->price);
+            $baseCost = (float) ($d->product->harga_beli ?? $d->harga_beli);
+            $addons = $d->addons ?? [];
+
             $this->cart[] = [
                 'id' => $d->product_id,
                 'name' => $d->product->name ?? 'Menu',
+                'category_name' => $d->product->category->name ?? '',
+                'base_price' => $basePrice,
+                'base_harga_beli' => $baseCost,
                 'price' => (float) $d->price,
                 'harga_beli' => (float) $d->harga_beli,
                 'quantity' => (int) $d->quantity,
                 'subtotal' => (float) $d->subtotal,
                 'notes' => $d->notes ?? '',
-                'sugar_level' => 'Normal',
-                'ice_level' => 'Normal',
+                'addons' => $addons,
             ];
         }
 
@@ -926,6 +1035,7 @@ class PosIndex extends Component
                     'subtotal' => $item['subtotal'],
                     'profit' => $profit,
                     'notes' => $item['notes'] ?? null,
+                    'addons' => !empty($item['addons']) ? $item['addons'] : null,
                 ]);
             }
 

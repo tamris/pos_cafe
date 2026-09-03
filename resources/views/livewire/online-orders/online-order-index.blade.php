@@ -322,6 +322,15 @@
                                                 <span class="font-bold text-slate-900 dark:text-white">
                                                     {{ $item->quantity }}x {{ $item->product?->name ?? 'Menu' }}
                                                 </span>
+                                                @if(!empty($item->addons))
+                                                    <div class="flex flex-wrap gap-1 mt-0.5">
+                                                        @foreach($item->addons as $addon)
+                                                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800">
+                                                                + {{ $addon['name'] }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
                                                 @if(!empty($item->notes))
                                                     <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                                                         {{ $item->notes }}
