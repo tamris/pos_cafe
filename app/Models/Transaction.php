@@ -24,6 +24,13 @@ class Transaction extends Model
         'table_number',
         'customer_name',
         'status',
+        'order_source',
+        'order_token',
+        'snap_token',
+        'qris_url',
+        'qris_string',
+        'customer_phone',
+        'payment_status',
         'cancelled_reason',
         'cancelled_by',
         'cancelled_at',
@@ -89,6 +96,42 @@ class Transaction extends Model
         return $this->status === 'pending';
     }
 
+    public function scopeSelfOrder($query)
+    {
+        return $query->where('order_source', 'self_order');
+    }
+
+    public function scopeOnlinePaid($query)
+    {
+        return $query->where('order_source', 'self_order')
+            ->where('payment_status', 'paid');
+    }
+
+    public function isSelfOrder(): bool
+    {
+        return $this->order_source === 'self_order';
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid';
+    }
+
+    public function getShortOrderNumberAttribute(): string
+    {
+        if (empty($this->invoice_number)) {
+            return '#' . sprintf('%02d', $this->id ?? 1);
+        }
+
+        $parts = explode('-', $this->invoice_number);
+        $last = end($parts);
+        if (is_numeric($last)) {
+            return '#' . sprintf('%02d', (int) $last);
+        }
+
+        return '#' . $this->invoice_number;
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -108,6 +151,10 @@ class Transaction extends Model
                 }
 
                 $transaction->invoice_number = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            }
+
+            if (!$transaction->order_token) {
+                $transaction->order_token = \Illuminate\Support\Str::random(32);
             }
         });
     }

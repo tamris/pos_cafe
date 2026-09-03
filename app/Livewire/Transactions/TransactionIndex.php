@@ -64,8 +64,17 @@ class TransactionIndex extends Component
     public function viewDetail($id)
     {
         $query = Transaction::with(['details.product', 'user', 'cancelledBy', 'shift']);
+        
+        $query->where(function($q) {
+            $q->where('order_source', '!=', 'self_order')
+              ->orWhere('payment_status', 'paid');
+        });
+
         if (auth()->check() && auth()->user()->role !== 'admin') {
-            $query->where('user_id', auth()->id());
+            $query->where(function($q) {
+                $q->where('user_id', auth()->id())
+                  ->orWhere('order_source', 'self_order');
+            });
         }
         $this->selectedTransaction = $query->find($id);
         if ($this->selectedTransaction) {
@@ -82,8 +91,17 @@ class TransactionIndex extends Component
     public function openCancelModal($id)
     {
         $query = Transaction::with(['shift', 'user']);
+        
+        $query->where(function($q) {
+            $q->where('order_source', '!=', 'self_order')
+              ->orWhere('payment_status', 'paid');
+        });
+
         if (auth()->check() && auth()->user()->role !== 'admin') {
-            $query->where('user_id', auth()->id());
+            $query->where(function($q) {
+                $q->where('user_id', auth()->id())
+                  ->orWhere('order_source', 'self_order');
+            });
         }
 
         $transaction = $query->find($id);
@@ -144,7 +162,7 @@ class TransactionIndex extends Component
 
         // Cek kembali proteksi shift kasir
         if (!$isAdmin) {
-            if ($transaction->user_id !== auth()->id()) {
+            if ($transaction->user_id !== auth()->id() && $transaction->order_source !== 'self_order') {
                 $this->dispatch('show-toast', ['type' => 'error', 'message' => 'Anda tidak memiliki hak akses membatalkan transaksi ini.']);
                 $this->closeCancelModal();
                 return;
@@ -159,42 +177,28 @@ class TransactionIndex extends Component
             }
         }
 
-        // Susun teks alasan pembatalan
-        $fullReason = trim($this->cancelReasonPreset);
-        if ($fullReason === 'Lainnya') {
-            $fullReason = !empty($this->cancelReasonNotes) ? trim($this->cancelReasonNotes) : 'Dibatalkan oleh kasir/admin';
-        } else {
-            if (!empty($this->cancelReasonNotes)) {
-                $fullReason .= ' (' . trim($this->cancelReasonNotes) . ')';
-            }
-        }
-
         \DB::beginTransaction();
         try {
             $transaction->status = 'cancelled';
-            $transaction->cancelled_reason = $fullReason;
-            $transaction->cancelled_by = auth()->id();
             $transaction->cancelled_at = now();
+            $transaction->cancelled_by = auth()->id();
+            
+            $fullReason = $this->cancelReasonPreset;
+            if (!empty(trim($this->cancelReasonNotes))) {
+                $fullReason .= ': ' . trim($this->cancelReasonNotes);
+            }
+            $transaction->cancelled_reason = $fullReason;
             $transaction->save();
 
-            // Otomatis kurangkan omset & kas di shift terkait
+            // Recalculate shift totals if shift is assigned
             if ($transaction->shift) {
                 $transaction->shift->recalculateTotals();
             }
 
             \DB::commit();
 
-            $this->dispatch('show-toast', [
-                'type' => 'success', 
-                'message' => "Transaksi {$transaction->invoice_number} berhasil dibatalkan (Void)."
-            ]);
-
+            $this->dispatch('show-toast', ['type' => 'success', 'message' => "Transaksi {$transaction->invoice_number} berhasil dibatalkan."]);
             $this->closeCancelModal();
-
-            // Refresh modal detail jika sedang terbuka
-            if ($this->selectedTransaction && $this->selectedTransaction->id === $transaction->id) {
-                $this->viewDetail($transaction->id);
-            }
 
         } catch (\Exception $e) {
             \DB::rollBack();
@@ -209,13 +213,26 @@ class TransactionIndex extends Component
 
         $query = Transaction::with(['user', 'cancelledBy', 'shift'])->latest();
 
-        // Jika bukan admin (kasir), hanya tampilkan transaksi kasir yang bersangkutan
+        // Hanya tampilkan transaksi POS kasir langsung ATAU Self-Order yang sudah lunas (paid)
+        // Self-order yang belum bayar / batal sebelum bayar tidak masuk ke jurnal transaksi
+        $query->where(function($q) {
+            $q->where('order_source', '!=', 'self_order')
+              ->orWhere('payment_status', 'paid');
+        });
+
+        // Jika bukan admin (kasir), tampilkan transaksi kasir yang bersangkutan + transaksi self-order
         if (!$isAdmin) {
-            $query->where('user_id', $userId);
+            $query->where(function($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('order_source', 'self_order');
+            });
         }
 
         if ($this->search) {
-            $query->where('invoice_number', 'like', '%' . $this->search . '%');
+            $query->where(function($q) {
+                $q->where('invoice_number', 'like', '%' . $this->search . '%')
+                  ->orWhere('customer_name', 'like', '%' . $this->search . '%');
+            });
         }
         if ($this->dateFrom) {
             $query->whereDate('created_at', '>=', $this->dateFrom);
@@ -242,18 +259,36 @@ class TransactionIndex extends Component
         $cancelledCount = (clone $cancelledQuery)->count();
 
         // Omset Hari ini & Kemarin (disesuaikan berdasarkan kasir jika non-admin)
-        $todayQuery = Transaction::whereDate('created_at', today())->where('status', 'completed');
+        $todayQuery = Transaction::whereDate('created_at', today())
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            });
+
         if (!$isAdmin) {
-            $todayQuery->where('user_id', $userId);
+            $todayQuery->where(function($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('order_source', 'self_order');
+            });
         }
         if ($this->paymentMethodFilter) {
             $todayQuery->where('payment_method', $this->paymentMethodFilter);
         }
         $todayOmset = $todayQuery->sum('total');
 
-        $yesterdayQuery = Transaction::whereDate('created_at', now()->subDay())->where('status', 'completed');
+        $yesterdayQuery = Transaction::whereDate('created_at', now()->subDay())
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            });
+
         if (!$isAdmin) {
-            $yesterdayQuery->where('user_id', $userId);
+            $yesterdayQuery->where(function($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('order_source', 'self_order');
+            });
         }
         if ($this->paymentMethodFilter) {
             $yesterdayQuery->where('payment_method', $this->paymentMethodFilter);
@@ -269,9 +304,18 @@ class TransactionIndex extends Component
         $prevTo = $from->copy()->subDay()->endOfDay();
         $prevFrom = $prevTo->copy()->subDays($diffInDays - 1)->startOfDay();
 
-        $prevQuery = Transaction::whereBetween('created_at', [$prevFrom, $prevTo])->where('status', 'completed');
+        $prevQuery = Transaction::whereBetween('created_at', [$prevFrom, $prevTo])
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            });
+
         if (!$isAdmin) {
-            $prevQuery->where('user_id', $userId);
+            $prevQuery->where(function($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('order_source', 'self_order');
+            });
         }
         if ($this->paymentMethodFilter) {
             $prevQuery->where('payment_method', $this->paymentMethodFilter);

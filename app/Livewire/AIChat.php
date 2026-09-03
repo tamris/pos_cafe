@@ -216,8 +216,9 @@ class AIChat extends Component
             $context .= "STATUS SHIFT AKTIF SAAT INI:\n";
             if ($activeShifts->count() > 0) {
                 foreach ($activeShifts as $shift) {
+                    $kasirName = $shift->user?->name ?? 'Kasir';
                     $context .= "🟢 Shift Aktif (#SFT-" . str_pad($shift->id, 5, '0', STR_PAD_LEFT) . "):\n";
-                    $context .= "   - Kasir Bertugas: {$shift->user->name}\n";
+                    $context .= "   - Kasir Bertugas: {$kasirName}\n";
                     $context .= "   - Waktu Buka: " . ($shift->start_time ? $shift->start_time->format('H:i') : '-') . "\n";
                     $context .= "   - Modal Kas Awal di Laci: Rp " . number_format($shift->starting_cash, 0, ',', '.') . "\n";
                     $context .= "   - Penjualan Tunai Selama Shift: Rp " . number_format($shift->cash_sales, 0, ',', '.') . "\n";

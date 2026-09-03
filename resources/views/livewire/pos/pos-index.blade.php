@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300">
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300" wire:poll.4s="checkNewOnlineOrders">
     @include('livewire.includes.sidebar')
 
     <div class="main-content-layout flex flex-col min-h-screen">
@@ -8,6 +8,49 @@
         ])
 
         <main class="p-3 sm:p-4 lg:p-5 space-y-3 flex-1 flex flex-col min-h-0">
+            
+            {{-- LIVE REAL-TIME SELF-ORDER NOTIFICATION BANNER --}}
+            @if($newOnlineOrderAlert)
+                <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-3 sm:p-4 rounded-2xl shadow-xl border border-emerald-400/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-bounce shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center text-xl shrink-0 shadow-inner">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-white text-emerald-800 uppercase">
+                                    Pesanan Online Baru!
+                                </span>
+                                <span class="text-xs font-mono font-bold text-emerald-100">{{ $newOnlineOrderAlert['invoice'] }}</span>
+                            </div>
+                            <div class="text-sm font-extrabold mt-0.5 text-white">
+                                {{ $newOnlineOrderAlert['customer_name'] }}
+                                @if(!empty($newOnlineOrderAlert['table_number']))
+                                    <span class="text-amber-300 font-black">• Meja {{ $newOnlineOrderAlert['table_number'] }}</span>
+                                @else
+                                    <span class="text-emerald-200 font-black">• Takeaway</span>
+                                @endif
+                                <span class="text-emerald-100 font-normal text-xs ml-1.5">({{ $newOnlineOrderAlert['items_count'] }} menu • Rp {{ number_format($newOnlineOrderAlert['total'], 0, ',', '.') }})</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        <a href="{{ route('online-orders.index') }}" 
+                           wire:navigate
+                           class="px-4 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 text-xs font-black shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Buka Pesanan Online</span>
+                        </a>
+                        <button type="button" 
+                                wire:click="dismissOnlineOrderAlert"
+                                class="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
+                                title="Tutup Notifikasi">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            @endif
             
             {{-- ========================================================================= --}}
             {{-- 1. TOP BAR: ORDER TYPE & TABLE NUMBER SELECTION                           --}}
@@ -158,7 +201,7 @@
                         <button type="button" wire:click="openEndShiftModal"
                             class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
-                            <span>Tutup Shift & Rekap Kas</span>
+                            <span>Tutup Shift</span>
                         </button>
                     @else
                         <button type="button" wire:click="openStartShiftModal"
@@ -1027,6 +1070,227 @@
     {{-- ========================================================================= --}}
     {{-- MODAL DAFTAR BILL AKTIF / OPEN BILLS (HOLD ORDERS)                       --}}
     {{-- ========================================================================= --}}
+    {{-- ========================================================================= --}}
+    {{-- MODAL DAFTAR PESANAN ONLINE / SELF-ORDER                                  --}}
+    {{-- ========================================================================= --}}
+    @if ($showSelfOrdersModal)
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-3xl w-full border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-colors">
+                
+                {{-- Header Modal --}}
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-amber-500/10 dark:bg-amber-950/40">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-900 dark:text-white text-base">Pesanan Online (Self-Order)</h3>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                                    {{ $selfOrdersCount }} Aktif
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Pesanan mandiri dari customer yang telah lunas dibayar via QRIS</p>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="closeSelfOrdersModal"
+                        class="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                {{-- Filter & Search Toolbar --}}
+                <div class="p-3.5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row gap-2.5 items-center justify-between">
+                    {{-- Status Filter Tabs --}}
+                    <div class="inline-flex rounded-xl p-1 bg-slate-200/70 dark:bg-slate-900 text-xs font-bold gap-1 w-full sm:w-auto overflow-x-auto no-scrollbar">
+                        <button type="button" wire:click="setSelfOrdersStatusFilter('active')"
+                            class="px-3 py-1.5 rounded-lg transition-all whitespace-nowrap {{ $selfOrdersStatusFilter === 'active' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900' }}">
+                            Antrean Aktif
+                        </button>
+                        <button type="button" wire:click="setSelfOrdersStatusFilter('processing')"
+                            class="px-3 py-1.5 rounded-lg transition-all whitespace-nowrap {{ $selfOrdersStatusFilter === 'processing' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900' }}">
+                            Disiapkan
+                        </button>
+                        <button type="button" wire:click="setSelfOrdersStatusFilter('ready')"
+                            class="px-3 py-1.5 rounded-lg transition-all whitespace-nowrap {{ $selfOrdersStatusFilter === 'ready' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900' }}">
+                            Siap Diambil
+                        </button>
+                        <button type="button" wire:click="setSelfOrdersStatusFilter('completed')"
+                            class="px-3 py-1.5 rounded-lg transition-all whitespace-nowrap {{ $selfOrdersStatusFilter === 'completed' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900' }}">
+                            Selesai
+                        </button>
+                        <button type="button" wire:click="setSelfOrdersStatusFilter('all')"
+                            class="px-3 py-1.5 rounded-lg transition-all whitespace-nowrap {{ $selfOrdersStatusFilter === 'all' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900' }}">
+                            Semua
+                        </button>
+                    </div>
+
+                    {{-- Search Input --}}
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" wire:model.live.debounce.300ms="selfOrdersSearch"
+                            placeholder="Cari meja, nama, invoice..."
+                            class="w-full pl-8 pr-4 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+                    </div>
+                </div>
+
+                {{-- List of Self Orders --}}
+                <div class="p-4 overflow-y-auto space-y-3.5 flex-1 min-h-0">
+                    @forelse ($selfOrders as $sOrder)
+                        <div class="rounded-2xl p-4 transition-all duration-150 space-y-3 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 hover:border-amber-500 dark:hover:border-amber-500 shadow-sm">
+                            
+                            {{-- Top Order Bar --}}
+                            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md shadow-amber-500/20">
+                                        @if($sOrder->order_type === 'dine_in')
+                                            {{ $sOrder->table_number ? 'M' . $sOrder->table_number : 'DI' }}
+                                        @else
+                                            TA
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-extrabold text-slate-900 dark:text-white text-base">
+                                                {{ $sOrder->customer_name ?: 'Pelanggan' }}
+                                            </h4>
+                                            @if($sOrder->order_type === 'dine_in')
+                                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                                    Meja {{ $sOrder->table_number ?? '-' }}
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
+                                                    Takeaway
+                                                </span>
+                                            @endif
+
+                                            {{-- Status Tag --}}
+                                            @if($sOrder->status === 'ready')
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white shadow-xs animate-pulse">
+                                                    Siap Diambil / Diantar
+                                                </span>
+                                            @elseif(in_array($sOrder->status, ['processing', 'pending']))
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-xs">
+                                                    Sedang Disiapkan
+                                                </span>
+                                            @elseif($sOrder->status === 'completed')
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                                    Selesai
+                                                </span>
+                                            @elseif($sOrder->status === 'cancelled')
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                                    Dibatalkan
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                                            <span class="font-mono text-slate-700 dark:text-slate-300 font-bold">{{ $sOrder->invoice_number }}</span>
+                                            <span>•</span>
+                                            <span>Pesan: {{ $sOrder->created_at->format('H:i') }} ({{ $sOrder->created_at->diffForHumans() }})</span>
+                                            <span>•</span>
+                                            <span class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                Lunas (QRIS)
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="text-left sm:text-right shrink-0">
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ $sOrder->details->sum('quantity') }} Item Menu</p>
+                                    <p class="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400">Rp {{ number_format($sOrder->total, 0, ',', '.') }}</p>
+                                </div>
+                            </div>
+
+                            {{-- Menu Items List with Notes --}}
+                            <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
+                                @foreach ($sOrder->details as $d)
+                                    <div class="flex justify-between items-start text-xs">
+                                        <div class="flex-1 pr-2">
+                                            <span class="font-bold text-slate-800 dark:text-slate-200">{{ $d->quantity }}x {{ $d->product->name ?? 'Menu' }}</span>
+                                            @if(!empty($d->notes))
+                                                <div class="text-[11px] text-amber-700 dark:text-amber-400 italic mt-0.5">
+                                                    👉 {{ $d->notes }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <span class="font-semibold text-slate-700 dark:text-slate-300">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Action Buttons --}}
+                            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <div class="flex items-center gap-1.5">
+                                    {{-- Print Kitchen Ticket --}}
+                                    <button type="button" onclick="printKitchenDirect('{{ $sOrder->invoice_number }}')"
+                                        class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-2xs">
+                                        <i class="fas fa-utensils text-[10px]"></i>
+                                        <span>Struk Dapur</span>
+                                    </button>
+
+                                    {{-- Print Receipt --}}
+                                    <button type="button" onclick="printStrukDirect('{{ $sOrder->invoice_number }}')"
+                                        class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-2xs">
+                                        <i class="fas fa-receipt text-[10px]"></i>
+                                        <span>Cetak Struk</span>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    @if(in_array($sOrder->status, ['pending', 'processing']))
+                                        {{-- Mark Ready Button --}}
+                                        <button type="button" wire:click="updateSelfOrderStatus({{ $sOrder->id }}, 'ready')"
+                                            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95">
+                                            <i class="fas fa-bell text-xs"></i>
+                                            <span>Pesanan Siap</span>
+                                        </button>
+                                    @elseif($sOrder->status === 'ready')
+                                        {{-- Complete Order Button --}}
+                                        <button type="button" wire:click="updateSelfOrderStatus({{ $sOrder->id }}, 'completed')"
+                                            class="px-3.5 py-1.5 bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md active:scale-95">
+                                            <i class="fas fa-check text-xs"></i>
+                                            <span>Selesaikan Pesanan</span>
+                                        </button>
+                                    @endif
+
+                                    @if(!in_array($sOrder->status, ['completed', 'cancelled']))
+                                        <button type="button" 
+                                            onclick="if(confirm('Batalkan pesanan online ini?')) { @this.call('updateSelfOrderStatus', {{ $sOrder->id }}, 'cancelled'); }"
+                                            class="px-2.5 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold">
+                                            Batalkan
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
+                    @empty
+                        <div class="text-center py-12">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-slate-800 text-amber-500 flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-mug-hot text-xl"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">Tidak Ada Pesanan Online</h4>
+                            <p class="text-xs text-slate-400 mt-1">Belum ada pesanan mandiri pelanggan pada kategori filter ini.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                {{-- Footer Modal --}}
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Daftar ini memuat pesanan online yang dibuat pelanggan via web / QR meja.</p>
+                    <button type="button" wire:click="closeSelfOrdersModal"
+                        class="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg font-bold shadow-xs hover:bg-slate-800 transition cursor-pointer">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if ($showOpenBillsModal)
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
             <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transition-colors">
@@ -1330,5 +1594,57 @@
             }
         });
     }
+
+    // Live Cafe Double-Chime Sound for Incoming Online Self-Orders
+    let audioUnlockedPos = false;
+    function unlockAudioPos() {
+        if (!audioUnlockedPos) {
+            audioUnlockedPos = true;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+            } catch (e) {}
+        }
+    }
+    document.addEventListener('click', unlockAudioPos, { once: false });
+    document.addEventListener('touchstart', unlockAudioPos, { once: false });
+
+    window.addEventListener('play-online-order-sound', (event) => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            
+            // First chime tone (high pleasant chime)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(880, ctx.currentTime); // A5
+            gain1.gain.setValueAtTime(0.35, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.45);
+
+            // Second chime tone (higher joyful chime)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.16); // D6
+            gain2.gain.setValueAtTime(0.4, ctx.currentTime + 0.16);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.16);
+            osc2.stop(ctx.currentTime + 0.85);
+
+        } catch (e) {
+            console.log('Audio chime auto-play note:', e);
+        }
+    });
 </script>
 @endpush

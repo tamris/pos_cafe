@@ -206,7 +206,7 @@ class ProductIndex extends Component
             'price' => 'required|numeric|min:0',
             'harga_beli' => 'required|numeric|min:0',
             'description' => 'nullable',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:5120',
             'is_active' => 'boolean',
         ], $this->messages);
 

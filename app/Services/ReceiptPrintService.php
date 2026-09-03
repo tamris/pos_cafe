@@ -12,143 +12,92 @@ class ReceiptPrintService
     /**
      * Konversi file gambar logo menjadi ESC/POS Monochrome Raster Bit-Image (GS v 0)
      */
-    public static function convertImageToEscPosRaster(?string $imageRelativePath, int $maxWidth = 280): string
+    public static function convertImageToEscPosRaster(?string $imageRelativePath, int $maxWidth = 200): string
     {
         if (empty($imageRelativePath)) {
-            return '';
+            return "";
         }
 
-        $fullPath = Storage::disk('public')->path($imageRelativePath);
+        $fullPath = Storage::disk("public")->path($imageRelativePath);
         if (!file_exists($fullPath)) {
-            $fullPath = public_path('storage/' . $imageRelativePath);
+            $fullPath = public_path("storage/" . $imageRelativePath);
             if (!file_exists($fullPath)) {
-                return '';
+                return "";
             }
         }
 
-        if (!extension_loaded('gd')) {
-            return '';
+        if (!extension_loaded("gd")) {
+            return "";
         }
 
         try {
             $imageContent = file_get_contents($fullPath);
-            if ($imageContent === false) {
-                return '';
-            }
+            if ($imageContent === false) return "";
 
             $img = @imagecreatefromstring($imageContent);
-            if (!$img) {
-                return '';
-            }
+            if (!$img) return "";
 
-            $w = imagesx($img);
-            $h = imagesy($img);
-            if ($w <= 0 || $h <= 0) {
+            $origWidth = imagesx($img);
+            $origHeight = imagesy($img);
+            if ($origWidth <= 0 || $origHeight <= 0) {
                 imagedestroy($img);
-                return '';
+                return "";
             }
 
-            // 1. Auto-detect content bounding box (Trim spasi kosong / transparan di sekeliling logo)
-            $minX = $w; $minY = $h; $maxX = 0; $maxY = 0;
-            $hasContent = false;
-
-            for ($y = 0; $y < $h; $y++) {
-                for ($x = 0; $x < $w; $x++) {
-                    $rgba = imagecolorat($img, $x, $y);
-                    $colors = imagecolorsforindex($img, $rgba);
-                    $isTransparent = (isset($colors['alpha']) && $colors['alpha'] > 80);
-                    $isWhite = ($colors['red'] > 245 && $colors['green'] > 245 && $colors['blue'] > 245);
-
-                    if (!$isTransparent && !$isWhite) {
-                        $hasContent = true;
-                        if ($x < $minX) $minX = $x;
-                        if ($x > $maxX) $maxX = $x;
-                        if ($y < $minY) $minY = $y;
-                        if ($y > $maxY) $maxY = $y;
-                    }
-                }
-            }
-
-            if ($hasContent) {
-                $pad = 4;
-                $cropX = max(0, $minX - $pad);
-                $cropY = max(0, $minY - $pad);
-                $cropW = min($w - $cropX, ($maxX - $minX + 1) + ($pad * 2));
-                $cropH = min($h - $cropY, ($maxY - $minY + 1) + ($pad * 2));
-
-                $cropped = imagecreatetruecolor($cropW, $cropH);
-                imagealphablending($cropped, false);
-                imagesavealpha($cropped, true);
-                $transparent = imagecolorallocatealpha($cropped, 255, 255, 255, 127);
-                imagefilledrectangle($cropped, 0, 0, $cropW, $cropH, $transparent);
-                imagecopy($cropped, $img, 0, 0, $cropX, $cropY, $cropW, $cropH);
-                imagedestroy($img);
-                $img = $cropped;
-                $origWidth = $cropW;
-                $origHeight = $cropH;
-            } else {
-                $origWidth = $w;
-                $origHeight = $h;
-            }
-
-            // 2. Hitung ukuran proporsional
             $targetWidth = min($origWidth, $maxWidth);
             $targetHeight = (int) round(($origHeight / $origWidth) * $targetWidth);
 
-            // Sesuaikan width agar kelipatan 8 (byte aligned)
-            $width = (int) (ceil($targetWidth / 8) * 8);
-            $height = $targetHeight;
-
-            // Buat canvas baru warna putih
-            $resized = imagecreatetruecolor($width, $height);
-            $white = imagecolorallocate($resized, 255, 255, 255);
-            imagefill($resized, 0, 0, $white);
-
-            // Copy and resize
-            imagecopyresampled($resized, $img, 0, 0, 0, 0, $width, $height, $origWidth, $origHeight);
+            $resized = imagecreatetruecolor($targetWidth, $targetHeight);
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
+            imagefilledrectangle($resized, 0, 0, $targetWidth, $targetHeight, $transparent);
+            imagecopyresampled($resized, $img, 0, 0, 0, 0, $targetWidth, $targetHeight, $origWidth, $origHeight);
             imagedestroy($img);
 
-            $widthBytes = (int) ($width / 8);
-            $xL = $widthBytes % 256;
-            $xH = (int) floor($widthBytes / 256);
-            $yL = $height % 256;
-            $yH = (int) floor($height / 256);
+            $esc = "\x1b";
+            $raw = $esc . "a\x01"; // Align center
+            $raw .= $esc . "3\x18"; // Line spacing 24 dots
 
-            $rawBytes = '';
+            $nL = chr($targetWidth % 256);
+            $nH = chr((int) floor($targetWidth / 256));
 
-            for ($y = 0; $y < $height; $y++) {
-                for ($xByte = 0; $xByte < $widthBytes; $xByte++) {
-                    $byte = 0;
-                    for ($bit = 0; $bit < 8; $bit++) {
-                        $x = ($xByte * 8) + $bit;
-                        $rgb = imagecolorat($resized, $x, $y);
-                        $colors = imagecolorsforindex($resized, $rgb);
-
-                        // Check transparency / alpha
-                        if (isset($colors['alpha']) && $colors['alpha'] > 80) {
-                            $isBlack = 0; // Transparan dianggap putih
-                        } else {
-                            $r = $colors['red'];
-                            $g = $colors['green'];
-                            $b = $colors['blue'];
-                            // Luminance threshold
-                            $luminance = (0.299 * $r) + (0.587 * $g) + (0.114 * $b);
-                            $isBlack = ($luminance < 160) ? 1 : 0;
+            for ($y = 0; $y < $targetHeight; $y += 24) {
+                $raw .= $esc . "*\x21" . $nL . $nH; // ESC * 33 (24-dot double density)
+                for ($x = 0; $x < $targetWidth; $x++) {
+                    for ($k = 0; $k < 3; $k++) {
+                        $byte = 0;
+                        for ($bit = 0; $bit < 8; $bit++) {
+                            $currentY = $y + ($k * 8) + $bit;
+                            $isBlack = 0;
+                            if ($currentY < $targetHeight) {
+                                $rgba = imagecolorat($resized, $x, $currentY);
+                                $colors = imagecolorsforindex($resized, $rgba);
+                                if (!isset($colors["alpha"]) || $colors["alpha"] <= 80) {
+                                    $luminance = (0.299 * $colors["red"]) + (0.587 * $colors["green"]) + (0.114 * $colors["blue"]);
+                                    if ($luminance < 180) {
+                                        $isBlack = 1;
+                                    }
+                                }
+                            }
+                            $byte = ($byte << 1) | $isBlack;
                         }
-
-                        $byte = ($byte << 1) | $isBlack;
+                        $raw .= chr($byte);
                     }
-                    $rawBytes .= chr($byte);
                 }
+                // Rapatkan jarak baris di band terakhir agar nama toko naik dekat logo
+                if ($y + 24 >= $targetHeight) {
+                    $raw .= $esc . "3\x04";
+                }
+                $raw .= "\n";
             }
 
             imagedestroy($resized);
-
-            // Perintah GS v 0 m xL xH yL yH
-            $rasterCommand = "\x1b\x61\x01" . "\x1d\x76\x30\x00" . chr($xL) . chr($xH) . chr($yL) . chr($yH) . $rawBytes . "\n";
-            return $rasterCommand;
+            $raw .= $esc . "2"; // Reset line spacing
+            $raw .= $esc . "a\x01"; // Center align
+            return $raw;
         } catch (\Throwable $e) {
-            return '';
+            return "";
         }
     }
 
