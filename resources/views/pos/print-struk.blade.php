@@ -107,7 +107,7 @@
             margin-bottom: 6px;
         }
         .logo-wrapper {
-            margin: 0 auto 8px auto;
+            margin: 0 auto 2px auto;
             text-align: center;
         }
         .logo-wrapper img {

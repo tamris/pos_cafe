@@ -153,6 +153,10 @@ class ReportIndex extends Component
 
         $transactions = Transaction::with(['user', 'details'])
             ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            })
             ->latest()
             ->paginate(12, ['*'], 'penjualanPage'); 
 

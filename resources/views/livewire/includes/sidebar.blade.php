@@ -103,6 +103,29 @@
                 <span class="font-medium text-sm">Kasir (POS)</span>
             </a>
 
+            {{-- Pesanan Online (All User) --}}
+            @php
+                $activeOnlineOrdersCount = \App\Models\Transaction::where('order_source', 'self_order')
+                    ->where('payment_status', 'paid')
+                    ->whereIn('status', ['pending', 'processing', 'ready'])
+                    ->count();
+            @endphp
+            <a href="{{ route('online-orders.index') }}" wire:navigate @click="if(window.innerWidth < 1280) mobileSidebarOpen = false"
+                class="sidebar-link flex items-center justify-between px-4 py-3 rounded-lg transition-colors
+                {{ $isPath('online-orders') ? 'text-slate-900 bg-slate-100 dark:bg-slate-800 dark:text-white font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                    </svg>
+                    <span class="font-medium text-sm">Pesanan Online</span>
+                </div>
+                @if($activeOnlineOrdersCount > 0)
+                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-black text-white bg-rose-600 rounded-full animate-pulse shadow-2xs">
+                        {{ $activeOnlineOrdersCount }}
+                    </span>
+                @endif
+            </a>
+
             {{-- Master Data (Dropdown - Admin Only) --}}
             @if(auth()->user()->role === 'admin')
             <div>

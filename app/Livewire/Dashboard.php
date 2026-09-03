@@ -69,6 +69,10 @@ class Dashboard extends Component
         $this->profitGrowth = $this->calculateGrowth($this->todayProfit, $yesterdayProfit);
 
         $this->recentTransactions = Transaction::with('user')
+            ->where(function($q) {
+                $q->where('order_source', '!=', 'self_order')
+                  ->orWhere('payment_status', 'paid');
+            })
             ->latest()
             ->take(5)
             ->get();

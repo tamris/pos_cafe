@@ -220,7 +220,7 @@
                                             <div class="min-w-0 flex-1">
                                                 <p class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">{{ $transaction->invoice_number }}</p>
                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                                    {{ $transaction->created_at->diffForHumans() }} • {{ $transaction->user->name }} •
+                                                    {{ $transaction->created_at->diffForHumans() }} • {{ $transaction->user?->name ?? ($transaction->order_source === 'self_order' ? 'Self-Order' : 'Kasir') }} •
                                                     <span class="font-medium">
                                                         {{ ($transaction->order_type ?? 'dine_in') === 'dine_in' ? 'Makan di Tempat' : (($transaction->order_type ?? '') === 'take_away' ? 'Bawa Pulang' : 'Pesan Antar') }}
                                                     </span>
