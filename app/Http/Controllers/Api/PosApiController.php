@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\CashierShift;
 use App\Models\Setting;
+use App\Models\Addon;
 use App\Services\ReceiptPrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,12 +31,29 @@ class PosApiController extends Controller
             ->orderBy('name', 'asc')
             ->get();
 
-        // 2. Active Products
+        // 2. Active Addons
+        $addons = Addon::where('is_active', true)
+            ->with(['categories:id,name'])
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function ($addon) {
+                return [
+                    'id' => $addon->id,
+                    'name' => $addon->name,
+                    'price' => (float) $addon->price,
+                    'harga_beli' => (float) ($addon->harga_beli ?? 0),
+                    'category_ids' => $addon->categories->pluck('id')->toArray(),
+                    'category_names' => $addon->categories->pluck('name')->toArray(),
+                    'is_active' => (bool) $addon->is_active,
+                ];
+            });
+
+        // 3. Active Products
         $products = Product::query()
             ->whereHas('category', function ($q) {
                 $q->where('is_active', true);
             })
-            ->with(['category:id,name'])
+            ->with(['category:id,name', 'category.addons'])
             ->withSum('transactionDetails as total_sold', 'quantity')
             ->orderByDesc('total_sold')
             ->orderBy('name', 'asc')
@@ -47,6 +65,15 @@ class PosApiController extends Controller
                         ? $p->image
                         : asset('storage/' . $p->image);
                 }
+
+                $availableAddons = $p->available_addons->map(function ($a) {
+                    return [
+                        'id' => $a->id,
+                        'name' => $a->name,
+                        'price' => (float) $a->price,
+                        'harga_beli' => (float) ($a->harga_beli ?? 0),
+                    ];
+                })->values()->toArray();
 
                 return [
                     'id' => $p->id,
@@ -61,15 +88,18 @@ class PosApiController extends Controller
                     'image_url' => $imageUrl,
                     'is_active' => (bool) $p->is_active,
                     'total_sold' => (int) ($p->total_sold ?? 0),
+                    'available_addons' => $availableAddons,
                 ];
             });
 
-        // 3. Occupied Tables (from Open Bills / Pending Transactions)
-        $occupiedTables = Transaction::where('status', 'pending')
+        // 3. Occupied Tables & Open Bills Count
+        $openBillsQuery = Transaction::where('status', 'pending')
             ->where(function ($q) {
                 $q->whereNull('order_source')
                   ->orWhere('order_source', '!=', 'self_order');
-            })
+            });
+        $openBillsCount = (clone $openBillsQuery)->count();
+        $occupiedTables = $openBillsQuery
             ->whereNotNull('table_number')
             ->where('table_number', '!=', '')
             ->pluck('table_number')
@@ -120,7 +150,9 @@ class PosApiController extends Controller
                 ],
                 'categories' => $categories,
                 'products' => $products,
+                'addons' => $addons,
                 'occupied_tables' => $occupiedTables,
+                'open_bills_count' => $openBillsCount,
                 'settings' => $cafeSettings,
                 'has_active_shift' => !is_null($activeShift),
                 'active_shift' => $activeShift ? $this->formatShiftData($activeShift) : null,
@@ -138,6 +170,33 @@ class PosApiController extends Controller
                 'quick_cash_presets' => [10000, 20000, 50000, 100000, 200000],
                 'server_time' => now()->toIso8601String(),
             ],
+        ]);
+    }
+
+    /**
+     * Get All Active Add-ons & Toppings for POS.
+     */
+    public function getAddons(Request $request)
+    {
+        $addons = Addon::where('is_active', true)
+            ->with(['categories:id,name'])
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function ($addon) {
+                return [
+                    'id' => $addon->id,
+                    'name' => $addon->name,
+                    'price' => (float) $addon->price,
+                    'harga_beli' => (float) ($addon->harga_beli ?? 0),
+                    'category_ids' => $addon->categories->pluck('id')->toArray(),
+                    'category_names' => $addon->categories->pluck('name')->toArray(),
+                    'is_active' => (bool) $addon->is_active,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $addons,
         ]);
     }
 
@@ -311,6 +370,10 @@ class PosApiController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.notes' => 'nullable|string|max:255',
+            'items.*.addons' => 'nullable|array',
+            'items.*.addons.*.id' => 'required_with:items.*.addons|integer',
+            'items.*.addons.*.name' => 'required_with:items.*.addons|string|max:100',
+            'items.*.addons.*.price' => 'required_with:items.*.addons|numeric|min:0',
             'open_bill_id' => 'nullable|integer|exists:transactions,id',
             'offline_id' => 'nullable|string|max:64',
         ]);
@@ -425,17 +488,25 @@ class PosApiController extends Controller
                 $itemPrice = (float) $item['price'];
                 $itemQty = (int) $item['quantity'];
                 $itemSubtotal = $itemPrice * $itemQty;
-                $itemProfit = ($itemPrice - $hargaBeli) * $itemQty;
+
+                $totalAddonCost = 0;
+                if (!empty($item['addons'])) {
+                    $addonIds = array_column($item['addons'], 'id');
+                    $totalAddonCost = (float) Addon::whereIn('id', $addonIds)->sum('harga_beli');
+                }
+                $unitCost = $hargaBeli + $totalAddonCost;
+                $itemProfit = ($itemPrice - $unitCost) * $itemQty;
 
                 TransactionDetail::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $item['id'],
                     'quantity' => $itemQty,
                     'price' => $itemPrice,
-                    'harga_beli' => $hargaBeli,
+                    'harga_beli' => $unitCost,
                     'subtotal' => $itemSubtotal,
                     'profit' => $itemProfit,
                     'notes' => $item['notes'] ?? null,
+                    'addons' => !empty($item['addons']) ? $item['addons'] : null,
                 ]);
             }
 
@@ -514,6 +585,7 @@ class PosApiController extends Controller
                         'price' => (float) $d->price,
                         'subtotal' => (float) $d->subtotal,
                         'notes' => $d->notes,
+                        'addons' => $d->addons ?? [],
                     ];
                 }),
             ];
@@ -541,6 +613,10 @@ class PosApiController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.notes' => 'nullable|string|max:255',
+            'items.*.addons' => 'nullable|array',
+            'items.*.addons.*.id' => 'required_with:items.*.addons|integer',
+            'items.*.addons.*.name' => 'required_with:items.*.addons|string|max:100',
+            'items.*.addons.*.price' => 'required_with:items.*.addons|numeric|min:0',
             'open_bill_id' => 'nullable|integer|exists:transactions,id',
         ]);
 
@@ -630,15 +706,23 @@ class PosApiController extends Controller
                 $itemPrice = (float) $item['price'];
                 $itemQty = (int) $item['quantity'];
 
+                $totalAddonCost = 0;
+                if (!empty($item['addons'])) {
+                    $addonIds = array_column($item['addons'], 'id');
+                    $totalAddonCost = (float) Addon::whereIn('id', $addonIds)->sum('harga_beli');
+                }
+                $unitCost = $hargaBeli + $totalAddonCost;
+
                 TransactionDetail::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $item['id'],
                     'quantity' => $itemQty,
                     'price' => $itemPrice,
-                    'harga_beli' => $hargaBeli,
+                    'harga_beli' => $unitCost,
                     'subtotal' => $itemPrice * $itemQty,
-                    'profit' => ($itemPrice - $hargaBeli) * $itemQty,
+                    'profit' => ($itemPrice - $unitCost) * $itemQty,
                     'notes' => $item['notes'] ?? null,
+                    'addons' => !empty($item['addons']) ? $item['addons'] : null,
                 ]);
             }
 
@@ -683,13 +767,15 @@ class PosApiController extends Controller
 
         $items = $transaction->details->map(function ($d) {
             return [
-                'id' => $d->product_id,
+                'id' => $d->id,
+                'product_id' => $d->product_id,
                 'name' => $d->product?->name ?? 'Menu',
                 'price' => (float) $d->price,
                 'harga_beli' => (float) $d->harga_beli,
                 'quantity' => (int) $d->quantity,
                 'subtotal' => (float) $d->subtotal,
                 'notes' => $d->notes ?? '',
+                'addons' => $d->addons ?? [],
             ];
         });
 
@@ -745,13 +831,24 @@ class PosApiController extends Controller
     {
         $user = $request->user();
         $search = $request->input('search');
-        $status = $request->input('status', 'completed'); // 'completed', 'cancelled', 'all'
+        $status = $request->input('status', 'completed'); // 'completed', 'pending', 'cancelled', 'all'
+
+        // 1. Stats Counter untuk filter tabs riwayat transaksi hari ini
+        $baseTodayQuery = Transaction::whereDate('created_at', today());
+        if ($user && in_array($user->role, ['kasir', 'cashier'])) {
+            $baseTodayQuery->where('user_id', $user->id);
+        }
+
+        $statsCompleted = (clone $baseTodayQuery)->where('status', 'completed')->count();
+        $statsPending = (clone $baseTodayQuery)->where('status', 'pending')->count();
+        $statsCancelled = (clone $baseTodayQuery)->where('status', 'cancelled')->count();
+        $statsAll = (clone $baseTodayQuery)->count();
 
         $query = Transaction::with(['details.product', 'user'])
             ->whereDate('created_at', today())
             ->orderBy('created_at', 'desc');
 
-        if (in_array($user->role, ['kasir', 'cashier'])) {
+        if ($user && in_array($user->role, ['kasir', 'cashier'])) {
             $query->where('user_id', $user->id);
         }
 
@@ -789,6 +886,7 @@ class PosApiController extends Controller
                         'price' => (float) $d->price,
                         'subtotal' => (float) $d->subtotal,
                         'notes' => $d->notes,
+                        'addons' => $d->addons ?? [],
                     ];
                 }),
             ];
@@ -796,6 +894,12 @@ class PosApiController extends Controller
 
         return response()->json([
             'success' => true,
+            'stats' => [
+                'all' => $statsAll,
+                'completed' => $statsCompleted,
+                'pending' => $statsPending,
+                'cancelled' => $statsCancelled,
+            ],
             'data' => $transactions,
         ]);
     }
@@ -891,15 +995,23 @@ class PosApiController extends Controller
                     $itemPrice = (float) $item['price'];
                     $itemQty = (int) $item['quantity'];
 
+                    $totalAddonCost = 0;
+                    if (!empty($item['addons'])) {
+                        $addonIds = array_column($item['addons'], 'id');
+                        $totalAddonCost = (float) Addon::whereIn('id', $addonIds)->sum('harga_beli');
+                    }
+                    $unitCost = $hargaBeli + $totalAddonCost;
+
                     TransactionDetail::create([
                         'transaction_id' => $transaction->id,
                         'product_id' => $item['id'],
                         'quantity' => $itemQty,
                         'price' => $itemPrice,
-                        'harga_beli' => $hargaBeli,
+                        'harga_beli' => $unitCost,
                         'subtotal' => $itemPrice * $itemQty,
-                        'profit' => ($itemPrice - $hargaBeli) * $itemQty,
+                        'profit' => ($itemPrice - $unitCost) * $itemQty,
                         'notes' => $item['notes'] ?? null,
+                        'addons' => !empty($item['addons']) ? $item['addons'] : null,
                     ]);
                 }
 
@@ -971,6 +1083,7 @@ class PosApiController extends Controller
                 'price' => (float) $d->price,
                 'subtotal' => (float) $d->subtotal,
                 'notes' => $d->notes ?? '',
+                'addons' => $d->addons ?? [],
             ];
         })->toArray();
 
@@ -1273,10 +1386,18 @@ class PosApiController extends Controller
         $setting = Setting::first();
         $isOnlineOrderActive = (bool) ($setting->is_online_order_active ?? true);
 
-        // Active count
+        // Active count online
         $activeCount = Transaction::where('order_source', 'self_order')
             ->where('payment_status', 'paid')
             ->whereIn('status', ['pending', 'processing', 'ready'])
+            ->count();
+
+        // Active open bills count (dine-in / offline open bills)
+        $openBillsCount = Transaction::where('status', 'pending')
+            ->where(function ($q) {
+                $q->whereNull('order_source')
+                  ->orWhere('order_source', '!=', 'self_order');
+            })
             ->count();
 
         $formattedNewOrders = $newOrders->map(function ($order) {
@@ -1302,6 +1423,7 @@ class PosApiController extends Controller
             'new_orders_count' => $newOrders->count(),
             'latest_order_id' => $latestOrder ?? $lastOrderId,
             'active_orders_count' => $activeCount,
+            'open_bills_count' => $openBillsCount,
             'is_online_order_active' => $isOnlineOrderActive,
             'new_orders' => $formattedNewOrders,
         ]);
@@ -1525,6 +1647,7 @@ class PosApiController extends Controller
                         'name' => $d->product?->name ?? 'Menu',
                         'quantity' => (int) $d->quantity,
                         'notes' => $d->notes ?? '',
+                        'addons' => $d->addons ?? [],
                     ];
                 }),
                 'rawbt_base64' => $rawbtKitchen,
@@ -1563,6 +1686,7 @@ class PosApiController extends Controller
                 'price' => (float) $d->price,
                 'subtotal' => (float) $d->subtotal,
                 'notes' => $d->notes ?? '',
+                'addons' => $d->addons ?? [],
             ];
         });
 

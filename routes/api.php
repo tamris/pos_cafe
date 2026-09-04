@@ -20,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // POS Data & Operations
     Route::prefix('pos')->group(function () {
         Route::get('/bootstrap', [PosApiController::class, 'bootstrap']);
+        Route::get('/addons', [PosApiController::class, 'getAddons']);
         
         // Shift Management
         Route::get('/shift/current', [PosApiController::class, 'currentShift']);
