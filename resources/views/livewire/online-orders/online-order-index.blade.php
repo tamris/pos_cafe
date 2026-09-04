@@ -325,8 +325,11 @@
                                                 @if(!empty($item->addons))
                                                     <div class="flex flex-wrap gap-1 mt-0.5">
                                                         @foreach($item->addons as $addon)
-                                                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800">
-                                                                + {{ $addon['name'] }}
+                                                            @php
+                                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                            @endphp
+                                                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800">
+                                                                + {{ $addonName }}
                                                             </span>
                                                         @endforeach
                                                     </div>

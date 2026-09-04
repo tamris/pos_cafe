@@ -199,6 +199,19 @@
                             <div class="font-bold text-stone-900">
                                 {{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}
                             </div>
+                            @if(!empty($d->addons))
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    @foreach($d->addons as $addon)
+                                        @php
+                                            $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                            $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                        @endphp
+                                        <span class="inline-flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                            + {{ $addonName }} @if($addonPrice > 0) (+Rp {{ number_format($addonPrice, 0, ',', '.') }}) @endif
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
                             @if(!empty($d->notes))
                                 <div class="text-[11px] text-stone-500 font-medium mt-0.5">
                                     {{ $d->notes }}

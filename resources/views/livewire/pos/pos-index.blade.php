@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300" wire:poll.4s="checkNewOnlineOrders">
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300" @if(auth()->user()->role !== 'admin') wire:poll.4s="checkNewOnlineOrders" @endif>
     @include('livewire.includes.sidebar')
 
     <div class="main-content-layout flex flex-col min-h-screen">
@@ -9,8 +9,8 @@
 
         <main class="p-3 sm:p-4 lg:p-5 space-y-3 flex-1 flex flex-col min-h-0">
             
-            {{-- LIVE REAL-TIME SELF-ORDER NOTIFICATION BANNER --}}
-            @if($newOnlineOrderAlert)
+            {{-- LIVE REAL-TIME SELF-ORDER NOTIFICATION BANNER (Kasir Only) --}}
+            @if(auth()->user()->role !== 'admin' && $newOnlineOrderAlert)
                 <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-3 sm:p-4 rounded-2xl shadow-xl border border-emerald-400/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-bounce shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center text-xl shrink-0 shadow-inner">
@@ -1272,6 +1272,18 @@
                                     <div class="flex justify-between items-start text-xs">
                                         <div class="flex-1 pr-2">
                                             <span class="font-bold text-slate-800 dark:text-slate-200">{{ $d->quantity }}x {{ $d->product->name ?? 'Menu' }}</span>
+                                            @if(!empty($d->addons))
+                                                <div class="flex flex-wrap gap-1 mt-1">
+                                                    @foreach($d->addons as $addon)
+                                                        @php
+                                                            $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                        @endphp
+                                                        <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800">
+                                                            + {{ $addonName }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                             @if(!empty($d->notes))
                                                 <div class="text-[11px] text-amber-700 dark:text-amber-400 italic mt-0.5">
                                                     👉 {{ $d->notes }}

@@ -103,7 +103,8 @@
                 <span class="font-medium text-sm">Kasir (POS)</span>
             </a>
 
-            {{-- Pesanan Online (All User) --}}
+            {{-- Pesanan Online (Khusus Kasir) --}}
+            @if(auth()->user()->role !== 'admin')
             @php
                 $activeOnlineOrdersCount = \App\Models\Transaction::where('order_source', 'self_order')
                     ->where('payment_status', 'paid')
@@ -125,6 +126,7 @@
                     </span>
                 @endif
             </a>
+            @endif
 
             {{-- Master Data (Dropdown - Admin Only) --}}
             @if(auth()->user()->role === 'admin')

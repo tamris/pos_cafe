@@ -105,6 +105,11 @@ class PosIndex extends Component
 
     public function checkNewOnlineOrders()
     {
+        // Online orders are handled only by cashiers
+        if (auth()->check() && auth()->user()->role === 'admin') {
+            return;
+        }
+
         $newOrder = Transaction::with(['details.product'])
             ->where('order_source', 'self_order')
             ->where('payment_status', 'paid')

@@ -574,8 +574,12 @@ class PosApiController extends Controller
                 'customer_name' => $bill->customer_name,
                 'total' => (float) $bill->total,
                 'subtotal' => (float) $bill->subtotal,
+                'order_type' => $bill->order_type ?? 'dine_in',
                 'items_count' => $bill->details->sum('quantity'),
-                'created_at' => $bill->created_at->format('H:i • d M Y'),
+                'created_at' => $bill->created_at->format('Y-m-d H:i:s'),
+                'time' => $bill->created_at->format('H:i'),
+                'date' => $bill->created_at->format('d M Y'),
+                'time_ago' => $bill->created_at->diffForHumans(),
                 'details' => $bill->details->map(function ($d) {
                     return [
                         'id' => $d->id,

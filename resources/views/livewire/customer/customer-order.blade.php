@@ -347,6 +347,19 @@
                                         <span class="text-xs font-black text-emerald-800 block mt-0.5">
                                             Rp {{ number_format($item['price'], 0, ',', '.') }}
                                         </span>
+                                        @if(!empty($item['addons']))
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($item['addons'] as $addon)
+                                                    @php
+                                                        $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                        $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                                    @endphp
+                                                    <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                        + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                         @if(!empty($item['notes']))
                                             <div class="text-[11px] text-slate-500 font-medium mt-0.5">
                                                 {{ $item['notes'] }}
@@ -782,8 +795,12 @@
                                 @if(!empty($item['addons']))
                                     <div class="flex flex-wrap gap-1 mt-1">
                                         @foreach($item['addons'] as $addon)
+                                            @php
+                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                            @endphp
                                             <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                                + {{ $addon['name'] }} (+{{ number_format($addon['price'], 0, ',', '.') }})
+                                                + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
                                             </span>
                                         @endforeach
                                     </div>
@@ -966,16 +983,31 @@
                                 </div>
 
                                 {{-- Details --}}
-                                <div class="text-xs space-y-1">
+                                <div class="text-xs space-y-1.5">
                                     @foreach($hist->details as $d)
-                                        <div class="flex items-center justify-between text-slate-700">
-                                            <span class="truncate">
-                                                <strong>{{ $d->quantity }}x</strong> {{ $d->product?->name ?? 'Menu' }}
-                                                @if(!empty($d->notes))
-                                                    <span class="text-slate-400 text-[11px]">({{ $d->notes }})</span>
+                                        <div class="flex items-start justify-between text-slate-700 py-1 border-b border-slate-50 last:border-0">
+                                            <div class="flex-1 min-w-0 pr-2">
+                                                <div class="font-bold text-slate-900 text-xs truncate">
+                                                    {{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}
+                                                </div>
+                                                @if(!empty($d->addons))
+                                                    <div class="flex flex-wrap gap-1 mt-0.5">
+                                                        @foreach($d->addons as $addon)
+                                                            @php
+                                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                                $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                                            @endphp
+                                                            <span class="inline-flex items-center text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                                + {{ $addonName }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
                                                 @endif
-                                            </span>
-                                            <span class="font-mono text-slate-600 shrink-0 ml-2">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
+                                                @if(!empty($d->notes))
+                                                    <span class="text-slate-400 text-[11px] block mt-0.5">({{ $d->notes }})</span>
+                                                @endif
+                                            </div>
+                                            <span class="font-mono text-slate-700 font-bold shrink-0 text-xs">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
                                         </div>
                                     @endforeach
                                 </div>
