@@ -34,6 +34,7 @@ class Transaction extends Model
         'cancelled_reason',
         'cancelled_by',
         'cancelled_at',
+        'created_at',
     ];
 
     protected $casts = [
