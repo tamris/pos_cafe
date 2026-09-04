@@ -51,4 +51,13 @@ class Product extends Model
     {
         return $this->hasMany(ProductIngredient::class);
     }
+
+    public function getAvailableAddonsAttribute()
+    {
+        if ($this->relationLoaded('category') && $this->category && $this->category->relationLoaded('addons')) {
+            return $this->category->addons->where('is_active', true);
+        }
+
+        return $this->category ? $this->category->addons()->where('addons.is_active', true)->get() : collect();
+    }
 }

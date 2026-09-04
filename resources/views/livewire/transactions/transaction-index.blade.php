@@ -542,7 +542,19 @@
                                 @foreach($selectedTransaction->details as $detail)
                                     <div class="px-4 py-3 flex justify-between items-center text-xs sm:text-sm hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
                                         <div class="pr-2">
-                                            <p class="font-bold text-slate-900 dark:text-white">{{ $detail->product->name }}</p>
+                                            <p class="font-bold text-slate-900 dark:text-white">{{ $detail->product->name ?? 'Menu' }}</p>
+                                            @if(!empty($detail->addons))
+                                                <div class="flex flex-wrap gap-1 mt-0.5 mb-1">
+                                                    @foreach($detail->addons as $addon)
+                                                        <span class="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                                            + {{ $addon['name'] }} (+{{ number_format($addon['price'], 0, ',', '.') }})
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                            @if($detail->notes)
+                                                <p class="text-[10px] text-slate-400 dark:text-slate-500 italic">* {{ $detail->notes }}</p>
+                                            @endif
                                             <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ $detail->quantity }} x Rp {{ number_format($detail->price, 0, ',', '.') }}</p>
                                         </div>
                                         <span class="font-black text-slate-900 dark:text-white shrink-0">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</span>

@@ -8,6 +8,15 @@
                 <p class="text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
                     Rp {{ number_format($item['price'], 0, ',', '.') }}
                 </p>
+                @if(!empty($item['addons']))
+                    <div class="flex flex-wrap gap-1 mt-1">
+                        @foreach($item['addons'] as $addon)
+                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                + {{ $addon['name'] }} (+{{ number_format($addon['price'], 0, ',', '.') }})
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             
             {{-- Stepper & Delete --}}
@@ -44,14 +53,21 @@
             <div class="min-w-0 pr-2">
                 @if(!empty($item['notes']))
                     <button type="button" wire:click="openItemNotesModal({{ $index }})"
-                        class="text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md hover:border-emerald-400 max-w-[150px] sm:max-w-[180px] truncate text-left flex items-center gap-1.5"
-                        title="Ubah catatan">
+                        class="text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md hover:border-emerald-400 max-w-[150px] sm:max-w-[180px] truncate text-left flex items-center gap-1.5 cursor-pointer"
+                        title="Ubah catatan & opsi">
                         <svg class="w-3 h-3 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path></svg>
                         <span class="truncate">{{ $item['notes'] }}</span>
                     </button>
+                @elseif(!empty($item['addons']))
+                    <button type="button" wire:click="openItemNotesModal({{ $index }})"
+                        class="text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md hover:border-emerald-400 flex items-center gap-1.5 cursor-pointer"
+                        title="Ubah add-on & opsi">
+                        <svg class="w-3 h-3 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path></svg>
+                        <span>{{ count($item['addons']) }} Add-on • Ubah</span>
+                    </button>
                 @else
                     <button type="button" wire:click="openItemNotesModal({{ $index }})"
-                        class="text-[11px] text-slate-400 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-400 font-medium hover:underline flex items-center gap-1">
+                        class="text-[11px] text-slate-400 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-400 font-medium hover:underline flex items-center gap-1 cursor-pointer">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path></svg>
                         <span>Catatan / Opsi</span>
                     </button>

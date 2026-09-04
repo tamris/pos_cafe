@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300" wire:poll.4s="checkNewOnlineOrders">
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 md:pb-0 transition-colors duration-300" @if(auth()->user()->role !== 'admin') wire:poll.4s="checkNewOnlineOrders" @endif>
     @include('livewire.includes.sidebar')
 
     <div class="main-content-layout flex flex-col min-h-screen">
@@ -9,8 +9,8 @@
 
         <main class="p-3 sm:p-4 lg:p-5 space-y-3 flex-1 flex flex-col min-h-0">
             
-            {{-- LIVE REAL-TIME SELF-ORDER NOTIFICATION BANNER --}}
-            @if($newOnlineOrderAlert)
+            {{-- LIVE REAL-TIME SELF-ORDER NOTIFICATION BANNER (Kasir Only) --}}
+            @if(auth()->user()->role !== 'admin' && $newOnlineOrderAlert)
                 <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-3 sm:p-4 rounded-2xl shadow-xl border border-emerald-400/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-bounce shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center text-xl shrink-0 shadow-inner">
@@ -463,21 +463,18 @@
     {{-- ========================================================================= --}}
     {{-- 4. MODAL: ITEM CUSTOMIZATION / NOTES                                      --}}
     {{-- ========================================================================= --}}
-    @if ($showItemNotesModal)
+    @if ($showItemNotesModal && isset($cart[$editingItemIndex]))
     <div class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 text-center">
             <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" wire:click="closeItemNotesModal"></div>
-            <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-700">
-                <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"></path></svg>
-                        </div>
-                        <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
-                            Catatan & Opsi Menu
-                        </h3>
+            <div class="inline-block bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all max-w-lg w-full border border-slate-200 dark:border-slate-700 my-8">
+                {{-- Header --}}
+                <div class="bg-slate-900 dark:bg-slate-850 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800">
+                    <div>
+                        <h3 class="text-base font-bold">Catatan & Opsi Menu</h3>
+                        <p class="text-xs text-slate-400 font-medium mt-0.5">{{ $cart[$editingItemIndex]['name'] ?? 'Menu' }} • Pilih add-ons dan catatan khusus</p>
                     </div>
-                    <button wire:click="closeItemNotesModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                    <button type="button" wire:click="closeItemNotesModal" class="text-slate-400 hover:text-white cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -485,17 +482,64 @@
                 @php
                     $categoryName = strtolower($cart[$editingItemIndex]['category_name'] ?? '');
                     $isDrink = str_contains($categoryName, 'coffee') || str_contains($categoryName, 'tea') || str_contains($categoryName, 'minuman');
+                    
+                    $modalBasePrice = (float)($cart[$editingItemIndex]['base_price'] ?? $cart[$editingItemIndex]['price']);
+                    $modalSelectedAddonsTotal = 0;
+                    foreach($availableAddonsForEditing as $ad) {
+                        if(in_array((int)$ad['id'], $tempSelectedAddonIds)) {
+                            $modalSelectedAddonsTotal += (float)$ad['price'];
+                        }
+                    }
+                    $modalFinalUnitPrice = $modalBasePrice + $modalSelectedAddonsTotal;
                 @endphp
 
-                <div class="space-y-4">
+                <div class="bg-white dark:bg-slate-800 px-6 py-5 space-y-4">
+                    {{-- 1. Pilihan Add-ons / Modifiers (Jika Kategori Memiliki Add-ons) --}}
+                    @if(!empty($availableAddonsForEditing))
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                    Pilihan Tambahan / Add-ons:
+                                </label>
+                                @if(!empty($tempSelectedAddonIds))
+                                    <button type="button" wire:click="$set('tempSelectedAddonIds', [])" class="text-[11px] text-slate-400 hover:text-rose-500 font-medium cursor-pointer">
+                                        Reset Tambahan
+                                    </button>
+                                @endif
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-thin">
+                                @foreach($availableAddonsForEditing as $addon)
+                                    @php
+                                        $isSelected = in_array((int)$addon['id'], $tempSelectedAddonIds);
+                                    @endphp
+                                    <button type="button" wire:click="toggleAddonInModal({{ $addon['id'] }})"
+                                        class="p-2.5 rounded-xl border-2 text-left transition-all flex items-center justify-between gap-2 cursor-pointer {{ $isSelected ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 shadow-xs' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 {{ $isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-400 bg-white dark:bg-slate-800' }}">
+                                                @if($isSelected)
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                                @endif
+                                            </div>
+                                            <span class="text-xs font-bold truncate">{{ $addon['name'] }}</span>
+                                        </div>
+                                        <span class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0">
+                                            +{{ number_format($addon['price'], 0, ',', '.') }}
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- 2. Sugar Level & Ice Level untuk Minuman --}}
                     @if($isDrink)
                         {{-- Sugar Level --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Sugar Level:</label>
                             <div class="grid grid-cols-3 gap-2">
                                 @foreach(['Normal', 'Less Sugar', 'No Sugar'] as $sugar)
-                                    <button type="button" wire:click="$set('tempSugarLevel', '{{ $sugar }}')"
-                                        class="w-full py-2 px-2 text-xs font-bold rounded-lg border transition-all text-center {{ $tempSugarLevel === $sugar ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
+                                    <button type="button" wire:click="setSugarLevel('{{ $sugar }}')"
+                                        class="w-full py-2 px-2 text-xs font-bold rounded-lg border transition-all text-center cursor-pointer {{ $tempSugarLevel === $sugar ? 'bg-slate-900 text-white border-slate-900 dark:bg-blue-600 dark:border-blue-600 shadow-xs ring-2 ring-slate-900/20 dark:ring-blue-600/30' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
                                         {{ $sugar }}
                                     </button>
                                 @endforeach
@@ -507,8 +551,8 @@
                             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Ice Level:</label>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 @foreach(['Normal', 'Less Ice', 'No Ice', 'Hot'] as $ice)
-                                    <button type="button" wire:click="$set('tempIceLevel', '{{ $ice }}')"
-                                        class="py-2 px-1 text-xs font-bold rounded-lg border transition-all text-center {{ $tempIceLevel === $ice ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
+                                    <button type="button" wire:click="setIceLevel('{{ $ice }}')"
+                                        class="py-2 px-1 text-xs font-bold rounded-lg border transition-all text-center cursor-pointer {{ $tempIceLevel === $ice ? 'bg-slate-900 text-white border-slate-900 dark:bg-blue-600 dark:border-blue-600 shadow-xs ring-2 ring-slate-900/20 dark:ring-blue-600/30' : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400' }}">
                                         {{ $ice }}
                                     </button>
                                 @endforeach
@@ -516,17 +560,34 @@
                         </div>
                     @endif
 
-                    {{-- Free Text Notes --}}
+                    {{-- 3. Free Text Notes --}}
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase tracking-wider">Catatan Tambahan (Dapur / Barista):</label>
-                        <textarea wire:model="tempItemNotes" rows="3" placeholder="Contoh: Pisahkan saus, extra whipped cream, pedas manis..."
-                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"></textarea>
+                        <textarea wire:model="tempItemNotes" rows="2" placeholder="Contoh: Pisahkan saus, gelas terpisah, sedikit manis..."
+                            class="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-900 dark:focus:ring-blue-500"></textarea>
+                    </div>
+
+                    {{-- 4. Dynamic Price Preview Box --}}
+                    <div class="bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-emerald-800 dark:text-emerald-300 font-bold uppercase tracking-wider">HARGA PER PORSI</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                Menu: Rp {{ number_format($modalBasePrice, 0, ',', '.') }} {{ $modalSelectedAddonsTotal > 0 ? '+ Addons: Rp ' . number_format($modalSelectedAddonsTotal, 0, ',', '.') : '' }}
+                            </p>
+                        </div>
+                        <span class="text-xl font-black text-emerald-700 dark:text-emerald-300">
+                            Rp {{ number_format($modalFinalUnitPrice, 0, ',', '.') }}
+                        </span>
                     </div>
                 </div>
 
-                <div class="mt-6 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <button wire:click="closeItemNotesModal" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Batal</button>
-                    <button wire:click="saveItemNotes" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-xs">Simpan Catatan</button>
+                {{-- Footer --}}
+                <div class="bg-slate-50 dark:bg-slate-850 px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2.5">
+                    <button type="button" wire:click="closeItemNotesModal" class="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">Batal</button>
+                    <button type="button" wire:click="saveItemNotes" class="px-4 py-2 text-xs font-bold bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white rounded-lg shadow-sm active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                        <span>Simpan Opsi Menu</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1211,6 +1272,18 @@
                                     <div class="flex justify-between items-start text-xs">
                                         <div class="flex-1 pr-2">
                                             <span class="font-bold text-slate-800 dark:text-slate-200">{{ $d->quantity }}x {{ $d->product->name ?? 'Menu' }}</span>
+                                            @if(!empty($d->addons))
+                                                <div class="flex flex-wrap gap-1 mt-1">
+                                                    @foreach($d->addons as $addon)
+                                                        @php
+                                                            $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                        @endphp
+                                                        <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800">
+                                                            + {{ $addonName }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                             @if(!empty($d->notes))
                                                 <div class="text-[11px] text-amber-700 dark:text-amber-400 italic mt-0.5">
                                                     👉 {{ $d->notes }}

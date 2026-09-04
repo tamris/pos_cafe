@@ -347,6 +347,19 @@
                                         <span class="text-xs font-black text-emerald-800 block mt-0.5">
                                             Rp {{ number_format($item['price'], 0, ',', '.') }}
                                         </span>
+                                        @if(!empty($item['addons']))
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($item['addons'] as $addon)
+                                                    @php
+                                                        $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                        $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                                    @endphp
+                                                    <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                        + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                         @if(!empty($item['notes']))
                                             <div class="text-[11px] text-slate-500 font-medium mt-0.5">
                                                 {{ $item['notes'] }}
@@ -645,6 +658,53 @@
                         @endif
                     @endif
 
+                    {{-- Pilihan Tambahan / Add-ons --}}
+                    @php
+                        $availableProductAddons = $selectedProduct->available_addons ?? collect();
+                        $modalAddonsTotal = 0;
+                        foreach($availableProductAddons as $ad) {
+                            if(in_array((int)$ad->id, $selectedAddonIds)) {
+                                $modalAddonsTotal += (float)$ad->price;
+                            }
+                        }
+                        $modalEffectiveUnitPrice = (float)$selectedProduct->price + $modalAddonsTotal;
+                    @endphp
+
+                    @if($availableProductAddons->count() > 0)
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-black text-slate-700">Pilihan Tambahan (Add-ons)</label>
+                                @if(!empty($selectedAddonIds))
+                                    <button type="button" wire:click="$set('selectedAddonIds', [])" class="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer">
+                                        Reset Tambahan
+                                    </button>
+                                @endif
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                @foreach($availableProductAddons as $addon)
+                                    @php
+                                        $isAddonSelected = in_array((int)$addon->id, $selectedAddonIds);
+                                    @endphp
+                                    <button type="button" 
+                                            wire:click="toggleAddon({{ $addon->id }})"
+                                            class="p-2.5 rounded-2xl text-xs font-bold text-left border-2 flex items-center justify-between gap-2 transition cursor-pointer {{ $isAddonSelected ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 {{ $isAddonSelected ? 'bg-[#0e382c] border-[#0e382c] text-white' : 'border-slate-300 bg-white' }}">
+                                                @if($isAddonSelected)
+                                                    <i class="fas fa-check text-[9px]"></i>
+                                                @endif
+                                            </div>
+                                            <span class="truncate">{{ $addon->name }}</span>
+                                        </div>
+                                        <span class="text-[11px] font-extrabold text-emerald-800 shrink-0">
+                                            +Rp {{ number_format($addon->price, 0, ',', '.') }}
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Special Instructions / Notes --}}
                     <div>
                         <label class="block text-xs font-black text-slate-700 mb-1.5">Catatan Khusus (Opsional)</label>
@@ -677,9 +737,9 @@
                 <div class="mt-5">
                     <button type="button" 
                             wire:click="addConfiguredToCart"
-                            class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-md shadow-[#0e382c]/20 flex items-center justify-between px-5 transition">
+                            class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-md shadow-[#0e382c]/20 flex items-center justify-between px-5 transition cursor-pointer">
                         <span>{{ $editingCartKey ? 'Simpan Perubahan' : 'Tambahkan ke Pesanan' }}</span>
-                        <span>Rp {{ number_format($selectedProduct->price * $modalQty, 0, ',', '.') }}</span>
+                        <span>Rp {{ number_format($modalEffectiveUnitPrice * $modalQty, 0, ',', '.') }}</span>
                     </button>
                 </div>
             </div>
@@ -732,6 +792,19 @@
                                 <span class="text-xs font-black text-emerald-800 block mt-0.5">
                                     Rp {{ number_format($item['price'], 0, ',', '.') }}
                                 </span>
+                                @if(!empty($item['addons']))
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        @foreach($item['addons'] as $addon)
+                                            @php
+                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                            @endphp
+                                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
                                 @if(!empty($item['notes']))
                                     <div class="text-[11px] text-slate-500 font-medium mt-0.5">
                                         {{ $item['notes'] }}
@@ -910,16 +983,31 @@
                                 </div>
 
                                 {{-- Details --}}
-                                <div class="text-xs space-y-1">
+                                <div class="text-xs space-y-1.5">
                                     @foreach($hist->details as $d)
-                                        <div class="flex items-center justify-between text-slate-700">
-                                            <span class="truncate">
-                                                <strong>{{ $d->quantity }}x</strong> {{ $d->product?->name ?? 'Menu' }}
-                                                @if(!empty($d->notes))
-                                                    <span class="text-slate-400 text-[11px]">({{ $d->notes }})</span>
+                                        <div class="flex items-start justify-between text-slate-700 py-1 border-b border-slate-50 last:border-0">
+                                            <div class="flex-1 min-w-0 pr-2">
+                                                <div class="font-bold text-slate-900 text-xs truncate">
+                                                    {{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}
+                                                </div>
+                                                @if(!empty($d->addons))
+                                                    <div class="flex flex-wrap gap-1 mt-0.5">
+                                                        @foreach($d->addons as $addon)
+                                                            @php
+                                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                                $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                                            @endphp
+                                                            <span class="inline-flex items-center text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                                + {{ $addonName }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
                                                 @endif
-                                            </span>
-                                            <span class="font-mono text-slate-600 shrink-0 ml-2">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
+                                                @if(!empty($d->notes))
+                                                    <span class="text-slate-400 text-[11px] block mt-0.5">({{ $d->notes }})</span>
+                                                @endif
+                                            </div>
+                                            <span class="font-mono text-slate-700 font-bold shrink-0 text-xs">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
                                         </div>
                                     @endforeach
                                 </div>

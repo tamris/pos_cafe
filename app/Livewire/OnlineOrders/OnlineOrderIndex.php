@@ -31,6 +31,10 @@ class OnlineOrderIndex extends Component
 
     public function mount()
     {
+        if (auth()->check() && auth()->user()->role === 'admin') {
+            return redirect()->route('dashboard');
+        }
+
         $this->checkActiveShift();
         $latestPaid = Transaction::where('order_source', 'self_order')
             ->where('payment_status', 'paid')

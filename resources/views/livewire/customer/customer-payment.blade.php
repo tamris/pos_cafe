@@ -48,11 +48,49 @@
             </div>
 
             {{-- Total Amount Display --}}
-            <div class="bg-slate-50 py-2.5 px-4 rounded-2xl border border-slate-200/60 mb-3">
+            <div class="bg-slate-50 py-2.5 px-4 rounded-2xl border border-slate-200/60 mb-2.5">
                 <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Total yang Harus Dibayar</span>
                 <span class="text-2xl sm:text-3xl font-black text-slate-900 font-heading tracking-tight">
                     Rp {{ number_format($transaction->total, 0, ',', '.') }}
                 </span>
+            </div>
+
+            {{-- Collapsible Order Breakdown with Add-ons --}}
+            <div x-data="{ openDetail: false }" class="mb-3 text-left">
+                <button type="button" @click="openDetail = !openDetail" 
+                        class="w-full py-2 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between transition cursor-pointer">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fas fa-receipt text-emerald-700 text-[11px]"></i>
+                        <span>Lihat Rincian Pesanan ({{ $transaction->details->count() }} menu)</span>
+                    </span>
+                    <i class="fas fa-chevron-down text-[10px] text-slate-500 transition-transform duration-200" :class="openDetail ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="openDetail" x-collapse class="mt-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-2 text-xs">
+                    @foreach($transaction->details as $d)
+                        <div class="flex justify-between items-start pb-2 border-b border-slate-200/60 last:border-0 last:pb-0">
+                            <div class="flex-1 pr-2">
+                                <span class="font-bold text-slate-900">{{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}</span>
+                                @if(!empty($d->addons))
+                                    <div class="flex flex-wrap gap-1 mt-0.5">
+                                        @foreach($d->addons as $addon)
+                                            @php
+                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                            @endphp
+                                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                + {{ $addonName }} @if($addonPrice > 0) (+Rp {{ number_format($addonPrice, 0, ',', '.') }}) @endif
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                @if(!empty($d->notes))
+                                    <div class="text-[11px] text-slate-500 mt-0.5">{{ $d->notes }}</div>
+                                @endif
+                            </div>
+                            <span class="font-bold text-slate-800 shrink-0 font-mono">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
+                        </div>
+                    @endforeach
+                </div>
             </div>
 
             {{-- The Authentic QRIS Frame --}}

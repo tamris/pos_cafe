@@ -325,6 +325,13 @@
             @foreach($transaction->details as $detail)
                 <div class="item-block">
                     <div class="item-name">{{ $detail->product->name }}</div>
+                    @if(!empty($detail->addons))
+                        <div style="font-size: 10.5px; color: #475569; padding-left: 6px; font-weight: normal;">
+                            @foreach($detail->addons as $addon)
+                                <div>+ {{ $addon['name'] }} ({{ number_format($addon['price'], 0, ',', '.') }})</div>
+                            @endforeach
+                        </div>
+                    @endif
                     <div class="item-calc">
                         <span>{{ $detail->quantity }} x {{ number_format($detail->price, 0, ',', '.') }}</span>
                         <span class="font-bold">{{ number_format($detail->subtotal, 0, ',', '.') }}</span>

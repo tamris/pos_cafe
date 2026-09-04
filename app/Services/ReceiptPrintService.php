@@ -188,6 +188,12 @@ class ReceiptPrintService
             $productName = $detail->product->name ?? 'Item';
             $raw .= $productName . "\n";
             
+            if (!empty($detail->addons)) {
+                foreach ($detail->addons as $addon) {
+                    $raw .= "  + " . $addon['name'] . " (" . number_format($addon['price'], 0, ',', '.') . ")\n";
+                }
+            }
+
             $qtyPrice = $detail->quantity . " x " . number_format($detail->price, 0, ',', '.');
             $subtotal = number_format($detail->subtotal, 0, ',', '.');
             $raw .= self::line32($qtyPrice, $subtotal) . "\n";
@@ -414,6 +420,12 @@ class ReceiptPrintService
 
             // Baris Item (Ukuran Normal Hemat Tempat)
             $raw .= $detail->quantity . "x  " . $productName . "\n";
+
+            if (!empty($detail->addons)) {
+                foreach ($detail->addons as $addon) {
+                    $raw .= "   [+] " . $addon['name'] . "\n";
+                }
+            }
 
             // Catatan Khusus Menu
             if (!empty($detail->notes)) {

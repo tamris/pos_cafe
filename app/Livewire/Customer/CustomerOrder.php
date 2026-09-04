@@ -5,6 +5,7 @@ namespace App\Livewire\Customer;
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Addon;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\Setting;
@@ -50,6 +51,7 @@ class CustomerOrder extends Component
     public $sugarLevel = 'Normal';
     public $iceLevel = 'Normal';
     public $modalQty = 1;
+    public $selectedAddonIds = [];
 
     // Review / Checkout Drawer
     public $showCartDrawer = false;
@@ -173,6 +175,7 @@ class CustomerOrder extends Component
             ->whereHas('category', function ($q) {
                 $q->where('is_active', true);
             })
+            ->with(['category.addons' => fn($q) => $q->where('addons.is_active', true)])
             ->find($productId);
 
         if (!$product) {
@@ -187,6 +190,7 @@ class CustomerOrder extends Component
         $this->sugarLevel = 'Normal';
         $this->iceLevel = 'Normal';
         $this->modalQty = 1;
+        $this->selectedAddonIds = [];
         $this->showCustomizeModal = true;
     }
 
@@ -235,9 +239,23 @@ class CustomerOrder extends Component
         });
         $this->itemNotes = trim(implode(' • ', $parts));
 
+        // Load existing addons
+        $currentAddons = $item['addons'] ?? [];
+        $this->selectedAddonIds = array_map('intval', array_column($currentAddons, 'id'));
+
         // Hide Cart Drawer while editing item so there is no visual overlap
         $this->showCartDrawer = false;
         $this->showCustomizeModal = true;
+    }
+
+    public function toggleAddon($addonId)
+    {
+        $addonId = (int) $addonId;
+        if (in_array($addonId, $this->selectedAddonIds)) {
+            $this->selectedAddonIds = array_values(array_diff($this->selectedAddonIds, [$addonId]));
+        } else {
+            $this->selectedAddonIds[] = $addonId;
+        }
     }
 
     public function closeCustomizeModal()
@@ -299,28 +317,57 @@ class CustomerOrder extends Component
             $notesParts[] = trim($this->itemNotes);
         }
 
+        // Process Addons
+        $addonsList = [];
+        $totalAddonPrice = 0;
+        $totalAddonCost = 0;
+
+        if (!empty($this->selectedAddonIds)) {
+            $addonModels = Addon::whereIn('id', $this->selectedAddonIds)->where('is_active', true)->get();
+            foreach ($addonModels as $ad) {
+                $addonsList[] = [
+                    'id' => $ad->id,
+                    'name' => $ad->name,
+                    'price' => (float) $ad->price,
+                    'harga_beli' => (float) $ad->harga_beli,
+                ];
+                $totalAddonPrice += (float) $ad->price;
+                $totalAddonCost += (float) $ad->harga_beli;
+            }
+        }
+
         $finalNotes = implode(' • ', $notesParts);
-        $cartKey = $this->selectedProduct->id . '-' . md5($finalNotes);
+        $sortedAddonIds = $this->selectedAddonIds;
+        sort($sortedAddonIds);
+        $addonsHash = !empty($sortedAddonIds) ? implode(',', $sortedAddonIds) : 'none';
+        $cartKey = $this->selectedProduct->id . '-' . md5($addonsHash . '|' . $finalNotes);
 
         if ($this->editingCartKey && $this->editingCartKey !== $cartKey) {
             unset($this->cart[$this->editingCartKey]);
         }
 
+        $effectivePrice = (float) $this->selectedProduct->price + $totalAddonPrice;
+        $effectiveCost = (float) ($this->selectedProduct->harga_beli ?? 0) + $totalAddonCost;
+
         if (isset($this->cart[$cartKey])) {
             $this->cart[$cartKey]['quantity'] = $this->editingCartKey ? $this->modalQty : ($this->cart[$cartKey]['quantity'] + $this->modalQty);
-            $this->cart[$cartKey]['subtotal'] = $this->cart[$cartKey]['quantity'] * $this->cart[$cartKey]['price'];
+            $this->cart[$cartKey]['subtotal'] = $this->cart[$cartKey]['quantity'] * $effectivePrice;
             $this->cart[$cartKey]['notes'] = $finalNotes;
+            $this->cart[$cartKey]['addons'] = $addonsList;
         } else {
             $this->cart[$cartKey] = [
                 'cart_key' => $cartKey,
                 'id' => $this->selectedProduct->id,
                 'name' => $this->selectedProduct->name,
-                'price' => (float) $this->selectedProduct->price,
-                'harga_beli' => (float) ($this->selectedProduct->harga_beli ?? 0),
+                'base_price' => (float) $this->selectedProduct->price,
+                'base_harga_beli' => (float) ($this->selectedProduct->harga_beli ?? 0),
+                'price' => $effectivePrice,
+                'harga_beli' => $effectiveCost,
                 'quantity' => $this->modalQty,
-                'subtotal' => (float) $this->selectedProduct->price * $this->modalQty,
+                'subtotal' => $effectivePrice * $this->modalQty,
                 'image' => $this->selectedProduct->image,
                 'notes' => $finalNotes,
+                'addons' => $addonsList,
                 'category_name' => $this->selectedProduct->category?->name ?? '',
             ];
         }
@@ -350,8 +397,10 @@ class CustomerOrder extends Component
                       str_contains($categoryName, 'minuman') || 
                       str_contains($categoryName, 'drink');
 
-        // If it's a beverage with options, open customize modal instead
-        if ($isBeverage) {
+        $hasAddons = $product->category && $product->category->addons()->where('addons.is_active', true)->exists();
+
+        // If it's a beverage with options or has addons, open customize modal instead
+        if ($isBeverage || $hasAddons) {
             $this->openCustomizeModal($productId);
             return;
         }
@@ -366,12 +415,15 @@ class CustomerOrder extends Component
                 'cart_key' => $cartKey,
                 'id' => $product->id,
                 'name' => $product->name,
+                'base_price' => (float) $product->price,
+                'base_harga_beli' => (float) ($product->harga_beli ?? 0),
                 'price' => (float) $product->price,
                 'harga_beli' => (float) ($product->harga_beli ?? 0),
                 'quantity' => 1,
                 'subtotal' => (float) $product->price,
                 'image' => $product->image,
                 'notes' => '',
+                'addons' => [],
                 'category_name' => $product->category?->name ?? '',
             ];
         }
@@ -501,6 +553,7 @@ class CustomerOrder extends Component
                     'subtotal' => $item['subtotal'],
                     'profit' => $profit,
                     'notes' => $item['notes'] ?? null,
+                    'addons' => !empty($item['addons']) ? $item['addons'] : null,
                 ]);
             }
 
