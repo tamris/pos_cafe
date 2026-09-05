@@ -11,12 +11,22 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Cek apakah user login DAN role-nya admin
-        if (Auth::check() && Auth::user()->role === 'admin') {
+        $user = $request->user() ?? Auth::user();
+
+        // Cek apakah user login DAN role-nya admin atau owner
+        if ($user && in_array($user->role, ['admin', 'owner'])) {
             return $next($request);
         }
 
-        // Kalau bukan admin, tendang balik atau kasih error 403
+        // Jika request berasal dari API atau mengharapkan JSON
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur ini hanya dapat diakses oleh Admin / Owner.',
+            ], 403);
+        }
+
+        // Kalau bukan admin/owner via Web, tendang balik atau kasih error 403
         abort(403, 'AKSES DITOLAK. Halaman ini khusus Admin/Owner.');
     }
 }

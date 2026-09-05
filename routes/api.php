@@ -4,11 +4,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PosApiController;
+use App\Http\Controllers\Api\AdminApiController;
 
 // Public Auth routes
 Route::prefix('auth')->group(function () {
     Route::get('/cashiers', [AuthController::class, 'getCashiers']);
     Route::post('/pin-login', [AuthController::class, 'pinLogin']);
+});
+
+// Protected Admin / Owner routes
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    // 1. Live Financial & Operational Dashboard
+    Route::get('/dashboard', [AdminApiController::class, 'dashboard']);
+
+    // 2. Shifts & Z-Report Audit
+    Route::get('/shifts/history', [AdminApiController::class, 'shiftHistory']);
+    Route::get('/shifts/{id}', [AdminApiController::class, 'shiftDetail']);
+
+    // 3. Transactions & Void Authority
+    Route::get('/transactions', [AdminApiController::class, 'transactions']);
+    Route::get('/transactions/{id}', [AdminApiController::class, 'transactionDetail']);
+    Route::post('/transactions/{id}/void', [AdminApiController::class, 'voidTransaction']);
+
+    // 4. Open Bills Monitoring
+    Route::get('/open-bills', [AdminApiController::class, 'openBills']);
 });
 
 // Protected POS routes
