@@ -128,19 +128,18 @@ class AdminApiController extends Controller
             ];
         }
 
-        // Open Bills currently active / pending (Unpaid tables & active self-orders)
-        $openBills = Transaction::where(function ($q) {
-            $q->where('status', 'pending')
-              ->orWhere(function ($sq) {
-                  $sq->where('order_source', 'self_order')
-                     ->whereIn('status', ['pending', 'processing', 'ready']);
-              });
-        });
+        // Open Bills currently active / pending (Khusus meja kasir POS, pesanan online tidak masuk pengawasan operasional)
+        $openBills = Transaction::where('status', 'pending')
+            ->where(function ($q) {
+                $q->whereNull('order_source')
+                  ->orWhere(function ($sq) {
+                      $sq->where('order_source', '!=', 'self_order')
+                         ->where('order_source', '!=', 'online');
+                  });
+            });
         $openBillsList = $openBills->get();
         $openBillsCount = (int) $openBillsList->count();
-        $openBillsPotentialTotal = (float) $openBillsList->filter(function ($b) {
-            return $b->order_source !== 'self_order' || $b->payment_status !== 'paid';
-        })->sum('total');
+        $openBillsPotentialTotal = (float) $openBillsList->sum('total');
 
         return response()->json([
             'success' => true,
@@ -366,7 +365,19 @@ class AdminApiController extends Controller
 
         // Filter status
         if ($request->filled('status') && in_array($request->status, ['completed', 'pending', 'cancelled'])) {
-            $query->where('status', $request->status);
+            if ($request->status === 'pending') {
+                // Open Bill strictly for POS table dine-in orders (exclude online/self-order)
+                $query->where('status', 'pending')
+                      ->where(function ($q) {
+                          $q->whereNull('order_source')
+                            ->orWhere(function ($sq) {
+                                $sq->where('order_source', '!=', 'self_order')
+                                   ->where('order_source', '!=', 'online');
+                            });
+                      });
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         // Filter date
@@ -443,7 +454,7 @@ class AdminApiController extends Controller
                 'cancelled_info' => $t->status === 'cancelled' ? [
                     'cancelled_at' => $t->cancelled_at?->toIso8601String(),
                     'cancelled_reason' => $t->cancelled_reason,
-                    'cancelled_by_name' => $t->cancelledBy?->name ?? 'Admin',
+                    'cancelled_by_name' => $t->cancelledBy?->name ?? 'Sistem',
                 ] : null,
             ];
         });
@@ -530,7 +541,7 @@ class AdminApiController extends Controller
                     'cancelled_reason' => $transaction->cancelled_reason,
                     'cancelled_by' => [
                         'id' => $transaction->cancelledBy?->id,
-                        'name' => $transaction->cancelledBy?->name ?? 'Admin',
+                        'name' => $transaction->cancelledBy?->name ?? 'Sistem',
                     ],
                 ] : null,
                 'items' => $items,

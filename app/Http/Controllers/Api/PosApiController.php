@@ -414,13 +414,21 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
-        $shift = CashierShift::where('user_id', $user->id)
+        $shift = null;
+        if ($request->filled('shift_id')) {
+            $shift = CashierShift::where('user_id', $user->id)
+                ->where('id', $request->input('shift_id'))
+                ->first();
+        }
+        if (!$shift) {
+            $shift = CashierShift::where('user_id', $user->id)
 
             ->where('status', 'open')
 
             ->latest()
 
             ->first();
+        }
 
 
 
@@ -530,7 +538,7 @@ class PosApiController extends Controller
 
             'user_id' => $user->id,
 
-            'start_time' => now(),
+            'start_time' => ($request->filled('start_time') ? \Carbon\Carbon::parse($request->input('start_time')) : now()),
 
             'starting_cash' => $startingCash,
 
@@ -604,13 +612,18 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
-        $shift = CashierShift::where('user_id', $user->id)
-
-            ->where('status', 'open')
-
-            ->latest()
-
-            ->first();
+        $shift = null;
+        if ($request->filled('shift_id')) {
+            $shift = CashierShift::where('user_id', $user->id)
+                ->where('id', $request->input('shift_id'))
+                ->first();
+        }
+        if (!$shift) {
+            $shift = CashierShift::where('user_id', $user->id)
+                ->where('status', 'open')
+                ->latest()
+                ->first();
+        }
 
 
 
@@ -676,7 +689,7 @@ class PosApiController extends Controller
 
         $shift->update([
 
-            'end_time' => now(),
+            'end_time' => ($request->filled('end_time') ? \Carbon\Carbon::parse($request->input('end_time')) : now()),
 
             'actual_cash' => $actualCash,
 
@@ -1929,6 +1942,20 @@ class PosApiController extends Controller
         try {
 
             foreach ($offlineList as $offTx) {
+                $offlineId = $offTx['offline_id'] ?? null;
+                if ($offlineId) {
+                    $existing = Transaction::where('order_token', $offlineId)->first();
+                    if ($existing) {
+                        $syncedResults[] = [
+                            'offline_id' => $offlineId,
+                            'server_id' => $existing->id,
+                            'invoice_number' => $existing->invoice_number,
+                            'status' => 'already_synced',
+                        ];
+                        continue;
+                    }
+                }
+
 
                 $subtotal = 0;
 
@@ -1960,13 +1987,31 @@ class PosApiController extends Controller
                     ? \Carbon\Carbon::parse($offTx['created_at'])
                     : now();
 
+                $txShiftId = null;
+                $requestedShiftId = isset($offTx['shift_id']) ? (int) $offTx['shift_id'] : null;
+
+                if ($requestedShiftId && $requestedShiftId > 0) {
+                    $matchedShift = CashierShift::find($requestedShiftId);
+                    if ($matchedShift) {
+                        $txShiftId = $matchedShift->id;
+                    }
+                }
+
+                if (!$txShiftId && $activeShift) {
+                    $activeStart = $activeShift->start_time ? \Carbon\Carbon::parse($activeShift->start_time) : null;
+                    if (!$activeStart || $realCreatedAt->greaterThanOrEqualTo($activeStart->subSeconds(10))) {
+                        $txShiftId = $activeShift->id;
+                    }
+                }
+
                 $openBillId = $offTx['open_bill_id'] ?? null;
                 $openBill = $openBillId ? Transaction::find($openBillId) : null;
 
                 if ($openBill && $openBill->status === 'pending') {
                     $openBill->update([
                         'user_id' => $user->id,
-                        'shift_id' => $activeShift?->id,
+                        'shift_id' => $txShiftId,
+                        'order_token' => $offlineId,
                         'subtotal' => $subtotal,
                         'discount' => $discountAmount,
                         'tax' => $taxAmount,
@@ -1987,7 +2032,8 @@ class PosApiController extends Controller
                 } else {
                     $transaction = Transaction::create([
                         'user_id' => $user->id,
-                        'shift_id' => $activeShift?->id,
+                        'shift_id' => $txShiftId,
+                        'order_token' => $offlineId,
                         'subtotal' => $subtotal,
                         'discount' => $discountAmount,
                         'tax' => $taxAmount,

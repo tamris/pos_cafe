@@ -316,7 +316,11 @@ class MidtransService
                 } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
                     if ($transaction->payment_status !== 'paid') {
                         $transaction->update([
+                            'status' => 'cancelled',
                             'payment_status' => 'failed',
+                            'cancelled_reason' => 'Batas waktu pembayaran QRIS telah kadaluarsa.',
+                            'cancelled_at' => now(),
+                            'cancelled_by' => null,
                         ]);
                     }
                 }
@@ -378,7 +382,11 @@ class MidtransService
             ]);
         } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
             $transaction->update([
+                'status' => 'cancelled',
                 'payment_status' => 'failed',
+                'cancelled_reason' => 'Batas waktu pembayaran QRIS telah kadaluarsa.',
+                'cancelled_at' => now(),
+                'cancelled_by' => null,
             ]);
             Log::info("Midtrans Webhook: Order {$orderId} status changed to {$transactionStatus}");
         }
