@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PosApiController;
 use App\Http\Controllers\Api\AdminApiController;
+use App\Http\Controllers\Api\MenuSalesApiController;
 
 // Public Auth routes
 Route::prefix('auth')->group(function () {
@@ -28,18 +29,42 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // 4. Open Bills Monitoring
     Route::get('/open-bills', [AdminApiController::class, 'openBills']);
+
+    // 5. Menu Sales Analytics & Reports
+    Route::prefix('menu-sales')->group(function () {
+        Route::get('/', [MenuSalesApiController::class, 'index']);
+        Route::get('/top', [MenuSalesApiController::class, 'topSelling']);
+        Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
+        Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
+    });
 });
 
-// Protected POS routes
+// Protected POS & Apps routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth info & logout
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    // Menu Sales Analytics (General Authenticated / Mobile Apps)
+    Route::prefix('menu-sales')->group(function () {
+        Route::get('/', [MenuSalesApiController::class, 'index']);
+        Route::get('/top', [MenuSalesApiController::class, 'topSelling']);
+        Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
+        Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
+    });
+
     // POS Data & Operations
     Route::prefix('pos')->group(function () {
         Route::get('/bootstrap', [PosApiController::class, 'bootstrap']);
         Route::get('/addons', [PosApiController::class, 'getAddons']);
+
+        // Menu Sales for POS
+        Route::prefix('menu-sales')->group(function () {
+            Route::get('/', [MenuSalesApiController::class, 'index']);
+            Route::get('/top', [MenuSalesApiController::class, 'topSelling']);
+            Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
+            Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
+        });
         
         // Shift Management
         Route::get('/shift/current', [PosApiController::class, 'currentShift']);
@@ -78,3 +103,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sync-offline', [PosApiController::class, 'syncOffline']);
     });
 });
+
