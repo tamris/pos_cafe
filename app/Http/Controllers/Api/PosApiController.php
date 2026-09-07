@@ -703,6 +703,9 @@ class PosApiController extends Controller
 
 
 
+        // Kirim notifikasi tutup shift ke Telegram (Background Job)
+        app(\App\Services\TelegramService::class)->sendShiftClosingNotification($shift);
+
         return response()->json([
 
             'success' => true,
@@ -1048,6 +1051,9 @@ class PosApiController extends Controller
 
 
             $freshTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
+
+            // Kirim notifikasi transaksi baru ke Telegram (Background Job)
+            app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTransaction);
 
             $receiptPayload = $this->buildCustomerReceiptPayload($freshTransaction);
 
@@ -2123,6 +2129,16 @@ class PosApiController extends Controller
 
             DB::commit();
 
+            // Kirim notifikasi Telegram untuk transaksi offline yang tersinkronisasi
+            foreach ($syncedResults as $res) {
+                if (!empty($res['server_id'])) {
+                    $tx = Transaction::with(['details.product', 'user', 'shift'])->find($res['server_id']);
+                    if ($tx && $tx->status === 'completed') {
+                        app(\App\Services\TelegramService::class)->sendTransactionNotification($tx);
+                    }
+                }
+            }
+
 
 
             if ($activeShift) {
@@ -2194,6 +2210,8 @@ class PosApiController extends Controller
             'qris_sales' => (float) $shift->qris_sales,
 
             'transfer_sales' => (float) $shift->transfer_sales,
+
+            'non_cash_sales' => (float) ($shift->qris_sales + $shift->transfer_sales),
 
             'total_sales' => (float) $shift->total_sales,
 
@@ -2352,6 +2370,8 @@ class PosApiController extends Controller
                 'qris_sales' => (float) $shift->qris_sales,
 
                 'transfer_sales' => (float) $shift->transfer_sales,
+
+                'non_cash_sales' => (float) ($shift->qris_sales + $shift->transfer_sales),
 
                 'total_sales' => (float) $shift->total_sales,
 
@@ -3148,6 +3168,20 @@ class PosApiController extends Controller
 
 
         $transaction->update($updateData);
+
+
+
+        if ($newStatus === 'cancelled') {
+
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+
+            if ($freshTx) {
+
+                app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+
+            }
+
+        }
 
 
 

@@ -114,6 +114,7 @@ class CustomerPayment extends Component
         $this->isSimulating = true;
 
         $transaction = Transaction::where('order_token', $this->token)->firstOrFail();
+        $wasUnpaid = ($transaction->payment_status !== 'paid');
         
         $transaction->update([
             'payment_status' => 'paid',
@@ -122,6 +123,13 @@ class CustomerPayment extends Component
             'change' => 0,
             'status' => 'processing',
         ]);
+
+        if ($wasUnpaid) {
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+            if ($freshTx) {
+                app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTx);
+            }
+        }
 
         return redirect()->route('customer.status', ['token' => $this->token]);
     }

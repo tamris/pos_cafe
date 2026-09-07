@@ -312,6 +312,11 @@ class MidtransService
                             'change' => 0,
                             'status' => in_array($transaction->status, ['pending', 'unpaid']) ? 'processing' : $transaction->status,
                         ]);
+
+                        $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+                        if ($freshTx) {
+                            app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTx);
+                        }
                     }
                 } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
                     if ($transaction->payment_status !== 'paid') {
@@ -374,6 +379,11 @@ class MidtransService
                 'change' => 0,
                 'status' => in_array($transaction->status, ['pending', 'unpaid']) ? 'processing' : $transaction->status,
             ]);
+
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+            if ($freshTx) {
+                app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTx);
+            }
 
             Log::info("Midtrans Webhook: Order {$orderId} marked as PAID via {$paymentType}");
         } elseif ($transactionStatus === 'pending') {

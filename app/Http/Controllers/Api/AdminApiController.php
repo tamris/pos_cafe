@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CashierShift;
 use App\Models\Transaction;
+use App\Models\Setting;
 use App\Models\TransactionDetail;
+use App\Services\TelegramService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -605,6 +607,9 @@ class AdminApiController extends Controller
 
             DB::commit();
 
+            // Trigger notifikasi alert pembatalan nota (Void) ke Telegram
+            app(TelegramService::class)->sendVoidNotification($transaction);
+
             return response()->json([
                 'success' => true,
                 'message' => "Transaksi {$transaction->invoice_number} berhasil dibatalkan.",
@@ -698,6 +703,142 @@ class AdminApiController extends Controller
             'data' => $formattedData,
             'total_active' => $formattedData->count(),
             'total_amount' => (float) $unpaidBillsTotal,
+        ]);
+    }
+
+    /**
+     * Get Telegram notification configuration.
+     * GET /api/admin/settings/telegram
+     */
+    public function getTelegramSettings(TelegramService $telegramService): JsonResponse
+    {
+        $setting = Setting::first();
+
+        $token = $telegramService->getBotToken($setting);
+        $chatId = $telegramService->getChatId($setting);
+
+        $maskedToken = null;
+        if (!empty($token)) {
+            $len = strlen($token);
+            if ($len > 14) {
+                $maskedToken = substr($token, 0, 7) . '...' . substr($token, -4);
+            } else {
+                $maskedToken = '******';
+            }
+        }
+
+        $source = !empty($setting?->telegram_bot_token)
+            ? 'database'
+            : (!empty(config('services.telegram.bot_token')) ? 'env' : 'not_set');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengaturan bot Telegram berhasil dimuat.',
+            'data' => [
+                'is_configured' => $telegramService->isConfigured($setting),
+                'has_bot_token' => !empty($token),
+                'bot_token_masked' => $maskedToken,
+                'chat_id' => $chatId ?? '',
+                'notify_trx' => $telegramService->isNotifyTrxEnabled($setting),
+                'notify_shift' => $telegramService->isNotifyShiftEnabled($setting),
+                'notify_void' => $telegramService->isNotifyVoidEnabled($setting),
+                'source' => $source,
+            ],
+        ]);
+    }
+
+    /**
+     * Update Telegram notification configuration.
+     * POST /api/admin/settings/telegram
+     */
+    public function updateTelegramSettings(Request $request, TelegramService $telegramService): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'bot_token' => 'nullable|string|max:255',
+            'chat_id' => 'nullable|string|max:100',
+            'notify_trx' => 'nullable|boolean',
+            'notify_shift' => 'nullable|boolean',
+            'notify_void' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pengaturan tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $setting = Setting::first();
+        if (!$setting) {
+            $setting = Setting::create([
+                'shop_name' => 'Cafe POS',
+            ]);
+        }
+
+        $updateData = [];
+
+        if ($request->has('bot_token')) {
+            $updateData['telegram_bot_token'] = trim($request->input('bot_token'));
+        }
+
+        if ($request->has('chat_id')) {
+            $updateData['telegram_chat_id'] = trim($request->input('chat_id'));
+        }
+
+        if ($request->has('notify_trx')) {
+            $updateData['telegram_notify_trx'] = $request->boolean('notify_trx');
+        }
+
+        if ($request->has('notify_shift')) {
+            $updateData['telegram_notify_shift'] = $request->boolean('notify_shift');
+        }
+
+        if ($request->has('notify_void')) {
+            $updateData['telegram_notify_void'] = $request->boolean('notify_void');
+        }
+
+        $setting->update($updateData);
+
+        return $this->getTelegramSettings($telegramService);
+    }
+
+    /**
+     * Send a test Telegram notification.
+     * POST /api/admin/settings/telegram/test
+     */
+    public function testTelegramNotification(Request $request, TelegramService $telegramService): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'bot_token' => 'nullable|string|max:255',
+            'chat_id' => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $token = $request->input('bot_token');
+        $chatId = $request->input('chat_id');
+
+        $result = $telegramService->testNotification($token, $chatId);
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesan uji coba Telegram berhasil dikirim ke chat ID target!',
+            'data' => $result['data'] ?? null,
         ]);
     }
 }
