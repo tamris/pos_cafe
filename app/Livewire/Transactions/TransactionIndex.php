@@ -197,6 +197,12 @@ class TransactionIndex extends Component
 
             \DB::commit();
 
+            // Kirim notifikasi void ke Telegram
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+            if ($freshTx) {
+                app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+            }
+
             $this->dispatch('show-toast', ['type' => 'success', 'message' => "Transaksi {$transaction->invoice_number} berhasil dibatalkan."]);
             $this->closeCancelModal();
 

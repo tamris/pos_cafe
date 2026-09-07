@@ -940,6 +940,11 @@ class PosIndex extends Component
             'cancelled_at' => now(),
         ]);
 
+        $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+        if ($freshTx) {
+            app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+        }
+
         if ($this->currentOpenBillId === $transaction->id) {
             $this->resetTransaction();
         }

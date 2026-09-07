@@ -1652,25 +1652,24 @@ class PosApiController extends Controller
 
 
         $transaction->update([
-
             'status' => 'cancelled',
-
             'cancelled_reason' => 'Dibatalkan Kasir via Mobile POS (Void Open Bill)',
-
             'cancelled_by' => $user->id,
-
             'cancelled_at' => now(),
-
         ]);
 
+        if ($transaction->shift) {
+            $transaction->shift->recalculateTotals();
+        }
 
+        $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+        if ($freshTx) {
+            app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+        }
 
         return response()->json([
-
             'success' => true,
-
             'message' => "Bill {$transaction->invoice_number} berhasil dibatalkan.",
-
         ]);
 
     }

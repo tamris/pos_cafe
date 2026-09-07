@@ -226,7 +226,7 @@ class TelegramService
                 return;
             }
 
-            $transaction->loadMissing(['user', 'cancelledBy']);
+            $transaction->loadMissing(['user', 'cancelledBy', 'details.product']);
 
             $message = $this->formatVoidMessage($transaction, $setting);
 
@@ -430,21 +430,108 @@ class TelegramService
         $shopName = htmlspecialchars($setting?->shop_name ?? 'POS Cafe');
         $invoice = htmlspecialchars($transaction->invoice_number);
         $cashier = htmlspecialchars($transaction->user?->name ?? 'Kasir');
-        $totalNominal = number_format($transaction->total, 0, ',', '.');
         $cancelledBy = htmlspecialchars($transaction->cancelledBy?->name ?? (auth()->user()?->name ?? 'Admin/Kasir'));
         $reason = htmlspecialchars($transaction->cancelled_reason ?? 'Tidak ada keterangan');
         $time = Carbon::parse($transaction->cancelled_at ?? now())->translatedFormat('d M Y, H:i') . ' WIB';
 
-        $text = "🚨 <b>ALERT: PEMBATALAN NOTA (VOID)</b>\n";
-        $text .= "Nota <code>#{$invoice}</code> • Rp {$totalNominal}\n";
+        $isSelfOrder = ($transaction->order_source === 'self_order');
+
+        // Format order type (dine_in -> Dine In, takeaway -> Take Away)
+        $orderTypeRaw = str_replace('_', ' ', strtolower($transaction->order_type ?? 'dine in'));
+        $orderType = ucwords($orderTypeRaw);
+        if (!empty($transaction->table_number)) {
+            $orderType .= ' (Meja ' . htmlspecialchars($transaction->table_number) . ')';
+        }
+
+        // Format payment method (cash -> Tunai, qris -> QRIS, transfer -> Transfer)
+        $pmRaw = strtolower($transaction->payment_method ?? '');
+        $paymentMethod = match ($pmRaw) {
+            'cash' => 'Tunai',
+            'qris' => 'QRIS',
+            'transfer' => 'Transfer Bank',
+            'debit' => 'Kartu Debit',
+            '' => 'Open Bill',
+            default => ucfirst($pmRaw),
+        };
+
+        if ($isSelfOrder) {
+            $text = "🚨 <b>{$shopName}</b>\n";
+            $text .= "Pembatalan Online • <code>#{$invoice}</code>\n";
+            $text .= "──────────────────────\n";
+            $text .= "🕒 {$time}\n";
+            $customerName = htmlspecialchars($transaction->customer_name ?: 'Pelanggan');
+            $text .= "🙋 Pemesan: <b>{$customerName}</b>";
+            if (!empty($transaction->customer_phone)) {
+                $text .= " (" . htmlspecialchars($transaction->customer_phone) . ")";
+            }
+            $text .= "\n";
+            $text .= "📦 Layanan: {$orderType}\n";
+            $text .= "🚫 Batal: <b>{$cancelledBy}</b>\n";
+            $text .= "📝 Alasan: <i>\"{$reason}\"</i>\n\n";
+        } else {
+            $text = "🚨 <b>{$shopName}</b>\n";
+            $text .= "Pembatalan Nota • <code>#{$invoice}</code> • {$orderType}\n";
+            $text .= "──────────────────────\n";
+            $text .= "🕒 {$time}\n";
+            $text .= "👤 Kasir: {$cashier}";
+            if (!empty($transaction->customer_name)) {
+                $text .= " • Pelanggan: " . htmlspecialchars($transaction->customer_name);
+            }
+            $text .= "\n";
+            $text .= "🚫 Batal: <b>{$cancelledBy}</b>\n";
+            $text .= "📝 Alasan: <i>\"{$reason}\"</i>\n\n";
+        }
+
+        $text .= "<b>Pesanan:</b>\n";
+        if ($transaction->details && $transaction->details->isNotEmpty()) {
+            foreach ($transaction->details as $detail) {
+                $productName = htmlspecialchars($detail->product?->name ?? 'Item');
+                $qty = (int) $detail->quantity;
+                $subtotal = number_format($detail->subtotal, 0, ',', '.');
+
+                $text .= "▫️ {$qty}x <b>{$productName}</b> — Rp {$subtotal}\n";
+
+                // Addon details
+                if (!empty($detail->addons) && is_array($detail->addons)) {
+                    foreach ($detail->addons as $addon) {
+                        $addonName = htmlspecialchars($addon['name'] ?? '');
+                        $addonPrice = isset($addon['price']) && $addon['price'] > 0
+                            ? ' (+Rp ' . number_format($addon['price'], 0, ',', '.') . ')'
+                            : '';
+                        if (!empty($addonName)) {
+                            $text .= "   └ <i>{$addonName}{$addonPrice}</i>\n";
+                        }
+                    }
+                }
+
+                // Catatan item
+                if (!empty($detail->notes)) {
+                    $text .= "   └ <i>Catatan: " . htmlspecialchars($detail->notes) . "</i>\n";
+                }
+            }
+        } else {
+            $text .= "▫️ <i>(Tidak ada rincian item)</i>\n";
+        }
+
         $text .= "──────────────────────\n";
-        $text .= "🏠 Toko       : {$shopName}\n";
-        $text .= "👤 Kasir Awal : {$cashier}\n";
-        $text .= "🚫 Dibatalkan : {$cancelledBy}\n";
-        $text .= "🕒 Waktu Batal: {$time}\n";
-        $text .= "📝 Alasan     : <i>\"{$reason}\"</i>\n";
-        $text .= "──────────────────────\n";
-        $text .= "⚠️ <i>Peringatan keamanan operasional kasir</i>";
+
+        $subtotalNominal = number_format($transaction->subtotal, 0, ',', '.');
+        $totalNominal = number_format($transaction->total, 0, ',', '.');
+
+        if ((float) $transaction->discount > 0 || (float) $transaction->tax > 0) {
+            $text .= "Subtotal : Rp {$subtotalNominal}\n";
+            if ((float) $transaction->discount > 0) {
+                $discountNominal = number_format($transaction->discount, 0, ',', '.');
+                $text .= "Diskon   : -Rp {$discountNominal}\n";
+            }
+            if ((float) $transaction->tax > 0) {
+                $taxNominal = number_format($transaction->tax, 0, ',', '.');
+                $text .= "Pajak    : +Rp {$taxNominal}\n";
+            }
+        }
+
+        $text .= "<b>Total    : Rp {$totalNominal}</b>\n";
+        $text .= "\nMetode : <b>{$paymentMethod}</b> • <b>Dibatalkan ❌</b>";
 
         return $text;
     }
