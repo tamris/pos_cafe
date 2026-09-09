@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PosApiController;
+use App\Http\Controllers\Api\AdminApiController;
+use App\Http\Controllers\Api\MenuSalesApiController;
+use App\Http\Controllers\Api\CashFlowApiController;
 
 // Public Auth routes
 Route::prefix('auth')->group(function () {
@@ -11,26 +14,101 @@ Route::prefix('auth')->group(function () {
     Route::post('/pin-login', [AuthController::class, 'pinLogin']);
 });
 
-// Protected POS routes
+// Protected Admin / Owner routes
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    // 1. Live Financial & Operational Dashboard
+    Route::get('/dashboard', [AdminApiController::class, 'dashboard']);
+
+    // 2. Shifts & Z-Report Audit
+    Route::get('/shifts/history', [AdminApiController::class, 'shiftHistory']);
+    Route::get('/shifts/{id}', [AdminApiController::class, 'shiftDetail']);
+
+    // 3. Transactions & Void Authority
+    Route::get('/transactions', [AdminApiController::class, 'transactions']);
+    Route::get('/transactions/{id}', [AdminApiController::class, 'transactionDetail']);
+    Route::post('/transactions/{id}/void', [AdminApiController::class, 'voidTransaction']);
+
+    // 4. Open Bills Monitoring
+    Route::get('/open-bills', [AdminApiController::class, 'openBills']);
+
+    // 5. Menu Sales Analytics & Reports
+    Route::prefix('menu-sales')->group(function () {
+        Route::get('/', [MenuSalesApiController::class, 'index']);
+        Route::get('/top', [MenuSalesApiController::class, 'topSelling']);
+        Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
+        Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
+    });
+
+    // 6. Telegram Bot Notification Settings
+    Route::prefix('settings/telegram')->group(function () {
+        Route::get('/', [AdminApiController::class, 'getTelegramSettings']);
+        Route::post('/', [AdminApiController::class, 'updateTelegramSettings']);
+        Route::post('/test', [AdminApiController::class, 'testTelegramNotification']);
+    });
+
+    // 7. Cash Flow & Expense Management (Level 1 & 2)
+    Route::prefix('cash-flow')->group(function () {
+        Route::get('/', [CashFlowApiController::class, 'index']);
+        Route::get('/summary', [CashFlowApiController::class, 'summary']);
+        Route::post('/', [CashFlowApiController::class, 'storeGeneralExpense']);
+        Route::get('/{id}', [CashFlowApiController::class, 'show']);
+        Route::delete('/{id}', [CashFlowApiController::class, 'destroy']);
+    });
+
+    // 8. Expense Categories Master (Admin CRUD)
+    Route::prefix('expense-categories')->group(function () {
+        Route::get('/', [CashFlowApiController::class, 'getCategoriesAdmin']);
+        Route::post('/', [CashFlowApiController::class, 'storeCategory']);
+        Route::put('/{id}', [CashFlowApiController::class, 'updateCategory']);
+        Route::delete('/{id}', [CashFlowApiController::class, 'deleteCategory']);
+    });
+});
+
+// Protected POS & Apps routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth info & logout
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    // Menu Sales Analytics (General Authenticated / Mobile Apps)
+    Route::prefix('menu-sales')->group(function () {
+        Route::get('/', [MenuSalesApiController::class, 'index']);
+        Route::get('/top', [MenuSalesApiController::class, 'topSelling']);
+        Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
+        Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
+    });
+
     // POS Data & Operations
     Route::prefix('pos')->group(function () {
         Route::get('/bootstrap', [PosApiController::class, 'bootstrap']);
         Route::get('/addons', [PosApiController::class, 'getAddons']);
+
+        // Menu Sales for POS
+        Route::prefix('menu-sales')->group(function () {
+            Route::get('/', [MenuSalesApiController::class, 'index']);
+            Route::get('/top', [MenuSalesApiController::class, 'topSelling']);
+            Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
+            Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
+        });
         
         // Shift Management
         Route::get('/shift/current', [PosApiController::class, 'currentShift']);
         Route::post('/shift/start', [PosApiController::class, 'startShift']);
         Route::post('/shift/end', [PosApiController::class, 'endShift']);
 
+        // Cash Flow / Cash Management (Level 1 Shift Petty Cash & Pay In)
+        Route::prefix('cash-flow')->group(function () {
+            Route::get('/categories', [CashFlowApiController::class, 'getCategories']);
+            Route::get('/current', [CashFlowApiController::class, 'getCurrentShiftMovements']);
+            Route::post('/', [CashFlowApiController::class, 'storeShiftMovement']);
+            Route::get('/{id}/receipt', [CashFlowApiController::class, 'getReceiptPayload']);
+        });
+
         // Orders & Transactions
         Route::post('/checkout', [PosApiController::class, 'checkout']);
         Route::get('/transactions/today', [PosApiController::class, 'todayTransactions']);
         Route::get('/transactions/{id}/receipt', [PosApiController::class, 'getReceiptData']);
+        Route::match(['put', 'post'], '/transactions/{id}/payment-method', [PosApiController::class, 'updatePaymentMethod']);
 
         // Open Bills / Hold Orders
         Route::get('/open-bills', [PosApiController::class, 'getOpenBills']);
@@ -59,3 +137,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sync-offline', [PosApiController::class, 'syncOffline']);
     });
 });
+

@@ -414,13 +414,21 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
-        $shift = CashierShift::where('user_id', $user->id)
+        $shift = null;
+        if ($request->filled('shift_id')) {
+            $shift = CashierShift::where('user_id', $user->id)
+                ->where('id', $request->input('shift_id'))
+                ->first();
+        }
+        if (!$shift) {
+            $shift = CashierShift::where('user_id', $user->id)
 
             ->where('status', 'open')
 
             ->latest()
 
             ->first();
+        }
 
 
 
@@ -530,7 +538,7 @@ class PosApiController extends Controller
 
             'user_id' => $user->id,
 
-            'start_time' => now(),
+            'start_time' => ($request->filled('start_time') ? \Carbon\Carbon::parse($request->input('start_time')) : now()),
 
             'starting_cash' => $startingCash,
 
@@ -604,13 +612,18 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
-        $shift = CashierShift::where('user_id', $user->id)
-
-            ->where('status', 'open')
-
-            ->latest()
-
-            ->first();
+        $shift = null;
+        if ($request->filled('shift_id')) {
+            $shift = CashierShift::where('user_id', $user->id)
+                ->where('id', $request->input('shift_id'))
+                ->first();
+        }
+        if (!$shift) {
+            $shift = CashierShift::where('user_id', $user->id)
+                ->where('status', 'open')
+                ->latest()
+                ->first();
+        }
 
 
 
@@ -676,7 +689,7 @@ class PosApiController extends Controller
 
         $shift->update([
 
-            'end_time' => now(),
+            'end_time' => ($request->filled('end_time') ? \Carbon\Carbon::parse($request->input('end_time')) : now()),
 
             'actual_cash' => $actualCash,
 
@@ -689,6 +702,9 @@ class PosApiController extends Controller
         ]);
 
 
+
+        // Kirim notifikasi tutup shift ke Telegram (Background Job)
+        app(\App\Services\TelegramService::class)->sendShiftClosingNotification($shift);
 
         return response()->json([
 
@@ -896,6 +912,8 @@ class PosApiController extends Controller
 
                 $transaction->update([
 
+                    'user_id' => $user->id,
+
                     'shift_id' => $shiftId,
 
                     'subtotal' => $subtotal,
@@ -920,7 +938,13 @@ class PosApiController extends Controller
 
                     'status' => 'completed',
 
+                    'created_at' => now(),
+
                 ]);
+
+                $transaction->created_at = now();
+
+                $transaction->save();
 
 
 
@@ -1035,6 +1059,9 @@ class PosApiController extends Controller
 
 
             $freshTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
+
+            // Kirim notifikasi transaksi baru ke Telegram (Background Job)
+            app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTransaction);
 
             $receiptPayload = $this->buildCustomerReceiptPayload($freshTransaction);
 
@@ -1633,25 +1660,24 @@ class PosApiController extends Controller
 
 
         $transaction->update([
-
             'status' => 'cancelled',
-
             'cancelled_reason' => 'Dibatalkan Kasir via Mobile POS (Void Open Bill)',
-
             'cancelled_by' => $user->id,
-
             'cancelled_at' => now(),
-
         ]);
 
+        if ($transaction->shift) {
+            $transaction->shift->recalculateTotals();
+        }
 
+        $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+        if ($freshTx) {
+            app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+        }
 
         return response()->json([
-
             'success' => true,
-
             'message' => "Bill {$transaction->invoice_number} berhasil dibatalkan.",
-
         ]);
 
     }
@@ -1824,6 +1850,115 @@ class PosApiController extends Controller
 
      */
 
+    /**
+     * Update Payment Method for Completed Transaction.
+     * Allows switching between Cash, QRIS, Transfer, Debit when shift is still open.
+     */
+    public function updatePaymentMethod(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_method' => 'required|in:cash,qris,transfer,debit',
+            'paid' => 'nullable|numeric|min:0',
+        ], [
+            'payment_method.required' => 'Metode pembayaran baru wajib dipilih.',
+            'payment_method.in' => 'Metode pembayaran tidak valid.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $transaction = Transaction::with('shift')->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
+        }
+
+        if ($transaction->status !== 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya transaksi yang sudah lunas/selesai (completed) yang dapat diubah metode pembayarannya.',
+            ], 422);
+        }
+
+        if ($transaction->shift && $transaction->shift->status !== 'open') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode pembayaran tidak dapat diubah karena shift kasir sudah ditutup.',
+            ], 422);
+        }
+
+        $newMethod = strtolower($request->input('payment_method'));
+        $oldMethod = strtolower($transaction->payment_method ?? 'cash');
+
+        if ($newMethod === $oldMethod) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode pembayaran yang dipilih sama dengan metode saat ini (' . strtoupper($oldMethod) . ').',
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $grandTotal = (float) $transaction->total;
+
+            if ($newMethod === 'cash') {
+                $paid = (float) $request->input('paid', $grandTotal);
+                if ($paid < $grandTotal) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Uang tunai yang diterima (' . number_format($paid, 0, ',', '.') . ') kurang dari total tagihan (' . number_format($grandTotal, 0, ',', '.') . ').',
+                    ], 422);
+                }
+                $change = max(0.0, $paid - $grandTotal);
+            } else {
+                $paid = $grandTotal;
+                $change = 0.0;
+            }
+
+            $transaction->update([
+                'payment_method' => $newMethod,
+                'paid' => $paid,
+                'change' => $change,
+            ]);
+
+            // Otomatis kalkulasi ulang saldo kas masuk/keluar dan expected cash di shift kasir aktif
+            if ($transaction->shift) {
+                $transaction->shift->recalculateTotals();
+            }
+
+            DB::commit();
+
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Metode pembayaran berhasil diubah dari ' . strtoupper($oldMethod) . ' menjadi ' . strtoupper($newMethod) . '.',
+                'data' => [
+                    'id' => $freshTx->id,
+                    'invoice_number' => $freshTx->invoice_number,
+                    'payment_method' => $freshTx->payment_method,
+                    'total' => (float) $freshTx->total,
+                    'paid' => (float) $freshTx->paid,
+                    'change' => (float) $freshTx->change,
+                ],
+                'shift' => $freshTx->shift ? $this->formatShiftData($freshTx->shift) : null,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah metode pembayaran: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getReceiptData($id)
 
     {
@@ -1929,6 +2064,20 @@ class PosApiController extends Controller
         try {
 
             foreach ($offlineList as $offTx) {
+                $offlineId = $offTx['offline_id'] ?? null;
+                if ($offlineId) {
+                    $existing = Transaction::where('order_token', $offlineId)->first();
+                    if ($existing) {
+                        $syncedResults[] = [
+                            'offline_id' => $offlineId,
+                            'server_id' => $existing->id,
+                            'invoice_number' => $existing->invoice_number,
+                            'status' => 'already_synced',
+                        ];
+                        continue;
+                    }
+                }
+
 
                 $subtotal = 0;
 
@@ -1960,13 +2109,31 @@ class PosApiController extends Controller
                     ? \Carbon\Carbon::parse($offTx['created_at'])
                     : now();
 
+                $txShiftId = null;
+                $requestedShiftId = isset($offTx['shift_id']) ? (int) $offTx['shift_id'] : null;
+
+                if ($requestedShiftId && $requestedShiftId > 0) {
+                    $matchedShift = CashierShift::find($requestedShiftId);
+                    if ($matchedShift) {
+                        $txShiftId = $matchedShift->id;
+                    }
+                }
+
+                if (!$txShiftId && $activeShift) {
+                    $activeStart = $activeShift->start_time ? \Carbon\Carbon::parse($activeShift->start_time) : null;
+                    if (!$activeStart || $realCreatedAt->greaterThanOrEqualTo($activeStart->subSeconds(10))) {
+                        $txShiftId = $activeShift->id;
+                    }
+                }
+
                 $openBillId = $offTx['open_bill_id'] ?? null;
                 $openBill = $openBillId ? Transaction::find($openBillId) : null;
 
                 if ($openBill && $openBill->status === 'pending') {
                     $openBill->update([
                         'user_id' => $user->id,
-                        'shift_id' => $activeShift?->id,
+                        'shift_id' => $txShiftId,
+                        'order_token' => $offlineId,
                         'subtotal' => $subtotal,
                         'discount' => $discountAmount,
                         'tax' => $taxAmount,
@@ -1987,7 +2154,8 @@ class PosApiController extends Controller
                 } else {
                     $transaction = Transaction::create([
                         'user_id' => $user->id,
-                        'shift_id' => $activeShift?->id,
+                        'shift_id' => $txShiftId,
+                        'order_token' => $offlineId,
                         'subtotal' => $subtotal,
                         'discount' => $discountAmount,
                         'tax' => $taxAmount,
@@ -2077,6 +2245,16 @@ class PosApiController extends Controller
 
             DB::commit();
 
+            // Kirim notifikasi Telegram untuk transaksi offline yang tersinkronisasi
+            foreach ($syncedResults as $res) {
+                if (!empty($res['server_id'])) {
+                    $tx = Transaction::with(['details.product', 'user', 'shift'])->find($res['server_id']);
+                    if ($tx && $tx->status === 'completed') {
+                        app(\App\Services\TelegramService::class)->sendTransactionNotification($tx);
+                    }
+                }
+            }
+
 
 
             if ($activeShift) {
@@ -2148,6 +2326,12 @@ class PosApiController extends Controller
             'qris_sales' => (float) $shift->qris_sales,
 
             'transfer_sales' => (float) $shift->transfer_sales,
+
+            'total_cash_in' => (float) ($shift->total_cash_in ?? 0),
+
+            'total_cash_out' => (float) ($shift->total_cash_out ?? 0),
+
+            'non_cash_sales' => (float) ($shift->qris_sales + $shift->transfer_sales),
 
             'total_sales' => (float) $shift->total_sales,
 
@@ -2307,9 +2491,15 @@ class PosApiController extends Controller
 
                 'transfer_sales' => (float) $shift->transfer_sales,
 
+                'non_cash_sales' => (float) ($shift->qris_sales + $shift->transfer_sales),
+
                 'total_sales' => (float) $shift->total_sales,
 
                 'total_transactions' => (int) $shift->total_transactions,
+
+                'total_cash_in' => (float) ($shift->total_cash_in ?? 0),
+
+                'total_cash_out' => (float) ($shift->total_cash_out ?? 0),
 
                 'expected_cash' => (float) $shift->expected_cash,
 
@@ -3102,6 +3292,20 @@ class PosApiController extends Controller
 
 
         $transaction->update($updateData);
+
+
+
+        if ($newStatus === 'cancelled') {
+
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+
+            if ($freshTx) {
+
+                app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+
+            }
+
+        }
 
 
 

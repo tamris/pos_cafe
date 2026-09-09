@@ -312,11 +312,20 @@ class MidtransService
                             'change' => 0,
                             'status' => in_array($transaction->status, ['pending', 'unpaid']) ? 'processing' : $transaction->status,
                         ]);
+
+                        $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+                        if ($freshTx) {
+                            app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTx);
+                        }
                     }
                 } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
                     if ($transaction->payment_status !== 'paid') {
                         $transaction->update([
+                            'status' => 'cancelled',
                             'payment_status' => 'failed',
+                            'cancelled_reason' => 'Batas waktu pembayaran QRIS telah kadaluarsa.',
+                            'cancelled_at' => now(),
+                            'cancelled_by' => null,
                         ]);
                     }
                 }
@@ -371,6 +380,11 @@ class MidtransService
                 'status' => in_array($transaction->status, ['pending', 'unpaid']) ? 'processing' : $transaction->status,
             ]);
 
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+            if ($freshTx) {
+                app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTx);
+            }
+
             Log::info("Midtrans Webhook: Order {$orderId} marked as PAID via {$paymentType}");
         } elseif ($transactionStatus === 'pending') {
             $transaction->update([
@@ -378,7 +392,11 @@ class MidtransService
             ]);
         } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
             $transaction->update([
+                'status' => 'cancelled',
                 'payment_status' => 'failed',
+                'cancelled_reason' => 'Batas waktu pembayaran QRIS telah kadaluarsa.',
+                'cancelled_at' => now(),
+                'cancelled_by' => null,
             ]);
             Log::info("Midtrans Webhook: Order {$orderId} status changed to {$transactionStatus}");
         }
