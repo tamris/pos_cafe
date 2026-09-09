@@ -124,6 +124,8 @@ class AdminApiController extends Controller
                 'start_time' => $activeShift->start_time?->toIso8601String(),
                 'starting_cash' => (float) $activeShift->starting_cash,
                 'cash_sales' => (float) $activeShift->cash_sales,
+                'total_cash_in' => (float) ($activeShift->total_cash_in ?? 0),
+                'total_cash_out' => (float) ($activeShift->total_cash_out ?? 0),
                 'expected_cash' => (float) $activeShift->expected_cash,
                 'total_sales' => (float) $activeShift->total_sales,
                 'total_transactions' => (int) $activeShift->total_transactions,
@@ -224,8 +226,12 @@ class AdminApiController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Optional filter by date
-        if ($request->filled('date')) {
+        // Optional filter by date (supports range start_date & end_date or single date)
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $start = Carbon::parse($request->start_date)->startOfDay();
+            $end = Carbon::parse($request->end_date)->endOfDay();
+            $query->whereBetween('start_time', [$start, $end]);
+        } elseif ($request->filled('date')) {
             $query->whereDate('start_time', $request->date);
         }
 
@@ -260,6 +266,8 @@ class AdminApiController extends Controller
                 'transfer_sales' => (float) $shift->transfer_sales,
                 'total_sales' => (float) $shift->total_sales,
                 'total_transactions' => (int) $shift->total_transactions,
+                'total_cash_in' => (float) ($shift->total_cash_in ?? 0),
+                'total_cash_out' => (float) ($shift->total_cash_out ?? 0),
                 'expected_cash' => (float) $shift->expected_cash,
                 'actual_cash' => is_null($shift->actual_cash) ? null : (float) $shift->actual_cash,
                 'difference' => is_null($shift->difference) ? null : (float) $shift->difference,
@@ -289,6 +297,9 @@ class AdminApiController extends Controller
     {
         $shift = CashierShift::with([
             'user:id,name,email',
+            'cashMovements' => function ($q) {
+                $q->latest();
+            },
             'transactions' => function ($q) {
                 $q->select('id', 'shift_id', 'invoice_number', 'total', 'payment_method', 'status', 'order_type', 'created_at')
                   ->latest();
@@ -329,6 +340,8 @@ class AdminApiController extends Controller
                 'cash_sales' => (float) $shift->cash_sales,
                 'qris_sales' => (float) $shift->qris_sales,
                 'transfer_sales' => (float) $shift->transfer_sales,
+                'total_cash_in' => (float) ($shift->total_cash_in ?? 0),
+                'total_cash_out' => (float) ($shift->total_cash_out ?? 0),
                 'total_sales' => (float) $shift->total_sales,
                 'total_transactions' => (int) $shift->total_transactions,
                 'expected_cash' => (float) $shift->expected_cash,
@@ -336,6 +349,20 @@ class AdminApiController extends Controller
                 'difference' => is_null($shift->difference) ? null : (float) $shift->difference,
                 'discrepancy_status' => $discrepancyStatus,
                 'notes' => $shift->notes,
+                'cash_movements' => $shift->cashMovements->map(function ($m) {
+                    return [
+                        'id' => $m->id,
+                        'movement_number' => $m->movement_number,
+                        'type' => $m->type,
+                        'type_label' => $m->type === 'in' ? 'Kas Masuk' : 'Kas Keluar',
+                        'source' => $m->source,
+                        'amount' => (float) $m->amount,
+                        'category_name' => $m->category_name,
+                        'notes' => $m->notes,
+                        'receipt_image_url' => $m->receipt_image_url,
+                        'created_at' => $m->created_at?->toIso8601String(),
+                    ];
+                }),
                 'transactions' => $shift->transactions->map(function ($t) {
                     return [
                         'id' => $t->id,
@@ -382,8 +409,12 @@ class AdminApiController extends Controller
             }
         }
 
-        // Filter date
-        if ($request->filled('date')) {
+        // Filter date (supports range start_date & end_date or single date)
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $start = Carbon::parse($request->start_date)->startOfDay();
+            $end = Carbon::parse($request->end_date)->endOfDay();
+            $query->whereBetween('created_at', [$start, $end]);
+        } elseif ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
 

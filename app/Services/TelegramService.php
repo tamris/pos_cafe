@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\SendTelegramNotificationJob;
 use App\Models\CashierShift;
+use App\Models\CashMovement;
 use App\Models\Setting;
 use App\Models\Transaction;
 use Carbon\Carbon;
@@ -182,7 +183,7 @@ class TelegramService
             }
 
             // Pastikan relasi sudah termuat
-            $transaction->loadMissing(['details.product', 'user', 'shift']);
+            $transaction->loadMissing(['details.product.category', 'user', 'shift']);
 
             $message = $this->formatTransactionMessage($transaction, $setting);
 
@@ -208,7 +209,7 @@ class TelegramService
                 return;
             }
 
-            $shift->loadMissing(['user', 'transactions']);
+            $shift->loadMissing(['user', 'transactions.details.product.category', 'cashMovements.category']);
 
             $message = $this->formatShiftClosingMessage($shift, $setting);
 
@@ -234,7 +235,7 @@ class TelegramService
                 return;
             }
 
-            $transaction->loadMissing(['user', 'cancelledBy', 'details.product']);
+            $transaction->loadMissing(['user', 'cancelledBy', 'details.product.category']);
 
             $message = $this->formatVoidMessage($transaction, $setting);
 
@@ -249,6 +250,31 @@ class TelegramService
     }
 
     /**
+     * Trigger notifikasi pengeluaran / arus kas baru (Asynchronous / Queue).
+     */
+    public function sendCashMovementNotification(CashMovement $movement): void
+    {
+        try {
+            $setting = $this->getSetting();
+
+            if (!$this->isConfigured($setting)) {
+                return;
+            }
+
+            $movement->loadMissing(['user', 'shift']);
+            $message = $this->formatCashMovementMessage($movement, $setting);
+
+            SendTelegramNotificationJob::dispatch(
+                $message,
+                $this->getBotToken($setting),
+                $this->getChatId($setting)
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error triggering Telegram cash movement notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Kirim notifikasi uji coba (Synchronous).
      */
     public function testNotification(?string $token = null, ?string $chatId = null): array
@@ -257,6 +283,56 @@ class TelegramService
         $message = $this->formatTestMessage($setting);
 
         return $this->sendMessage($message, $token, $chatId);
+    }
+
+    /**
+     * Tentukan satuan produk (cup vs porsi) secara cerdas berdasarkan nama produk dan nama kategori.
+     */
+    public function determineUnit(?string $productName, ?string $categoryName): string
+    {
+        $combined = strtolower(trim(($productName ?? '') . ' ' . ($categoryName ?? '')));
+
+        // Minuman / Beverages -> cup
+        if (preg_match('/\b(coffee|kopi|espresso|latte|cappuccino|americano|tea|teh|matcha|chocolate|cokelat|taro|drink|minuman|beverage|juice|jus|boba|frappe|mocktail|smoothie|syrup|ice|es|soda|cup)\b/i', $combined)) {
+            return 'cup';
+        }
+
+        // Makanan / Meals / Snacks / Pastry -> porsi
+        if (preg_match('/\b(food|makanan|meal|snack|cemilan|dish|rice|nasi|noodle|mie|pasta|spaghetti|toast|roti|croissant|pastry|cake|dessert|bowl|porsi|pack)\b/i', $combined)) {
+            return 'porsi';
+        }
+
+        // Cek kategori jika ada indikasi minuman
+        $catLower = strtolower($categoryName ?? '');
+        if (str_contains($catLower, 'coffee') || str_contains($catLower, 'kopi') || str_contains($catLower, 'tea') || str_contains($catLower, 'drink') || str_contains($catLower, 'beverage')) {
+            return 'cup';
+        }
+
+        return 'porsi';
+    }
+
+    /**
+     * Dapatkan ikon emoji yang representatif untuk kategori menu.
+     */
+    public function getCategoryIcon(?string $categoryName): string
+    {
+        $lower = strtolower($categoryName ?? '');
+        if (str_contains($lower, 'non-coffee') || str_contains($lower, 'non coffee') || str_contains($lower, 'tea') || str_contains($lower, 'teh') || str_contains($lower, 'matcha') || str_contains($lower, 'juice') || str_contains($lower, 'jus') || str_contains($lower, 'boba')) {
+            return '🍵';
+        }
+        if (str_contains($lower, 'coffee') || str_contains($lower, 'kopi') || str_contains($lower, 'espresso')) {
+            return '☕';
+        }
+        if (str_contains($lower, 'food') || str_contains($lower, 'makanan') || str_contains($lower, 'rice') || str_contains($lower, 'nasi') || str_contains($lower, 'course') || str_contains($lower, 'dish') || str_contains($lower, 'meal')) {
+            return '🍽️';
+        }
+        if (str_contains($lower, 'snack') || str_contains($lower, 'cemilan') || str_contains($lower, 'pastry') || str_contains($lower, 'bakery') || str_contains($lower, 'roti') || str_contains($lower, 'dessert') || str_contains($lower, 'cake')) {
+            return '🥐';
+        }
+        if (str_contains($lower, 'drink') || str_contains($lower, 'beverage') || str_contains($lower, 'minuman')) {
+            return '🥤';
+        }
+        return '🏷️';
     }
 
     /**
@@ -289,33 +365,33 @@ class TelegramService
         $isSelfOrder = ($transaction->order_source === 'self_order');
 
         if ($isSelfOrder) {
+            $customerName = htmlspecialchars($transaction->customer_name ?: 'Pelanggan');
+            $customerPhone = !empty($transaction->customer_phone) ? ' (' . htmlspecialchars($transaction->customer_phone) . ')' : '';
+
             $text = "🌐 <b>{$shopName}</b>\n";
             $text .= "Pesanan Online • <code>#{$invoice}</code>\n";
             $text .= "──────────────────────\n";
             $text .= "🕒 {$time}\n";
-            $customerName = htmlspecialchars($transaction->customer_name ?: 'Pelanggan');
-            $text .= "🙋 Pemesan: <b>{$customerName}</b>";
-            if (!empty($transaction->customer_phone)) {
-                $text .= " (" . htmlspecialchars($transaction->customer_phone) . ")";
-            }
-            $text .= "\n";
-            $text .= "📦 Layanan: {$orderType}\n\n";
+            $text .= "👤 Pemesan : <b>{$customerName}</b>{$customerPhone}\n";
+            $text .= "📦 Layanan : {$orderType}\n";
         } else {
+            $customerPart = !empty($transaction->customer_name) ? ' • ' . htmlspecialchars($transaction->customer_name) : '';
+
             $text = "☕ <b>{$shopName}</b>\n";
             $text .= "Nota <code>#{$invoice}</code> • {$orderType}\n";
             $text .= "──────────────────────\n";
             $text .= "🕒 {$time}\n";
-            $text .= "👤 Kasir: {$cashier}";
-            if (!empty($transaction->customer_name)) {
-                $text .= " • Pelanggan: " . htmlspecialchars($transaction->customer_name);
-            }
-            $text .= "\n\n";
+            $text .= "👤 Kasir   : {$cashier}{$customerPart}\n";
         }
 
+        $text .= "──────────────────────\n";
         $text .= "<b>Pesanan:</b>\n";
+
+        $totalQty = 0;
         foreach ($transaction->details as $detail) {
             $productName = htmlspecialchars($detail->product?->name ?? 'Item');
             $qty = (int) $detail->quantity;
+            $totalQty += $qty;
             $subtotal = number_format($detail->subtotal, 0, ',', '.');
 
             $text .= "▫️ {$qty}x <b>{$productName}</b> — Rp {$subtotal}\n";
@@ -345,26 +421,25 @@ class TelegramService
         $totalNominal = number_format($transaction->total, 0, ',', '.');
 
         if ((float) $transaction->discount > 0 || (float) $transaction->tax > 0) {
-            $text .= "Subtotal : Rp {$subtotalNominal}\n";
+            $text .= "Subtotal   : Rp {$subtotalNominal}\n";
             if ((float) $transaction->discount > 0) {
                 $discountNominal = number_format($transaction->discount, 0, ',', '.');
-                $text .= "Diskon   : -Rp {$discountNominal}\n";
+                $text .= "Diskon     : -Rp {$discountNominal}\n";
             }
             if ((float) $transaction->tax > 0) {
                 $taxNominal = number_format($transaction->tax, 0, ',', '.');
-                $text .= "Pajak    : +Rp {$taxNominal}\n";
+                $text .= "Pajak      : +Rp {$taxNominal}\n";
             }
         }
 
-        $text .= "<b>Total    : Rp {$totalNominal}</b>\n";
+        $text .= "<b>Total Bill : Rp {$totalNominal}</b>\n";
+        $text .= "Metode     : <b>{$paymentMethod} • Lunas ✅</b>\n";
 
         if ($pmRaw === 'cash') {
             $paidNominal = number_format($transaction->paid, 0, ',', '.');
             $changeNominal = number_format($transaction->change, 0, ',', '.');
-            $text .= "Bayar    : Rp {$paidNominal} (Kembali: Rp {$changeNominal})\n";
+            $text .= "Diterima   : Rp {$paidNominal} (Kembali: Rp {$changeNominal})\n";
         }
-
-        $text .= "\nMetode : <b>{$paymentMethod}</b> • <b>Lunas ✅</b>";
 
         return $text;
     }
@@ -391,41 +466,118 @@ class TelegramService
         $difference = (float) ($shift->difference ?? 0);
         $totalTransactions = $shift->total_transactions ?? $shift->transactions()->count();
 
+        $totalCashIn = (float) ($shift->total_cash_in ?? 0);
+        $totalCashOut = (float) ($shift->total_cash_out ?? 0);
+        $cashInFormatted = number_format($totalCashIn, 0, ',', '.');
+        $cashOutFormatted = number_format($totalCashOut, 0, ',', '.');
+
+        // Status Selisih Kas Laci
+        if ($difference == 0) {
+            $diffText = "<b>Rp 0 (Sesuai ✅)</b>";
+        } elseif ($difference > 0) {
+            $diffNominal = number_format($difference, 0, ',', '.');
+            $diffText = "<b>+Rp {$diffNominal} (Surplus 🟢)</b>";
+        } else {
+            $diffNominal = number_format(abs($difference), 0, ',', '.');
+            $diffText = "<b>-Rp {$diffNominal} (Minus ⚠️)</b>";
+        }
+
+        // Saldo Kas Riil Toko (Real-Time)
+        $storeBalances = CashMovement::getStoreRealBalances();
+        $realCash = number_format($storeBalances['cash_balance'], 0, ',', '.');
+        $realBank = number_format($storeBalances['bank_balance'], 0, ',', '.');
+        $totalReal = number_format($storeBalances['total_real_balance'], 0, ',', '.');
+
         $text = "📊 <b>{$shopName}</b>\n";
         $text .= "Laporan Tutup Shift • <b>Final</b>\n";
         $text .= "──────────────────────\n";
         $text .= "👤 Kasir     : {$cashier}\n";
         $text .= "🕒 Jam Kerja : {$startTime} – {$endTime}\n";
-        $text .= "📦 Total Nota: {$totalTransactions} Transaksi\n";
+        $text .= "🧾 Total Nota: {$totalTransactions} Transaksi\n";
         $text .= "──────────────────────\n";
-        $text .= "💵 Saldo Awal: Rp {$startingCash}\n";
-        $text .= "💰 Tunai     : Rp {$cashSales}\n";
-        $text .= "💳 Non-Tunai : Rp {$nonCashSales}\n";
-        if ((float) $shift->qris_sales > 0 || (float) $shift->transfer_sales > 0) {
-            $text .= "   ├ QRIS     : Rp {$qrisSales}\n";
-            $text .= "   └ Transfer : Rp {$transferSales}\n";
-        }
-        $text .= "📈 <b>Total Omset : Rp {$totalSales}</b>\n";
-        $text .= "──────────────────────\n";
-        $text .= "💵 Kas Fisik : Rp {$actualCash} (Sistem: Rp {$expectedCash})\n";
 
-        if ($difference == 0) {
-            $text .= "⚖️ Selisih   : <b>Rp 0 (Sesuai ✅)</b>\n";
-        } elseif ($difference > 0) {
-            $diffNominal = number_format($difference, 0, ',', '.');
-            $text .= "⚖️ Selisih   : <b>+Rp {$diffNominal} (Surplus 🟢)</b>\n";
-        } else {
-            $diffNominal = number_format(abs($difference), 0, ',', '.');
-            $text .= "⚖️ Selisih   : <b>-Rp {$diffNominal} (Minus ⚠️)</b>\n";
+        // 1. Ringkasan Omset
+        $text .= "📈 <b>RINGKASAN OMSET</b>\n";
+        $text .= "• Tunai        : Rp {$cashSales}\n";
+        $text .= "• Non-Tunai    : Rp {$nonCashSales}\n";
+        if ((float) $shift->qris_sales > 0 || (float) $shift->transfer_sales > 0) {
+            $text .= "  ├ QRIS       : Rp {$qrisSales}\n";
+            $text .= "  └ Transfer   : Rp {$transferSales}\n";
+        }
+        $text .= "💰 <b>Total Omset : Rp {$totalSales}</b>\n";
+        $text .= "──────────────────────\n";
+
+        // 2. Kas Laci Kasir
+        $text .= "💵 <b>KAS LACI KASIR</b>\n";
+        $text .= "• Modal Awal   : Rp {$startingCash}\n";
+        if ($totalCashIn > 0) {
+            $text .= "• Kas Masuk    : +Rp {$cashInFormatted}\n";
+        }
+        if ($totalCashOut > 0) {
+            $text .= "• Kas Keluar   : -Rp {$cashOutFormatted}\n";
+            $shiftMovements = $shift->cashMovements ?? collect();
+            $cashOutMovements = $shiftMovements->where('type', 'out');
+            if ($cashOutMovements->isNotEmpty()) {
+                foreach ($cashOutMovements->take(3) as $m) {
+                    $note = !empty($m->notes) ? htmlspecialchars($m->notes) : htmlspecialchars($m->category_name ?: 'Pengeluaran');
+                    $amt = number_format((float) $m->amount, 0, ',', '.');
+                    $text .= "  └ <i>{$note} (-Rp {$amt})</i>\n";
+                }
+            }
+        }
+        $text .= "• Kas Sistem   : Rp {$expectedCash}\n";
+        $text .= "• Kas Fisik    : Rp {$actualCash}\n";
+        $text .= "⚖️ Selisih Kas : {$diffText}\n";
+        $text .= "──────────────────────\n";
+
+        // 3. Saldo Kas Riil Toko
+        $text .= "🏦 <b>SALDO KAS RIIL TOKO</b>\n";
+        $text .= "• Kas Tunai    : Rp {$realCash}\n";
+        $text .= "• Bank / QRIS  : Rp {$realBank}\n";
+        $text .= "💼 <b>Total Saldo: Rp {$totalReal}</b>\n";
+        $text .= "──────────────────────\n";
+
+        // 4. Rekap Penjualan per Kategori (Ringkas)
+        $shiftPortions = [];
+        $totalShiftCups = 0;
+
+        $completedTransactions = ($shift->transactions ?? collect())->where('status', 'completed');
+        foreach ($completedTransactions as $tx) {
+            if (!$tx->relationLoaded('details')) {
+                $tx->load('details.product.category');
+            }
+            foreach ($tx->details as $detail) {
+                $catName = $detail->product?->category?->name ?? 'Menu Lainnya';
+                $qty = (int) $detail->quantity;
+
+                if (!isset($shiftPortions[$catName])) {
+                    $shiftPortions[$catName] = 0;
+                }
+
+                $shiftPortions[$catName] += $qty;
+                $totalShiftCups += $qty;
+            }
+        }
+
+        if (!empty($shiftPortions)) {
+            $text .= "🏷️ <b>PENJUALAN PER KATEGORI</b>\n";
+            foreach ($shiftPortions as $catName => $totalQty) {
+                $catIcon = $this->getCategoryIcon($catName);
+                $catNameEsc = htmlspecialchars($catName);
+                $text .= "{$catIcon} {$catNameEsc} ({$totalQty})\n";
+            }
+            $text .= "──────────────\n";
+            $text .= "📊 <b>Total Cup: {$totalShiftCups} cup</b>\n";
+            $text .= "──────────────────────\n";
         }
 
         $notesContent = $shift->notes ?? $shift->closing_notes ?? null;
         if (!empty($notesContent)) {
             $notes = htmlspecialchars($notesContent);
-            $text .= "📝 Catatan   : <i>{$notes}</i>\n";
+            $text .= "📝 <i>Catatan: {$notes}</i>\n";
         }
 
-        $text .= "\n<b>Status: Shift Ditutup Resmi ✅</b>";
+        $text .= "✅ <b>Status: Shift Resmi Ditutup</b>";
 
         return $text;
     }
@@ -463,34 +615,31 @@ class TelegramService
         };
 
         if ($isSelfOrder) {
+            $customerName = htmlspecialchars($transaction->customer_name ?: 'Pelanggan');
+            $customerPhone = !empty($transaction->customer_phone) ? ' (' . htmlspecialchars($transaction->customer_phone) . ')' : '';
+
             $text = "🚨 <b>{$shopName}</b>\n";
-            $text .= "Pembatalan Online • <code>#{$invoice}</code>\n";
+            $text .= "ALERT: TRANSAKSI DIBATALKAN • <code>#{$invoice}</code>\n";
             $text .= "──────────────────────\n";
             $text .= "🕒 {$time}\n";
             $customerName = htmlspecialchars($transaction->customer_name ?: 'Pelanggan');
-            $text .= "🙋 Pemesan: <b>{$customerName}</b>";
-            if (!empty($transaction->customer_phone)) {
-                $text .= " (" . htmlspecialchars($transaction->customer_phone) . ")";
-            }
-            $text .= "\n";
-            $text .= "📦 Layanan: {$orderType}\n";
-            $text .= "🚫 Batal: <b>{$cancelledBy}</b>\n";
-            $text .= "📝 Alasan: <i>\"{$reason}\"</i>\n\n";
+            $text .= "👤 Pemesan   : <b>{$customerName}</b>{$customerPhone}\n";
+            $text .= "📦 Layanan   : {$orderType}\n";
+            $text .= "🚫 Dibatalkan: <b>{$cancelledBy}</b>\n";
+            $text .= "📝 Alasan    : <i>\"{$reason}\"</i>\n";
         } else {
             $text = "🚨 <b>{$shopName}</b>\n";
-            $text .= "Pembatalan Nota • <code>#{$invoice}</code> • {$orderType}\n";
+            $text .= "ALERT: TRANSAKSI DIBATALKAN • <code>#{$invoice}</code>\n";
             $text .= "──────────────────────\n";
             $text .= "🕒 {$time}\n";
-            $text .= "👤 Kasir: {$cashier}";
-            if (!empty($transaction->customer_name)) {
-                $text .= " • Pelanggan: " . htmlspecialchars($transaction->customer_name);
-            }
-            $text .= "\n";
-            $text .= "🚫 Batal: <b>{$cancelledBy}</b>\n";
-            $text .= "📝 Alasan: <i>\"{$reason}\"</i>\n\n";
+            $text .= "👤 Kasir     : {$cashier}\n";
+            $text .= "📍 Layanan   : {$orderType}\n";
+            $text .= "🚫 Dibatalkan: <b>{$cancelledBy}</b>\n";
+            $text .= "📝 Alasan    : <i>\"{$reason}\"</i>\n";
         }
 
-        $text .= "<b>Pesanan:</b>\n";
+        $text .= "──────────────────────\n";
+        $text .= "<b>Pesanan Dibatalkan:</b>\n";
         if ($transaction->details && $transaction->details->isNotEmpty()) {
             foreach ($transaction->details as $detail) {
                 $productName = htmlspecialchars($detail->product?->name ?? 'Item');
@@ -527,19 +676,19 @@ class TelegramService
         $totalNominal = number_format($transaction->total, 0, ',', '.');
 
         if ((float) $transaction->discount > 0 || (float) $transaction->tax > 0) {
-            $text .= "Subtotal : Rp {$subtotalNominal}\n";
+            $text .= "Subtotal   : Rp {$subtotalNominal}\n";
             if ((float) $transaction->discount > 0) {
                 $discountNominal = number_format($transaction->discount, 0, ',', '.');
-                $text .= "Diskon   : -Rp {$discountNominal}\n";
+                $text .= "Diskon     : -Rp {$discountNominal}\n";
             }
             if ((float) $transaction->tax > 0) {
                 $taxNominal = number_format($transaction->tax, 0, ',', '.');
-                $text .= "Pajak    : +Rp {$taxNominal}\n";
+                $text .= "Pajak      : +Rp {$taxNominal}\n";
             }
         }
 
-        $text .= "<b>Total    : Rp {$totalNominal}</b>\n";
-        $text .= "\nMetode : <b>{$paymentMethod}</b> • <b>Dibatalkan ❌</b>";
+        $text .= "<b>Total Bill : Rp {$totalNominal}</b>\n";
+        $text .= "Metode     : <b>{$paymentMethod} • Dibatalkan ❌</b>";
 
         return $text;
     }
@@ -559,6 +708,46 @@ class TelegramService
         $text .= "⚡ Status : <b>Terhubung & Aktif ✅</b>\n";
         $text .= "──────────────────────\n";
         $text .= "Notifikasi transaksi, tutup shift, dan alert void akan otomatis dikirim ke sini.";
+
+        return $text;
+    }
+
+    /**
+     * Format pesan Telegram untuk arus kas / pengeluaran.
+     */
+    public function formatCashMovementMessage(CashMovement $movement, ?Setting $setting = null): string
+    {
+        $shopName = htmlspecialchars($setting?->shop_name ?? 'POS Cafe');
+        $userName = htmlspecialchars($movement->user?->name ?? 'Kasir');
+        $time = Carbon::parse($movement->movement_date)->translatedFormat('d M Y, H:i') . ' WIB';
+        $amount = number_format((float) $movement->amount, 0, ',', '.');
+        $isOut = $movement->type === 'out';
+        $typeTitle = $isOut ? '🔴 PENGELUARAN KAS (PAY OUT)' : '🟢 KAS MASUK (PAY IN)';
+        $category = htmlspecialchars($movement->category_name);
+        $source = match ($movement->source) {
+            'drawer' => 'Laci Kasir (Cash Drawer)',
+            'bank' => 'Rekening Bank / Transfer',
+            'petty_cash' => 'Kas Toko / Brankas',
+            default => ucfirst($movement->source),
+        };
+
+        $text = "💸 <b>{$shopName}</b>\n";
+        $text .= "{$typeTitle}\n";
+        $text .= "──────────────────────\n";
+        $text .= "📄 Ref       : <code>{$movement->movement_number}</code>\n";
+        $text .= "🕒 Waktu     : {$time}\n";
+        $text .= "👤 Pencatat  : {$userName}\n";
+        $text .= "🏷️ Kategori  : <b>{$category}</b>\n";
+        $text .= "💳 Sumber    : {$source}\n";
+        $text .= "💰 Nominal   : <b>Rp {$amount}</b>\n";
+        $notes = htmlspecialchars($movement->notes);
+        $text .= "📝 Catatan   : <i>{$notes}</i>\n";
+
+        if ($movement->shift_id && $movement->shift) {
+            $expectedCash = number_format((float) $movement->shift->expected_cash, 0, ',', '.');
+            $text .= "──────────────────────\n";
+            $text .= "💵 Saldo Laci Kasir: Rp {$expectedCash}\n";
+        }
 
         return $text;
     }
