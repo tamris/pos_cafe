@@ -107,4 +107,40 @@ class CashMovement extends Model
     {
         return $query->where('source', 'petty_cash');
     }
+
+    /**
+     * Hitung total saldo kas riil toko secara real-time / all-time (Cash, Bank, dan Total Riil).
+     */
+    public static function getStoreRealBalances(): array
+    {
+        $allSalesQuery = Transaction::where('status', 'completed');
+        $allSalesTotal = (float) $allSalesQuery->sum('total');
+        $allCashSales = (float) (clone $allSalesQuery)->whereRaw('LOWER(payment_method) = ?', ['cash'])->sum('total');
+        $allNonCashSales = (float) (clone $allSalesQuery)->whereRaw('LOWER(payment_method) != ?', ['cash'])->sum('total');
+
+        $allMovements = static::all();
+        $allCashInDrawer = (float) $allMovements->where('type', 'in')->where('source', 'drawer')->sum('amount');
+        $allCashInBank = (float) $allMovements->where('type', 'in')->where('source', 'bank')->sum('amount');
+        $allCashInTotal = (float) $allMovements->where('type', 'in')->sum('amount');
+
+        $allCashOutDrawer = (float) $allMovements->where('type', 'out')->where('source', 'drawer')->sum('amount');
+        $allCashOutPetty = (float) $allMovements->where('type', 'out')->where('source', 'petty_cash')->sum('amount');
+        $allCashOutBank = (float) $allMovements->where('type', 'out')->where('source', 'bank')->sum('amount');
+        $allCashOutTotal = (float) $allMovements->where('type', 'out')->sum('amount');
+
+        $realCashBalance = ($allCashSales + $allCashInDrawer) - ($allCashOutDrawer + $allCashOutPetty);
+        $realBankBalance = ($allNonCashSales + $allCashInBank) - $allCashOutBank;
+        $totalRealBalance = ($allSalesTotal + $allCashInTotal) - $allCashOutTotal;
+
+        return [
+            'cash_balance' => $realCashBalance,
+            'bank_balance' => $realBankBalance,
+            'total_real_balance' => $totalRealBalance,
+            'all_sales_total' => $allSalesTotal,
+            'all_cash_sales' => $allCashSales,
+            'all_non_cash_sales' => $allNonCashSales,
+            'all_cash_in' => $allCashInTotal,
+            'all_cash_out' => $allCashOutTotal,
+        ];
+    }
 }

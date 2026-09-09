@@ -545,24 +545,10 @@ class CashFlowApiController extends Controller
         $netCashFlow = $totalInflow - $cashOutTotal;
 
         // 3. Saldo Kas Riil Toko (Real-Time / All-Time - Tidak terpengaruh filter tanggal)
-        $allSalesQuery = Transaction::where('status', 'completed');
-        $allSalesTotal = (float) $allSalesQuery->sum('total');
-        $allCashSales = (float) (clone $allSalesQuery)->whereRaw('LOWER(payment_method) = ?', ['cash'])->sum('total');
-        $allNonCashSales = (float) (clone $allSalesQuery)->whereRaw('LOWER(payment_method) != ?', ['cash'])->sum('total');
-
-        $allMovements = CashMovement::all();
-        $allCashInDrawer = (float) $allMovements->where('type', 'in')->where('source', 'drawer')->sum('amount');
-        $allCashInBank = (float) $allMovements->where('type', 'in')->where('source', 'bank')->sum('amount');
-        $allCashInTotal = (float) $allMovements->where('type', 'in')->sum('amount');
-
-        $allCashOutDrawer = (float) $allMovements->where('type', 'out')->where('source', 'drawer')->sum('amount');
-        $allCashOutPetty = (float) $allMovements->where('type', 'out')->where('source', 'petty_cash')->sum('amount');
-        $allCashOutBank = (float) $allMovements->where('type', 'out')->where('source', 'bank')->sum('amount');
-        $allCashOutTotal = (float) $allMovements->where('type', 'out')->sum('amount');
-
-        $realCashBalance = ($allCashSales + $allCashInDrawer) - ($allCashOutDrawer + $allCashOutPetty);
-        $realBankBalance = ($allNonCashSales + $allCashInBank) - $allCashOutBank;
-        $totalRealBalance = ($allSalesTotal + $allCashInTotal) - $allCashOutTotal;
+        $storeBalances = CashMovement::getStoreRealBalances();
+        $realCashBalance = $storeBalances['cash_balance'];
+        $realBankBalance = $storeBalances['bank_balance'];
+        $totalRealBalance = $storeBalances['total_real_balance'];
 
         // Breakdown Beban Pengeluaran per Kategori (untuk Chart / Analisis)
         $expenseMovements = $movements->where('type', 'out');

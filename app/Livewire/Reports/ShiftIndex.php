@@ -163,6 +163,8 @@ class ShiftIndex extends Component
             return;
         }
 
+        $this->activeShift->recalculateTotals();
+
         $this->activeShift->end_time = now();
         $this->activeShift->actual_cash = (float) $this->actualCash;
         $this->activeShift->difference = (float) $this->actualCash - (float) $this->activeShift->expected_cash;
@@ -170,8 +172,12 @@ class ShiftIndex extends Component
         $this->activeShift->status = 'closed';
         $this->activeShift->save();
 
+        $closedShift = $this->activeShift;
         $this->activeShift = null;
         $this->showEndShiftModal = false;
+
+        // Kirim notifikasi tutup shift ke Telegram
+        app(\App\Services\TelegramService::class)->sendShiftClosingNotification($closedShift);
 
         $this->dispatch('show-toast', [
             'type' => 'success', 
