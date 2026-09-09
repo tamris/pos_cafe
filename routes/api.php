@@ -37,6 +37,13 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         Route::get('/categories', [MenuSalesApiController::class, 'categorySales']);
         Route::get('/{id}', [MenuSalesApiController::class, 'detail']);
     });
+
+    // 6. Telegram Bot Notification Settings
+    Route::prefix('settings/telegram')->group(function () {
+        Route::get('/', [AdminApiController::class, 'getTelegramSettings']);
+        Route::post('/', [AdminApiController::class, 'updateTelegramSettings']);
+        Route::post('/test', [AdminApiController::class, 'testTelegramNotification']);
+    });
 });
 
 // Protected POS & Apps routes

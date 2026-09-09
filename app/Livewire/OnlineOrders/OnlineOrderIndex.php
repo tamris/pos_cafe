@@ -204,6 +204,12 @@ class OnlineOrderIndex extends Component
                 $this->activeShift->recalculateTotals();
             }
 
+            // Kirim notifikasi void ke Telegram
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+            if ($freshTx) {
+                app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+            }
+
             $this->dispatch('show-toast', ['type' => 'success', 'message' => "Pesanan {$transaction->invoice_number} berhasil dibatalkan."]);
         }
 

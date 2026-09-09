@@ -39,6 +39,10 @@ class CashierShift extends Model
         'difference' => 'decimal:2',
     ];
 
+    protected $appends = [
+        'non_cash_sales',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class)->withTrashed();
@@ -50,6 +54,14 @@ class CashierShift extends Model
     }
 
     /**
+     * Accessor untuk total penjualan non-tunai (QRIS + Transfer).
+     */
+    public function getNonCashSalesAttribute(): float
+    {
+        return (float) ($this->qris_sales ?? 0) + (float) ($this->transfer_sales ?? 0);
+    }
+
+    /**
      * Recalculate sales totals based on associated transactions.
      */
     public function recalculateTotals()
@@ -57,9 +69,9 @@ class CashierShift extends Model
         $transactions = $this->transactions()->where('status', 'completed')->get();
 
         $this->total_transactions = $transactions->count();
-        $this->cash_sales = $transactions->where('payment_method', 'cash')->sum('total');
-        $this->qris_sales = $transactions->where('payment_method', 'qris')->sum('total');
-        $this->transfer_sales = $transactions->where('payment_method', 'transfer')->sum('total');
+        $this->cash_sales = $transactions->filter(fn($t) => strtolower($t->payment_method ?? '') === 'cash')->sum('total');
+        $this->qris_sales = $transactions->filter(fn($t) => strtolower($t->payment_method ?? '') === 'qris')->sum('total');
+        $this->transfer_sales = $transactions->filter(fn($t) => in_array(strtolower($t->payment_method ?? ''), ['transfer', 'debit']))->sum('total');
         $this->total_sales = $transactions->sum('total');
         $this->expected_cash = (float) $this->starting_cash + (float) $this->cash_sales;
 
