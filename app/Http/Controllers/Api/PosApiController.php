@@ -2218,6 +2218,10 @@ class PosApiController extends Controller
 
             'transfer_sales' => (float) $shift->transfer_sales,
 
+            'total_cash_in' => (float) ($shift->total_cash_in ?? 0),
+
+            'total_cash_out' => (float) ($shift->total_cash_out ?? 0),
+
             'non_cash_sales' => (float) ($shift->qris_sales + $shift->transfer_sales),
 
             'total_sales' => (float) $shift->total_sales,
@@ -2383,6 +2387,10 @@ class PosApiController extends Controller
                 'total_sales' => (float) $shift->total_sales,
 
                 'total_transactions' => (int) $shift->total_transactions,
+
+                'total_cash_in' => (float) ($shift->total_cash_in ?? 0),
+
+                'total_cash_out' => (float) ($shift->total_cash_out ?? 0),
 
                 'expected_cash' => (float) $shift->expected_cash,
 

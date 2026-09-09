@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\SendTelegramNotificationJob;
 use App\Models\CashierShift;
+use App\Models\CashMovement;
 use App\Models\Setting;
 use App\Models\Transaction;
 use Carbon\Carbon;
@@ -249,6 +250,31 @@ class TelegramService
     }
 
     /**
+     * Trigger notifikasi pengeluaran / arus kas baru (Asynchronous / Queue).
+     */
+    public function sendCashMovementNotification(CashMovement $movement): void
+    {
+        try {
+            $setting = $this->getSetting();
+
+            if (!$this->isConfigured($setting)) {
+                return;
+            }
+
+            $movement->loadMissing(['user', 'shift']);
+            $message = $this->formatCashMovementMessage($movement, $setting);
+
+            SendTelegramNotificationJob::dispatch(
+                $message,
+                $this->getBotToken($setting),
+                $this->getChatId($setting)
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error triggering Telegram cash movement notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Kirim notifikasi uji coba (Synchronous).
      */
     public function testNotification(?string $token = null, ?string $chatId = null): array
@@ -391,6 +417,11 @@ class TelegramService
         $difference = (float) ($shift->difference ?? 0);
         $totalTransactions = $shift->total_transactions ?? $shift->transactions()->count();
 
+        $totalCashIn = (float) ($shift->total_cash_in ?? 0);
+        $totalCashOut = (float) ($shift->total_cash_out ?? 0);
+        $cashInFormatted = number_format($totalCashIn, 0, ',', '.');
+        $cashOutFormatted = number_format($totalCashOut, 0, ',', '.');
+
         $text = "📊 <b>{$shopName}</b>\n";
         $text .= "Laporan Tutup Shift • <b>Final</b>\n";
         $text .= "──────────────────────\n";
@@ -400,6 +431,12 @@ class TelegramService
         $text .= "──────────────────────\n";
         $text .= "💵 Saldo Awal: Rp {$startingCash}\n";
         $text .= "💰 Tunai     : Rp {$cashSales}\n";
+        if ($totalCashIn > 0) {
+            $text .= "📥 Kas Masuk : +Rp {$cashInFormatted}\n";
+        }
+        if ($totalCashOut > 0) {
+            $text .= "📤 Kas Keluar: -Rp {$cashOutFormatted}\n";
+        }
         $text .= "💳 Non-Tunai : Rp {$nonCashSales}\n";
         if ((float) $shift->qris_sales > 0 || (float) $shift->transfer_sales > 0) {
             $text .= "   ├ QRIS     : Rp {$qrisSales}\n";
@@ -559,6 +596,46 @@ class TelegramService
         $text .= "⚡ Status : <b>Terhubung & Aktif ✅</b>\n";
         $text .= "──────────────────────\n";
         $text .= "Notifikasi transaksi, tutup shift, dan alert void akan otomatis dikirim ke sini.";
+
+        return $text;
+    }
+
+    /**
+     * Format pesan Telegram untuk arus kas / pengeluaran.
+     */
+    public function formatCashMovementMessage(CashMovement $movement, ?Setting $setting = null): string
+    {
+        $shopName = htmlspecialchars($setting?->shop_name ?? 'POS Cafe');
+        $userName = htmlspecialchars($movement->user?->name ?? 'Kasir');
+        $time = Carbon::parse($movement->movement_date)->translatedFormat('d M Y, H:i') . ' WIB';
+        $amount = number_format((float) $movement->amount, 0, ',', '.');
+        $isOut = $movement->type === 'out';
+        $typeTitle = $isOut ? '🔴 PENGELUARAN KAS (PAY OUT)' : '🟢 KAS MASUK (PAY IN)';
+        $category = htmlspecialchars($movement->category_name);
+        $source = match ($movement->source) {
+            'drawer' => 'Laci Kasir (Cash Drawer)',
+            'bank' => 'Rekening Bank / Transfer',
+            'petty_cash' => 'Kas Toko / Brankas',
+            default => ucfirst($movement->source),
+        };
+
+        $text = "💸 <b>{$shopName}</b>\n";
+        $text .= "{$typeTitle}\n";
+        $text .= "──────────────────────\n";
+        $text .= "📄 Ref       : <code>{$movement->movement_number}</code>\n";
+        $text .= "🕒 Waktu     : {$time}\n";
+        $text .= "👤 Pencatat  : {$userName}\n";
+        $text .= "🏷️ Kategori  : <b>{$category}</b>\n";
+        $text .= "💳 Sumber    : {$source}\n";
+        $text .= "💰 Nominal   : <b>Rp {$amount}</b>\n";
+        $notes = htmlspecialchars($movement->notes);
+        $text .= "📝 Catatan   : <i>{$notes}</i>\n";
+
+        if ($movement->shift_id && $movement->shift) {
+            $expectedCash = number_format((float) $movement->shift->expected_cash, 0, ',', '.');
+            $text .= "──────────────────────\n";
+            $text .= "💵 Saldo Laci Kasir: Rp {$expectedCash}\n";
+        }
 
         return $text;
     }
