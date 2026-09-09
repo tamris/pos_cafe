@@ -108,6 +108,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/checkout', [PosApiController::class, 'checkout']);
         Route::get('/transactions/today', [PosApiController::class, 'todayTransactions']);
         Route::get('/transactions/{id}/receipt', [PosApiController::class, 'getReceiptData']);
+        Route::match(['put', 'post'], '/transactions/{id}/payment-method', [PosApiController::class, 'updatePaymentMethod']);
 
         // Open Bills / Hold Orders
         Route::get('/open-bills', [PosApiController::class, 'getOpenBills']);

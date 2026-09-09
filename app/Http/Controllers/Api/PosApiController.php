@@ -1850,6 +1850,115 @@ class PosApiController extends Controller
 
      */
 
+    /**
+     * Update Payment Method for Completed Transaction.
+     * Allows switching between Cash, QRIS, Transfer, Debit when shift is still open.
+     */
+    public function updatePaymentMethod(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_method' => 'required|in:cash,qris,transfer,debit',
+            'paid' => 'nullable|numeric|min:0',
+        ], [
+            'payment_method.required' => 'Metode pembayaran baru wajib dipilih.',
+            'payment_method.in' => 'Metode pembayaran tidak valid.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $transaction = Transaction::with('shift')->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
+        }
+
+        if ($transaction->status !== 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya transaksi yang sudah lunas/selesai (completed) yang dapat diubah metode pembayarannya.',
+            ], 422);
+        }
+
+        if ($transaction->shift && $transaction->shift->status !== 'open') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode pembayaran tidak dapat diubah karena shift kasir sudah ditutup.',
+            ], 422);
+        }
+
+        $newMethod = strtolower($request->input('payment_method'));
+        $oldMethod = strtolower($transaction->payment_method ?? 'cash');
+
+        if ($newMethod === $oldMethod) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode pembayaran yang dipilih sama dengan metode saat ini (' . strtoupper($oldMethod) . ').',
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $grandTotal = (float) $transaction->total;
+
+            if ($newMethod === 'cash') {
+                $paid = (float) $request->input('paid', $grandTotal);
+                if ($paid < $grandTotal) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Uang tunai yang diterima (' . number_format($paid, 0, ',', '.') . ') kurang dari total tagihan (' . number_format($grandTotal, 0, ',', '.') . ').',
+                    ], 422);
+                }
+                $change = max(0.0, $paid - $grandTotal);
+            } else {
+                $paid = $grandTotal;
+                $change = 0.0;
+            }
+
+            $transaction->update([
+                'payment_method' => $newMethod,
+                'paid' => $paid,
+                'change' => $change,
+            ]);
+
+            // Otomatis kalkulasi ulang saldo kas masuk/keluar dan expected cash di shift kasir aktif
+            if ($transaction->shift) {
+                $transaction->shift->recalculateTotals();
+            }
+
+            DB::commit();
+
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Metode pembayaran berhasil diubah dari ' . strtoupper($oldMethod) . ' menjadi ' . strtoupper($newMethod) . '.',
+                'data' => [
+                    'id' => $freshTx->id,
+                    'invoice_number' => $freshTx->invoice_number,
+                    'payment_method' => $freshTx->payment_method,
+                    'total' => (float) $freshTx->total,
+                    'paid' => (float) $freshTx->paid,
+                    'change' => (float) $freshTx->change,
+                ],
+                'shift' => $freshTx->shift ? $this->formatShiftData($freshTx->shift) : null,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah metode pembayaran: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getReceiptData($id)
 
     {

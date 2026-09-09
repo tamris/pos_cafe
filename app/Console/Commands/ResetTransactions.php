@@ -43,6 +43,7 @@ class ResetTransactions extends Command
             'categories' => 'Kategori Menu',
             'products' => 'Produk / Menu & Harga',
             'product_ingredients' => 'Resep / Bahan Baku Menu',
+            'expense_categories' => 'Kategori Pengeluaran & Arus Kas',
             'settings' => 'Pengaturan Cafe / Struk / Logo',
         ];
 
@@ -61,6 +62,7 @@ class ResetTransactions extends Command
         $this->components->warn('🗑️  DATA YANG AKAN DIKOSONGKAN & DI-RESET AUTO-INCREMENT KE 1:');
 
         $tablesToWipe = [
+            'cash_movements' => 'Riwayat Arus Kas & Pengeluaran (Cash Flow)',
             'transaction_details' => 'Detail Item Penjualan',
             'transactions' => 'Transaksi Penjualan (POS & Online)',
             'cashier_shifts' => 'Riwayat Shift Kasir',
