@@ -135,18 +135,24 @@ class TelegramService
                     'success' => true,
                     'message' => 'Pesan Telegram berhasil terkirim.',
                     'data' => $body['result'] ?? null,
+                    'status_code' => $response->status(),
                 ];
             }
 
             $errorDesc = $body['description'] ?? ('HTTP Error ' . $response->status());
+            $retryAfter = $body['parameters']['retry_after'] ?? null;
+
             Log::warning("Telegram API Error [{$response->status()}]: {$errorDesc}", [
                 'chat_id' => $targetChatId,
+                'retry_after' => $retryAfter,
             ]);
 
             return [
                 'success' => false,
                 'message' => 'Telegram API Error: ' . $errorDesc,
                 'data' => $body,
+                'status_code' => $response->status(),
+                'retry_after' => $retryAfter,
             ];
         } catch (\Throwable $e) {
             Log::error('Telegram Service Exception: ' . $e->getMessage(), [
@@ -157,6 +163,8 @@ class TelegramService
                 'success' => false,
                 'message' => 'Gagal menghubungi server Telegram: ' . $e->getMessage(),
                 'data' => null,
+                'status_code' => 0,
+                'retry_after' => null,
             ];
         }
     }

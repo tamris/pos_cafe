@@ -912,6 +912,8 @@ class PosApiController extends Controller
 
                 $transaction->update([
 
+                    'user_id' => $user->id,
+
                     'shift_id' => $shiftId,
 
                     'subtotal' => $subtotal,
@@ -936,7 +938,13 @@ class PosApiController extends Controller
 
                     'status' => 'completed',
 
+                    'created_at' => now(),
+
                 ]);
+
+                $transaction->created_at = now();
+
+                $transaction->save();
 
 
 
