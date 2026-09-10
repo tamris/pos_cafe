@@ -16,6 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'isAdmin' => \App\Http\Middleware\IsAdmin::class,
             'admin' => \App\Http\Middleware\IsAdmin::class,
         ]);
+
+        $middleware->redirectTo(
+            guests: '/login',
+            users: function () {
+                return auth()->user()?->role === 'admin' ? '/dashboard' : '/pos';
+            },
+        );
         
         $middleware->validateCsrfTokens(except: [
             'api/midtrans/*',
