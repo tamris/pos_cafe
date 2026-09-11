@@ -1061,8 +1061,17 @@ class PosIndex extends Component
                 $this->activeShift->recalculateTotals();
             }
 
-            $this->lastTransaction = Transaction::with(['details.product', 'user'])->find($transaction->id);
+            $this->lastTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
             $this->lastInvoice = $transaction->invoice_number ?? '';
+
+            // Kirim notifikasi transaksi baru ke Telegram (Background Job)
+            try {
+                if ($this->lastTransaction) {
+                    app(\App\Services\TelegramService::class)->sendTransactionNotification($this->lastTransaction);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Error sending Telegram transaction notification from POS: ' . $e->getMessage());
+            }
 
             $setting = Setting::first();
             $autoPrintReceipt = (bool) ($setting->auto_print_receipt ?? true);
