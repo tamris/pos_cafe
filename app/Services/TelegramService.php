@@ -336,6 +336,74 @@ class TelegramService
     }
 
     /**
+     * Hitung data akumulasi omset dan penjualan per kategori untuk shift kasir / hari berjalan.
+     */
+    public function getShiftAccumulationData(Transaction $transaction): array
+    {
+        $shift = $transaction->shift;
+        if (!$shift && $transaction->shift_id) {
+            $shift = CashierShift::find($transaction->shift_id);
+        }
+
+        if (!$shift) {
+            $shift = CashierShift::where('status', 'open')->latest()->first();
+        }
+
+        if ($shift) {
+            $shiftTransactions = $shift->transactions()
+                ->where(function ($q) {
+                    $q->where('status', 'completed')
+                      ->orWhere('payment_status', 'paid');
+                })
+                ->where('status', '!=', 'cancelled')
+                ->with(['details.product.category'])
+                ->get();
+        } else {
+            $shiftTransactions = Transaction::whereDate('created_at', Carbon::today())
+                ->where(function ($q) {
+                    $q->where('status', 'completed')
+                      ->orWhere('payment_status', 'paid');
+                })
+                ->where('status', '!=', 'cancelled')
+                ->with(['details.product.category'])
+                ->get();
+        }
+
+        // Pastikan transaksi saat ini ikut terhitung jika belum ada di dalam collection (dan bukan transaksi dibatalkan)
+        if ($transaction->status !== 'cancelled' && !$shiftTransactions->contains('id', $transaction->id)) {
+            $shiftTransactions->push($transaction);
+        }
+
+        $totalOmset = (float) $shiftTransactions->sum('total');
+        $categoryBreakdown = [];
+        $totalCups = 0;
+
+        foreach ($shiftTransactions as $tx) {
+            if (!$tx->relationLoaded('details')) {
+                $tx->load('details.product.category');
+            }
+            foreach ($tx->details as $detail) {
+                $catName = $detail->product?->category?->name ?? 'Menu Lainnya';
+                $qty = (int) $detail->quantity;
+
+                if (!isset($categoryBreakdown[$catName])) {
+                    $categoryBreakdown[$catName] = 0;
+                }
+
+                $categoryBreakdown[$catName] += $qty;
+                $totalCups += $qty;
+            }
+        }
+
+        return [
+            'shift' => $shift,
+            'total_omset' => $totalOmset,
+            'category_breakdown' => $categoryBreakdown,
+            'total_cups' => $totalCups,
+        ];
+    }
+
+    /**
      * Format pesan untuk transaksi baru.
      */
     public function formatTransactionMessage(Transaction $transaction, ?Setting $setting = null): string
@@ -441,6 +509,25 @@ class TelegramService
             $text .= "Diterima   : Rp {$paidNominal} (Kembali: Rp {$changeNominal})\n";
         }
 
+        // Rekap Shift Berjalan (Total Omset & Akumulasi Cup Terjual per Kategori)
+        $shiftData = $this->getShiftAccumulationData($transaction);
+        $shiftOmset = number_format($shiftData['total_omset'], 0, ',', '.');
+
+        $text .= "──────────────────────\n";
+        $text .= "📊 <b>REKAP SHIFT BERJALAN</b>\n";
+        $text .= "💰 <b>Total Omset : Rp {$shiftOmset}</b>\n";
+
+        if (!empty($shiftData['category_breakdown'])) {
+            $text .= "🏷️ <b>Kategori Terjual:</b>\n";
+            foreach ($shiftData['category_breakdown'] as $catName => $totalCatQty) {
+                $catIcon = $this->getCategoryIcon($catName);
+                $catNameEsc = htmlspecialchars($catName);
+                $text .= "{$catIcon} {$catNameEsc} ({$totalCatQty})\n";
+            }
+            $text .= "──────────────\n";
+            $text .= "🥤 <b>Total Cup: {$shiftData['total_cups']} cup</b>\n";
+        }
+
         return $text;
     }
 
@@ -481,12 +568,6 @@ class TelegramService
             $diffNominal = number_format(abs($difference), 0, ',', '.');
             $diffText = "<b>-Rp {$diffNominal} (Minus ⚠️)</b>";
         }
-
-        // Saldo Kas Riil Toko (Real-Time)
-        $storeBalances = CashMovement::getStoreRealBalances();
-        $realCash = number_format($storeBalances['cash_balance'], 0, ',', '.');
-        $realBank = number_format($storeBalances['bank_balance'], 0, ',', '.');
-        $totalReal = number_format($storeBalances['total_real_balance'], 0, ',', '.');
 
         $text = "📊 <b>{$shopName}</b>\n";
         $text .= "Laporan Tutup Shift • <b>Final</b>\n";
@@ -530,14 +611,7 @@ class TelegramService
         $text .= "⚖️ Selisih Kas : {$diffText}\n";
         $text .= "──────────────────────\n";
 
-        // 3. Saldo Kas Riil Toko
-        $text .= "🏦 <b>SALDO KAS RIIL TOKO</b>\n";
-        $text .= "• Kas Tunai    : Rp {$realCash}\n";
-        $text .= "• Bank / QRIS  : Rp {$realBank}\n";
-        $text .= "💼 <b>Total Saldo: Rp {$totalReal}</b>\n";
-        $text .= "──────────────────────\n";
-
-        // 4. Rekap Penjualan per Kategori (Ringkas)
+        // 3. Rekap Penjualan per Kategori (Ringkas)
         $shiftPortions = [];
         $totalShiftCups = 0;
 
