@@ -91,9 +91,10 @@ class TelegramService
      * @param string $message Pesan dalam format HTML
      * @param string|null $token Bot token override (opsional)
      * @param string|null $chatId Chat ID override (opsional)
+     * @param array|null $replyMarkup Array keyboard / button markup (opsional)
      * @return array ['success' => bool, 'message' => string, 'data' => ?array]
      */
-    public function sendMessage(string $message, ?string $token = null, ?string $chatId = null): array
+    public function sendMessage(string $message, ?string $token = null, ?string $chatId = null, ?array $replyMarkup = null): array
     {
         $setting = $this->getSetting();
         $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
@@ -118,16 +119,22 @@ class TelegramService
         try {
             $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
 
-            $response = Http::withOptions([
-                'curl' => [
-                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-                ],
-            ])->timeout(10)->post($url, [
+            $payload = [
                 'chat_id' => $targetChatId,
                 'text' => $message,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,
-            ]);
+            ];
+
+            if (!empty($replyMarkup)) {
+                $payload['reply_markup'] = $replyMarkup;
+            }
+
+            $response = Http::withOptions([
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
+            ])->timeout(10)->post($url, $payload);
 
             $body = $response->json();
 
@@ -167,6 +174,235 @@ class TelegramService
                 'status_code' => 0,
                 'retry_after' => null,
             ];
+        }
+    }
+
+    /**
+     * Edit teks dan keyboard dari pesan yang sudah ada secara in-place (tanpa buat bubble chat baru).
+     */
+    public function editMessageText(string $message, ?string $token = null, ?string $chatId = null, ?int $messageId = null, ?array $replyMarkup = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+        $targetChatId = trim($chatId ?: ($this->getChatId($setting) ?? ''));
+
+        if (empty($botToken) || empty($targetChatId) || empty($messageId)) {
+            return ['success' => false, 'message' => 'Parameter editMessageText tidak lengkap.'];
+        }
+
+        try {
+            $url = "https://api.telegram.org/bot{$botToken}/editMessageText";
+
+            $payload = [
+                'chat_id' => $targetChatId,
+                'message_id' => $messageId,
+                'text' => $message,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+            ];
+
+            if (!empty($replyMarkup)) {
+                $payload['reply_markup'] = $replyMarkup;
+            }
+
+            $response = Http::withOptions([
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
+            ])->timeout(10)->post($url, $payload);
+
+            $body = $response->json();
+
+            // Jika Telegram membalas "message is not modified", anggap sukses (angka belum berubah)
+            if (!$response->successful() && str_contains($body['description'] ?? '', 'message is not modified')) {
+                return ['success' => true, 'not_modified' => true, 'data' => $body];
+            }
+
+            return [
+                'success' => $response->successful() && ($body['ok'] ?? false),
+                'message' => $body['description'] ?? 'OK',
+                'data' => $body['result'] ?? null,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Telegram editMessageText Error: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Berikan feedback acknowledgement untuk event klik tombol inline (callback_query).
+     */
+    public function answerCallbackQuery(string $callbackQueryId, ?string $text = null, bool $showAlert = false, ?string $token = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+
+        if (empty($botToken)) {
+            return ['success' => false, 'message' => 'Token belum diatur.'];
+        }
+
+        try {
+            $url = "https://api.telegram.org/bot{$botToken}/answerCallbackQuery";
+            $payload = ['callback_query_id' => $callbackQueryId];
+            if (!empty($text)) {
+                $payload['text'] = $text;
+                $payload['show_alert'] = $showAlert;
+            }
+
+            $response = Http::timeout(5)->post($url, $payload);
+            return ['success' => $response->successful(), 'data' => $response->json()];
+        } catch (\Throwable $e) {
+            Log::error('Telegram answerCallbackQuery Error: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Hapus pesan yang sudah terkirim di Telegram (untuk menjaga chat tetap bersih).
+     */
+    public function deleteMessage(?string $token = null, ?string $chatId = null, ?int $messageId = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+        $targetChatId = trim($chatId ?: ($this->getChatId($setting) ?? ''));
+
+        if (empty($botToken) || empty($targetChatId) || empty($messageId)) {
+            return ['success' => false, 'message' => 'Parameter deleteMessage tidak lengkap.'];
+        }
+
+        try {
+            $url = "https://api.telegram.org/bot{$botToken}/deleteMessage";
+            $response = Http::withOptions([
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
+            ])->timeout(5)->post($url, [
+                'chat_id' => $targetChatId,
+                'message_id' => $messageId,
+            ]);
+
+            $body = $response->json();
+
+            return [
+                'success' => $response->successful() && ($body['ok'] ?? false),
+                'message' => $body['description'] ?? 'OK',
+                'data' => $body['result'] ?? null,
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Telegram deleteMessage Error: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Kirim status aksi chat ke Telegram (misal: 'typing', 'upload_photo').
+     */
+    public function sendChatAction(string $action = 'typing', ?string $chatId = null, ?string $token = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+        $targetChatId = trim($chatId ?: ($this->getChatId($setting) ?? ''));
+
+        if (empty($botToken) || empty($targetChatId)) {
+            return ['success' => false, 'message' => 'Token atau Chat ID belum diatur.'];
+        }
+
+        try {
+            $url = "https://api.telegram.org/bot{$botToken}/sendChatAction";
+            $response = Http::withOptions([
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
+            ])->timeout(4)->post($url, [
+                'chat_id' => $targetChatId,
+                'action' => $action,
+            ]);
+
+            return ['success' => $response->successful(), 'data' => $response->json()];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Daftarkan webhook URL ke Telegram Bot API.
+     */
+    public function setWebhook(string $url, ?string $token = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+
+        if (empty($botToken)) {
+            return ['success' => false, 'message' => 'Telegram Bot Token belum diatur.'];
+        }
+
+        try {
+            $endpoint = "https://api.telegram.org/bot{$botToken}/setWebhook";
+            $response = Http::timeout(10)->post($endpoint, [
+                'url' => $url,
+                'drop_pending_updates' => true,
+            ]);
+
+            return [
+                'success' => $response->successful() && ($response->json('ok') ?? false),
+                'message' => $response->json('description') ?? 'Webhook request sent.',
+                'data' => $response->json(),
+            ];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => 'Gagal set webhook: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Cek status webhook saat ini dari Telegram Bot API.
+     */
+    public function getWebhookInfo(?string $token = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+
+        if (empty($botToken)) {
+            return ['success' => false, 'message' => 'Telegram Bot Token belum diatur.'];
+        }
+
+        try {
+            $endpoint = "https://api.telegram.org/bot{$botToken}/getWebhookInfo";
+            $response = Http::timeout(10)->get($endpoint);
+
+            return [
+                'success' => $response->successful(),
+                'data' => $response->json('result') ?? [],
+            ];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => 'Gagal cek webhook: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Daftarkan daftar perintah menu resmi (Slash Commands) ke Bot Telegram.
+     */
+    public function setMyCommands(array $commands, ?string $token = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+
+        if (empty($botToken)) {
+            return ['success' => false, 'message' => 'Telegram Bot Token belum diatur.'];
+        }
+
+        try {
+            $endpoint = "https://api.telegram.org/bot{$botToken}/setMyCommands";
+            $response = Http::timeout(10)->post($endpoint, [
+                'commands' => $commands,
+            ]);
+
+            return [
+                'success' => $response->successful() && ($response->json('ok') ?? false),
+                'message' => $response->json('description') ?? 'Commands registered.',
+                'data' => $response->json(),
+            ];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => 'Gagal set commands: ' . $e->getMessage()];
         }
     }
 
