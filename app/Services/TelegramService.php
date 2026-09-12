@@ -428,6 +428,11 @@ class TelegramService
             }
         }
 
+        // Urutkan kategori: Terlaris (cup terbanyak) di atas, jika jumlah sama urutkan sesuai abjad
+        uksort($categoryBreakdown, function ($a, $b) use ($categoryBreakdown) {
+            return ($categoryBreakdown[$b] <=> $categoryBreakdown[$a]) ?: strcasecmp($a, $b);
+        });
+
         return [
             'shift' => $shift,
             'total_omset' => $totalOmset,
@@ -675,6 +680,11 @@ class TelegramService
                 $totalShiftCups += $qty;
             }
         }
+
+        // Urutkan kategori: Terlaris (cup terbanyak) di atas, jika jumlah sama urutkan sesuai abjad
+        uksort($shiftPortions, function ($a, $b) use ($shiftPortions) {
+            return ($shiftPortions[$b] <=> $shiftPortions[$a]) ?: strcasecmp($a, $b);
+        });
 
         if (!empty($shiftPortions)) {
             $text .= "🏷️ <b>PENJUALAN PER KATEGORI</b>\n";
