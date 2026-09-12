@@ -360,11 +360,14 @@ class TelegramBotCommandService
         $openBillsCount = $openBills->count();
         $openBillsTotal = (float) $openBills->sum('total');
 
+        $totalCupsToday = (int) TransactionDetail::whereIn('transaction_id', $transactions->pluck('id'))->sum('quantity');
+
         $text = "📊 <b>RINGKASAN OMSET HARI INI</b>\n";
         $text .= "🕒 {$nowFormatted}\n";
         $text .= "────────────────────\n";
         $text .= "💰 <b>Total Omset : Rp " . number_format($totalOmset, 0, ',', '.') . "</b>\n";
         $text .= "🧾 <b>Total Trx   : {$totalTrx} transaksi</b>\n";
+        $text .= "🥤 <b>Total Cup   : {$totalCupsToday} cup terjual</b>\n";
         $text .= "👥 <b>Rata-rata   : Rp " . number_format($avgBasket, 0, ',', '.') . " / trx</b>\n\n";
 
         $text .= "💳 <b>Metode Pembayaran:</b>\n";
@@ -474,33 +477,35 @@ class TelegramBotCommandService
         $categoryBreakdown = [];
 
         foreach ($details as $d) {
-            $catName = $d->category_name ?: 'Lainnya';
+            $catName = $d->category_name ?: 'Menu Lainnya';
             $qty = (int) $d->quantity;
-            $unit = $this->telegramService->determineUnit($d->product_name, $d->category_name);
 
-            if ($unit === 'cup') {
-                $totalCups += $qty;
-                if (!isset($categoryBreakdown[$catName])) {
-                    $categoryBreakdown[$catName] = 0;
-                }
-                $categoryBreakdown[$catName] += $qty;
+            $totalCups += $qty;
+            if (!isset($categoryBreakdown[$catName])) {
+                $categoryBreakdown[$catName] = 0;
             }
+            $categoryBreakdown[$catName] += $qty;
         }
+
+        // Urutkan kategori: Terlaris (cup terbanyak) di atas, jika jumlah sama urutkan sesuai abjad
+        uksort($categoryBreakdown, function ($a, $b) use ($categoryBreakdown) {
+            return ($categoryBreakdown[$b] <=> $categoryBreakdown[$a]) ?: strcasecmp($a, $b);
+        });
 
         $text = "🥤 <b>TOTAL PENJUALAN CUP HARI INI</b>\n";
         $text .= "📅 {$dateFormatted}\n";
         $text .= "────────────────────\n";
-        $text .= "🥤 <b>Total Minuman : {$totalCups} cup terjual</b>\n\n";
+        $text .= "🥤 <b>Total Cup Terjual : {$totalCups} cup</b>\n\n";
 
         if (!empty($categoryBreakdown)) {
-            $text .= "<b>Rincian Kategori:</b>\n";
+            $text .= "🏷️ <b>Penjualan per Kategori (Terlaris):</b>\n";
             foreach ($categoryBreakdown as $catName => $qty) {
                 $icon = $this->telegramService->getCategoryIcon($catName);
                 $catEsc = htmlspecialchars($catName);
                 $text .= "• {$icon} {$catEsc}: <b>{$qty} cup</b>\n";
             }
         } else {
-            $text .= "<i>Belum ada penjualan minuman cup hari ini.</i>\n";
+            $text .= "<i>Belum ada penjualan cup/menu hari ini.</i>\n";
         }
         $text .= "────────────────────";
 
@@ -543,12 +548,15 @@ class TelegramBotCommandService
         $cashOut = number_format((float) $activeShift->total_cash_out, 0, ',', '.');
         $expectedCash = number_format((float) $activeShift->expected_cash, 0, ',', '.');
         $trxCount = (int) $activeShift->total_transactions;
+        $shiftCompletedTxIds = $activeShift->transactions()->where('status', 'completed')->pluck('id');
+        $shiftTotalCups = (int) TransactionDetail::whereIn('transaction_id', $shiftCompletedTxIds)->sum('quantity');
 
         $text = "👤 <b>STATUS SHIFT KASIR AKTIF</b>\n";
         $text .= "────────────────────\n";
         $text .= "• Kasir Bertugas : <b>{$cashierName}</b>\n";
         $text .= "• Waktu Mulai    : {$startTime} WIB ({$duration})\n";
         $text .= "• Total Trx      : {$trxCount} transaksi\n";
+        $text .= "• Total Cup      : {$shiftTotalCups} cup terjual\n";
         $text .= "• Omset Shift    : <b>Rp {$totalSales}</b>\n\n";
 
         $text .= "💵 <b>Posisi Laci Kasir (Cash):</b>\n";
