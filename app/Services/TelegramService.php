@@ -173,7 +173,7 @@ class TelegramService
     /**
      * Trigger notifikasi transaksi baru (Asynchronous / Queue).
      */
-    public function sendTransactionNotification(Transaction $transaction): void
+    public function sendTransactionNotification(Transaction $transaction, bool $wasOpenBill = false): void
     {
         try {
             $setting = $this->getSetting();
@@ -185,7 +185,7 @@ class TelegramService
             // Pastikan relasi sudah termuat
             $transaction->loadMissing(['details.product.category', 'user', 'shift']);
 
-            $message = $this->formatTransactionMessage($transaction, $setting);
+            $message = $this->formatTransactionMessage($transaction, $setting, $wasOpenBill);
 
             SendTelegramNotificationJob::dispatch(
                 $message,
@@ -337,6 +337,8 @@ class TelegramService
 
     /**
      * Hitung data akumulasi omset dan penjualan per kategori untuk shift kasir / hari berjalan.
+     * Hanya menghitung transaksi yang benar-benar LUNAS (completed / online paid).
+     * Open bill (pending) dan unpaid dikecualikan.
      */
     public function getShiftAccumulationData(Transaction $transaction): array
     {
@@ -349,30 +351,61 @@ class TelegramService
             $shift = CashierShift::where('status', 'open')->latest()->first();
         }
 
+        // Filter ketat transaksi yang sudah LUNAS
+        $paidFilter = function ($query) {
+            $query->where(function ($q) {
+                $q->where('status', 'completed')
+                  ->orWhere(function ($sq) {
+                      $sq->where('order_source', 'self_order')
+                         ->where('payment_status', 'paid')
+                         ->whereNotIn('status', ['cancelled', 'pending']);
+                  });
+            })
+            ->where('status', '!=', 'cancelled')
+            ->where('payment_status', '!=', 'unpaid');
+        };
+
         if ($shift) {
             $shiftTransactions = $shift->transactions()
-                ->where(function ($q) {
-                    $q->where('status', 'completed')
-                      ->orWhere('payment_status', 'paid');
-                })
-                ->where('status', '!=', 'cancelled')
+                ->where($paidFilter)
                 ->with(['details.product.category'])
+                ->get();
+
+            $activeOpenBills = $shift->transactions()
+                ->where('status', 'pending')
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($q) {
+                    $q->where('payment_status', 'unpaid')
+                      ->orWhere('paid', '<=', 0);
+                })
                 ->get();
         } else {
             $shiftTransactions = Transaction::whereDate('created_at', Carbon::today())
-                ->where(function ($q) {
-                    $q->where('status', 'completed')
-                      ->orWhere('payment_status', 'paid');
-                })
-                ->where('status', '!=', 'cancelled')
+                ->where($paidFilter)
                 ->with(['details.product.category'])
+                ->get();
+
+            $activeOpenBills = Transaction::whereDate('created_at', Carbon::today())
+                ->where('status', 'pending')
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($q) {
+                    $q->where('payment_status', 'unpaid')
+                      ->orWhere('paid', '<=', 0);
+                })
                 ->get();
         }
 
-        // Pastikan transaksi saat ini ikut terhitung jika belum ada di dalam collection (dan bukan transaksi dibatalkan)
-        if ($transaction->status !== 'cancelled' && !$shiftTransactions->contains('id', $transaction->id)) {
+        // Pastikan transaksi saat ini ikut terhitung jika sudah lunas dan belum ada di dalam collection
+        $isCurrentTxPaid = ($transaction->status === 'completed' || ($transaction->payment_status === 'paid' && !in_array($transaction->status, ['pending', 'cancelled'])))
+            && $transaction->status !== 'cancelled'
+            && $transaction->payment_status !== 'unpaid';
+
+        if ($isCurrentTxPaid && !$shiftTransactions->contains('id', $transaction->id)) {
             $shiftTransactions->push($transaction);
         }
+
+        // Pastikan transaksi saat ini dikeluarkan dari daftar open bill aktif
+        $activeOpenBills = $activeOpenBills->reject(fn($t) => $t->id === $transaction->id);
 
         $totalOmset = (float) $shiftTransactions->sum('total');
         $categoryBreakdown = [];
@@ -400,13 +433,15 @@ class TelegramService
             'total_omset' => $totalOmset,
             'category_breakdown' => $categoryBreakdown,
             'total_cups' => $totalCups,
+            'open_bills_count' => $activeOpenBills->count(),
+            'open_bills_total' => (float) $activeOpenBills->sum('total'),
         ];
     }
 
     /**
      * Format pesan untuk transaksi baru.
      */
-    public function formatTransactionMessage(Transaction $transaction, ?Setting $setting = null): string
+    public function formatTransactionMessage(Transaction $transaction, ?Setting $setting = null, bool $wasOpenBill = false): string
     {
         $shopName = htmlspecialchars($setting?->shop_name ?? 'POS Cafe');
         $invoice = htmlspecialchars($transaction->invoice_number);
@@ -431,6 +466,7 @@ class TelegramService
         };
 
         $isSelfOrder = ($transaction->order_source === 'self_order');
+        $isPelunasan = ($wasOpenBill || (bool) ($transaction->was_open_bill ?? false));
 
         if ($isSelfOrder) {
             $customerName = htmlspecialchars($transaction->customer_name ?: 'Pelanggan');
@@ -444,9 +480,10 @@ class TelegramService
             $text .= "📦 Layanan : {$orderType}\n";
         } else {
             $customerPart = !empty($transaction->customer_name) ? ' • ' . htmlspecialchars($transaction->customer_name) : '';
+            $billBadge = $isPelunasan ? " 🏷️ <i>[PELUNASAN BILL]</i>" : "";
 
             $text = "☕ <b>{$shopName}</b>\n";
-            $text .= "Nota <code>#{$invoice}</code> • {$orderType}\n";
+            $text .= "Nota <code>#{$invoice}</code> • {$orderType}{$billBadge}\n";
             $text .= "──────────────────────\n";
             $text .= "🕒 {$time}\n";
             $text .= "👤 Kasir   : {$cashier}{$customerPart}\n";
@@ -526,6 +563,12 @@ class TelegramService
             }
             $text .= "──────────────\n";
             $text .= "🥤 <b>Total Cup: {$shiftData['total_cups']} cup</b>\n";
+        }
+
+        if (!empty($shiftData['open_bills_count']) && $shiftData['open_bills_count'] > 0) {
+            $openBillsNominal = number_format($shiftData['open_bills_total'], 0, ',', '.');
+            $text .= "──────────────\n";
+            $text .= "⏳ <b>Open Bill Aktif: {$shiftData['open_bills_count']} bill (Rp {$openBillsNominal})</b>\n";
         }
 
         return $text;
