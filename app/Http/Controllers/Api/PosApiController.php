@@ -888,6 +888,8 @@ class PosApiController extends Controller
 
 
 
+            $isFromOpenBill = !empty($openBillId);
+
             if ($openBillId) {
 
                 // Update existing Open Bill to Completed
@@ -938,6 +940,8 @@ class PosApiController extends Controller
 
                     'status' => 'completed',
 
+                    'payment_status' => 'paid',
+
                     'created_at' => now(),
 
                 ]);
@@ -981,6 +985,8 @@ class PosApiController extends Controller
                     'customer_name' => $customerName,
 
                     'status' => 'completed',
+
+                    'payment_status' => 'paid',
 
                 ]);
 
@@ -1061,7 +1067,7 @@ class PosApiController extends Controller
             $freshTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
 
             // Kirim notifikasi transaksi baru ke Telegram (Background Job)
-            app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTransaction);
+            app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTransaction, $isFromOpenBill);
 
             $receiptPayload = $this->buildCustomerReceiptPayload($freshTransaction);
 
@@ -1395,6 +1401,10 @@ class PosApiController extends Controller
 
                     'customer_name' => $customerName,
 
+                    'status' => 'pending',
+
+                    'payment_status' => 'unpaid',
+
                 ]);
 
 
@@ -1430,6 +1440,8 @@ class PosApiController extends Controller
                     'customer_name' => $customerName,
 
                     'status' => 'pending',
+
+                    'payment_status' => 'unpaid',
 
                 ]);
 
@@ -1661,6 +1673,7 @@ class PosApiController extends Controller
 
         $transaction->update([
             'status' => 'cancelled',
+            'payment_status' => 'failed',
             'cancelled_reason' => 'Dibatalkan Kasir via Mobile POS (Void Open Bill)',
             'cancelled_by' => $user->id,
             'cancelled_at' => now(),
@@ -2145,6 +2158,7 @@ class PosApiController extends Controller
                         'table_number' => $offTx['table_number'] ?? null,
                         'customer_name' => $offTx['customer_name'] ?? null,
                         'status' => 'completed',
+                        'payment_status' => 'paid',
                         'created_at' => $realCreatedAt,
                     ]);
                     $openBill->created_at = $realCreatedAt;
@@ -2167,6 +2181,7 @@ class PosApiController extends Controller
                         'table_number' => $offTx['table_number'] ?? null,
                         'customer_name' => $offTx['customer_name'] ?? null,
                         'status' => 'completed',
+                        'payment_status' => 'paid',
                         'created_at' => $realCreatedAt,
                     ]);
                     $transaction->created_at = $realCreatedAt;

@@ -824,6 +824,8 @@ class PosIndex extends Component
                     'order_type' => $this->orderType,
                     'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
                     'customer_name' => $this->customerName ?: null,
+                    'status' => 'pending',
+                    'payment_status' => 'unpaid',
                 ]);
 
                 $transaction->details()->delete();
@@ -844,6 +846,7 @@ class PosIndex extends Component
                     'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
                     'customer_name' => $this->customerName ?: null,
                     'status' => 'pending',
+                    'payment_status' => 'unpaid',
                 ]);
             }
 
@@ -941,6 +944,7 @@ class PosIndex extends Component
 
         $transaction->update([
             'status' => 'cancelled',
+            'payment_status' => 'failed',
             'cancelled_reason' => 'Dibatalkan Kasir sebelum Bayar (Void Open Bill)',
             'cancelled_by' => auth()->id(),
             'cancelled_at' => now(),
@@ -982,6 +986,8 @@ class PosIndex extends Component
 
             $shiftId = $this->activeShift?->id;
 
+            $isFromOpenBill = !empty($this->currentOpenBillId);
+
             if ($this->currentOpenBillId) {
                 // Selesaikan Open Bill yang sudah ada
                 $transaction = Transaction::find($this->currentOpenBillId);
@@ -999,10 +1005,12 @@ class PosIndex extends Component
                         'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
                         'customer_name' => $this->customerName ?: null,
                         'status' => 'completed',
+                        'payment_status' => 'paid',
                     ]);
 
                     $transaction->details()->delete();
                 } else {
+                    $isFromOpenBill = false;
                     $transaction = Transaction::create([
                         'user_id' => auth()->id(),
                         'shift_id' => $shiftId,
@@ -1017,6 +1025,7 @@ class PosIndex extends Component
                         'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
                         'customer_name' => $this->customerName ?: null,
                         'status' => 'completed',
+                        'payment_status' => 'paid',
                     ]);
                 }
             } else {
@@ -1035,6 +1044,7 @@ class PosIndex extends Component
                     'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
                     'customer_name' => $this->customerName ?: null,
                     'status' => 'completed',
+                    'payment_status' => 'paid',
                 ]);
             }
 
@@ -1067,7 +1077,7 @@ class PosIndex extends Component
             // Kirim notifikasi transaksi baru ke Telegram (Background Job)
             try {
                 if ($this->lastTransaction) {
-                    app(\App\Services\TelegramService::class)->sendTransactionNotification($this->lastTransaction);
+                    app(\App\Services\TelegramService::class)->sendTransactionNotification($this->lastTransaction, $isFromOpenBill);
                 }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('Error sending Telegram transaction notification from POS: ' . $e->getMessage());
