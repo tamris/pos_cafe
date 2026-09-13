@@ -12,14 +12,18 @@ use App\Livewire\Pos\PosIndex;
 use App\Livewire\Reports\ReportIndex;
 use App\Livewire\StockManagement\StockIndex;
 use App\Livewire\OnlineOrders\OnlineOrderIndex;
+use App\Livewire\Customer\CafeLanding;
 use App\Livewire\Customer\CustomerOrder;
 use App\Livewire\Customer\CustomerPayment;
 use App\Livewire\Customer\CustomerStatus;
 use App\Http\Middleware\IsAdmin;
 
+// Customer Landing & Menu Showcase (Public)
+Route::get('/', CafeLanding::class)->name('customer.landing');
+Route::get('/menu', CafeLanding::class)->name('customer.menu');
+
 // Customer Self-Order Routes (Public)
-Route::get('/', CustomerOrder::class)->name('customer.order');
-Route::get('/order', CustomerOrder::class); // Alias agar QR code / link lama tetap berfungsi
+Route::get('/order', CustomerOrder::class)->name('customer.order');
 Route::get('/order/pay/{token}', CustomerPayment::class)->name('customer.payment');
 Route::get('/order/status/{token}', CustomerStatus::class)->name('customer.status');
 

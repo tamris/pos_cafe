@@ -24,6 +24,9 @@ class CustomerOrder extends Component
     #[Url(as: 'type')]
     public $typeParam = '';
 
+    #[Url(as: 'select')]
+    public $selectParam = '';
+
     // Customer Identity State
     public $orderType = 'dine_in'; // 'dine_in' or 'take_away'
     public $tableNumber = '';
@@ -81,6 +84,11 @@ class CustomerOrder extends Component
         $setting = Setting::first();
         if ($setting && isset($setting->tax_percentage)) {
             $this->taxRate = (float) $setting->tax_percentage;
+        }
+
+        // Auto open customized modal if selected from landing page
+        if (!empty($this->selectParam) && is_numeric($this->selectParam)) {
+            $this->openCustomizeModal((int) $this->selectParam);
         }
     }
 
@@ -610,48 +618,74 @@ class CustomerOrder extends Component
 
         $isOnlineOrderActive = (bool) ($setting->is_online_order_active ?? true);
 
-        // Calculate dynamic Best Seller (1 Top Product) & Top Order (2 Runner-up Products) from actual completed sales
-        $bestSellerIds = \App\Models\TransactionDetail::select('product_id', DB::raw('SUM(quantity) as total_qty'))
-            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
-            ->where('transactions.status', 'completed')
-            ->groupBy('product_id')
-            ->orderByDesc('total_qty')
+        // 1. Fetch Top Coffee Products (Juara Kategori Kopi)
+        $topCoffee = Product::active()
+            ->whereNotNull('image')
+            ->whereHas('category', function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('name', 'like', '%Espresso%')
+                        ->orWhere('name', 'like', '%Coffee%');
+                })->where('name', 'not like', '%Non-Coffee%');
+            })
+            ->withSum(['transactionDetails as total_sold' => function ($q) {
+                $q->whereHas('transaction', function ($t) {
+                    $t->where('status', 'completed');
+                });
+            }], 'quantity')
+            ->orderByDesc('total_sold')
+            ->orderBy('price', 'desc')
+            ->take(3)
+            ->get();
+
+        // 2. Fetch Top Non-Coffee Product (Juara Kategori Non-Kopi)
+        $topNonCoffee = Product::active()
+            ->whereNotNull('image')
+            ->whereHas('category', function ($q) {
+                $q->where('name', 'like', '%Non-Coffee%')
+                  ->orWhere('name', 'like', '%Tea%');
+            })
+            ->withSum(['transactionDetails as total_sold' => function ($q) {
+                $q->whereHas('transaction', function ($t) {
+                    $t->where('status', 'completed');
+                });
+            }], 'quantity')
+            ->orderByDesc('total_sold')
+            ->orderBy('price', 'desc')
             ->take(1)
-            ->pluck('product_id')
-            ->toArray();
+            ->get();
 
-        $topOrderIds = \App\Models\TransactionDetail::select('product_id', DB::raw('COUNT(DISTINCT transaction_id) as order_count'))
-            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
-            ->where('transactions.status', 'completed')
-            ->where('transactions.created_at', '>=', now()->subDays(14))
-            ->whereNotIn('product_id', $bestSellerIds)
-            ->groupBy('product_id')
-            ->orderByDesc('order_count')
-            ->take(2)
-            ->pluck('product_id')
-            ->toArray();
+        $bestSellerIds = [];
+        $topOrderIds = [];
+        $mostPopularIds = [];
+        $pinnedOrder = [];
 
-        if (empty($topOrderIds)) {
-            $topOrderIds = \App\Models\TransactionDetail::select('product_id', DB::raw('SUM(quantity) as total_qty'))
-                ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
-                ->where('transactions.status', 'completed')
-                ->whereNotIn('product_id', $bestSellerIds)
-                ->groupBy('product_id')
-                ->orderByDesc('total_qty')
-                ->take(2)
-                ->pluck('product_id')
-                ->toArray();
+        // #1 Coffee -> Best Seller
+        if ($topCoffee->isNotEmpty()) {
+            $bestSellerIds[] = $topCoffee->get(0)->id;
+            $pinnedOrder[$topCoffee->get(0)->id] = 0;
         }
 
-        // Smart Pinning: Put Best Seller at position #1, Top Orders at #2 & #3, then remaining products
-        $products = $products->sortBy(function ($product) use ($bestSellerIds, $topOrderIds) {
-            if (in_array($product->id, $bestSellerIds)) {
-                return 0;
-            }
-            if (in_array($product->id, $topOrderIds)) {
-                return 1;
-            }
-            return 2;
+        // #1 Non-Coffee -> Most Popular
+        if ($topNonCoffee->isNotEmpty()) {
+            $mostPopularIds[] = $topNonCoffee->get(0)->id;
+            $pinnedOrder[$topNonCoffee->get(0)->id] = 1;
+        }
+
+        // #2 Coffee -> Top Ordered
+        if ($topCoffee->count() > 1) {
+            $topOrderIds[] = $topCoffee->get(1)->id;
+            $pinnedOrder[$topCoffee->get(1)->id] = 2;
+        }
+
+        // #3 Coffee -> Top Ordered
+        if ($topCoffee->count() > 2) {
+            $topOrderIds[] = $topCoffee->get(2)->id;
+            $pinnedOrder[$topCoffee->get(2)->id] = 3;
+        }
+
+        // Smart Pinning: Put Top 4 Curated Products at positions #1-#4, then remaining products alphabetically
+        $products = $products->sortBy(function ($product) use ($pinnedOrder) {
+            return $pinnedOrder[$product->id] ?? (100 + $product->id);
         })->values();
 
         return view('livewire.customer.customer-order', [
@@ -660,6 +694,7 @@ class CustomerOrder extends Component
             'products' => $products,
             'bestSellerIds' => $bestSellerIds,
             'topOrderIds' => $topOrderIds,
+            'mostPopularIds' => $mostPopularIds,
             'totalItemsInCart' => $totalItemsInCart,
             'isStoreOpen' => $isStoreOpen,
             'isOnlineOrderActive' => $isOnlineOrderActive,
