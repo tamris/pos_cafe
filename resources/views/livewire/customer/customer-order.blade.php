@@ -35,12 +35,13 @@
                     </h1>
                 </div>
 
-                {{-- Riwayat Pesanan Saya Button (Top Right) --}}
+                {{-- Action Buttons: Beranda & Riwayat Pesanan --}}
                 @php
                     $activeOrdersCount = $this->activeOrders->count();
                     $activeOrder = $this->activeOrders->first();
                 @endphp
-                <div class="shrink-0">
+                <div class="shrink-0 flex items-center gap-2">
+
                     <button type="button" 
                             wire:click="openHistoryModal"
                             class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-left flex items-center gap-2 shadow-sm relative cursor-pointer">
@@ -227,16 +228,21 @@
                                 
                                 {{-- Image Thumbnail Container --}}
                                 <div class="w-full aspect-square rounded-2xl bg-slate-100 overflow-hidden relative mb-2.5">
-                                    {{-- Best Seller / Top Order Badge --}}
+                                    {{-- Fore-Style Badge: Best Seller, Top Ordered, Most Popular --}}
                                     @if(in_array($product->id, $bestSellerIds ?? []))
-                                        <div class="absolute top-2 left-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9.5px] font-black px-2.5 py-1 rounded-xl shadow-sm shadow-orange-500/30 border border-white/30 flex items-center gap-1.5 leading-none">
-                                            <i class="fas fa-fire text-[9.5px] text-amber-100"></i>
+                                        <div class="absolute top-2 left-2 z-10 bg-[#b88646] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                                            <i class="fas fa-star text-[9px] text-amber-100"></i>
                                             <span>Best Seller</span>
                                         </div>
                                     @elseif(in_array($product->id, $topOrderIds ?? []))
-                                        <div class="absolute top-2 left-2 z-10 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9.5px] font-black px-2.5 py-1 rounded-xl shadow-sm shadow-emerald-600/30 border border-white/30 flex items-center gap-1.5 leading-none">
-                                            <i class="fas fa-star text-[9px] text-emerald-100"></i>
-                                            <span>Top Order</span>
+                                        <div class="absolute top-2 left-2 z-10 bg-[#0e382c] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                                            <i class="fas fa-award text-[9px] text-emerald-300"></i>
+                                            <span>Top Ordered</span>
+                                        </div>
+                                    @elseif(in_array($product->id, $mostPopularIds ?? []))
+                                        <div class="absolute top-2 left-2 z-10 bg-[#784421] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                                            <i class="fas fa-thumbs-up text-[9px] text-amber-100"></i>
+                                            <span>Most Popular</span>
                                         </div>
                                     @endif
 
@@ -581,12 +587,19 @@
                                 {{ $editingCartKey ? 'Ubah Pesanan • ' : '' }}{{ $selectedProduct->category?->name }}
                             </span>
                             @if(in_array($selectedProduct->id, $bestSellerIds ?? []))
-                                <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.2 rounded-full shadow-2xs flex items-center gap-0.5">
-                                    <i class="fas fa-fire text-[8px]"></i> Best Seller
+                                <span class="bg-[#b88646] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fas fa-star text-[8px] text-amber-100"></i>
+                                    <span>Best Seller</span>
                                 </span>
                             @elseif(in_array($selectedProduct->id, $topOrderIds ?? []))
-                                <span class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] font-black px-2 py-0.2 rounded-full shadow-2xs flex items-center gap-0.5">
-                                    <i class="fas fa-star text-[8px]"></i> Top Order
+                                <span class="bg-[#0e382c] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fas fa-award text-[8px] text-emerald-300"></i>
+                                    <span>Top Ordered</span>
+                                </span>
+                            @elseif(in_array($selectedProduct->id, $mostPopularIds ?? []))
+                                <span class="bg-[#784421] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fas fa-thumbs-up text-[8px] text-amber-100"></i>
+                                    <span>Most Popular</span>
                                 </span>
                             @endif
                         </div>
