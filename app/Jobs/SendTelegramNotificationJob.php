@@ -42,16 +42,18 @@ class SendTelegramNotificationJob implements ShouldQueue
     public string $message;
     public ?string $token;
     public ?string $chatId;
+    public ?array $replyMarkup;
     public int $rateLimitReleaseCount = 0;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(string $message, ?string $token = null, ?string $chatId = null)
+    public function __construct(string $message, ?string $token = null, ?string $chatId = null, ?array $replyMarkup = null)
     {
         $this->message = $message;
         $this->token = $token;
         $this->chatId = $chatId;
+        $this->replyMarkup = $replyMarkup;
     }
 
     /**
@@ -59,7 +61,7 @@ class SendTelegramNotificationJob implements ShouldQueue
      */
     public function handle(TelegramService $telegramService): void
     {
-        $result = $telegramService->sendMessage($this->message, $this->token, $this->chatId);
+        $result = $telegramService->sendMessage($this->message, $this->token, $this->chatId, $this->replyMarkup);
 
         if ($result['success'] ?? false) {
             return; // Berhasil terkirim

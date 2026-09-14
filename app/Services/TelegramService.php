@@ -423,10 +423,20 @@ class TelegramService
 
             $message = $this->formatTransactionMessage($transaction, $setting, $wasOpenBill);
 
+            // Tombol pembatalan cepat (Void) untuk Owner / Admin
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '🚫 Batalkan Nota (Void)', 'callback_data' => 'void_req_' . $transaction->id],
+                    ],
+                ],
+            ];
+
             SendTelegramNotificationJob::dispatch(
                 $message,
                 $this->getBotToken($setting),
-                $this->getChatId($setting)
+                $this->getChatId($setting),
+                $keyboard
             );
         } catch (\Throwable $e) {
             Log::error('Error triggering Telegram transaction notification: ' . $e->getMessage());

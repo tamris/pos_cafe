@@ -105,7 +105,9 @@ class TelegramBotCommandService
             case '/void':
             case '/batal':
             case 'void':
-                $this->sendVoidReport($chatId);
+            case 'batal':
+                $param = trim(substr($text, strlen($command)));
+                $this->handleVoidCommand($chatId, $param);
                 break;
 
             case '/bulan':
@@ -157,6 +159,34 @@ class TelegramBotCommandService
             if ($messageId > 0) {
                 $this->telegramService->deleteMessage(null, $chatId, $messageId);
             }
+            return;
+        }
+
+        // === Handler Flow Void / Pembatalan Nota (Flow A & Flow B) ===
+        if (str_starts_with($action, 'void_req_')) {
+            $txId = (int) substr($action, strlen('void_req_'));
+            $this->handleVoidRequest($chatId, $txId, $messageId, $callbackId, $fromName);
+            return;
+        }
+
+        if (str_starts_with($action, 'void_cancel_')) {
+            $txId = (int) substr($action, strlen('void_cancel_'));
+            $this->handleVoidCancel($chatId, $txId, $messageId, $callbackId);
+            return;
+        }
+
+        if (str_starts_with($action, 'void_do_')) {
+            $payload = substr($action, strlen('void_do_'));
+            $parts = explode('_', $payload, 2);
+            $txId = (int) ($parts[0] ?? 0);
+            $reasonKey = $parts[1] ?? 'lainnya';
+            $this->handleVoidExecution($chatId, $txId, $reasonKey, $messageId, $callbackId, $fromName);
+            return;
+        }
+
+        if ($action === 'menu_void_list') {
+            $this->sendActiveTransactionsForVoid($chatId, $messageId);
+            $this->telegramService->answerCallbackQuery($callbackId);
             return;
         }
 
@@ -301,10 +331,13 @@ class TelegramBotCommandService
                 ],
                 [
                     ['text' => '🚫 Log Void', 'callback_data' => 'cmd_void'],
-                    ['text' => '📆 Rekap Bulan Ini', 'callback_data' => 'cmd_bulan'],
+                    ['text' => '❌ Batalkan Nota', 'callback_data' => 'menu_void_list'],
                 ],
                 [
+                    ['text' => '📆 Rekap Bulan Ini', 'callback_data' => 'cmd_bulan'],
                     ['text' => '🔄 Refresh Menu', 'callback_data' => 'menu_main'],
+                ],
+                [
                     ['text' => '🗑️ Tutup Menu', 'callback_data' => 'cmd_close'],
                 ],
             ],
@@ -693,7 +726,18 @@ class TelegramBotCommandService
         }
         $text .= "────────────────────";
 
-        $keyboard = $this->getActionKeyboard('cmd_void');
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '❌ Batalkan Nota Hari Ini', 'callback_data' => 'menu_void_list'],
+                    ['text' => '🔄 Refresh Log', 'callback_data' => 'cmd_void'],
+                ],
+                [
+                    ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+                    ['text' => '🗑️ Tutup Pesan', 'callback_data' => 'cmd_close'],
+                ],
+            ],
+        ];
         $this->deliverResponse($chatId, $text, $keyboard, $messageId);
     }
 
@@ -775,5 +819,300 @@ class TelegramBotCommandService
                 ],
             ],
         ];
+    }
+
+    /**
+     * Handler untuk command teks /void atau /batal.
+     */
+    public function handleVoidCommand(string $chatId, string $query = ''): void
+    {
+        if (!empty($query)) {
+            $this->sendActiveTransactionsForVoid($chatId, null, $query);
+        } else {
+            $this->sendActiveTransactionsForVoid($chatId);
+        }
+    }
+
+    /**
+     * Tampilkan daftar transaksi hari ini yang dapat dibatalkan (Flow B).
+     */
+    public function sendActiveTransactionsForVoid(string $chatId, ?int $messageId = null, string $search = ''): void
+    {
+        $today = Carbon::today();
+        $dateFormatted = Carbon::now()->translatedFormat('d M Y');
+
+        $query = Transaction::whereDate('created_at', $today)
+            ->where(function ($q) {
+                $q->where('status', 'completed')
+                  ->orWhere(function ($sq) {
+                      $sq->where('status', 'pending')
+                         ->where('order_source', 'self_order')
+                         ->where('payment_status', 'paid');
+                  });
+            })
+            ->where('status', '!=', 'cancelled');
+
+        if (!empty($search)) {
+            $cleanSearch = ltrim($search, '#');
+            $query->where('invoice_number', 'like', "%{$cleanSearch}%");
+        }
+
+        $activeTransactions = $query->orderBy('created_at', 'desc')->take(6)->get();
+
+        $text = "🚫 <b>BATALKAN NOTA (VOID PESANAN)</b>\n";
+        $text .= "📅 {$dateFormatted}\n";
+        $text .= "────────────────────\n";
+
+        if ($activeTransactions->isEmpty()) {
+            if (!empty($search)) {
+                $text .= "<i>Tidak ditemukan transaksi aktif dengan nota \"{$search}\" hari ini.</i>\n\n";
+            } else {
+                $text .= "<i>Tidak ada transaksi aktif yang dapat dibatalkan hari ini.</i>\n\n";
+            }
+            $text .= "<i>(Hanya transaksi yang belum dibatalkan yang bisa di-void).</i>\n";
+            $text .= "────────────────────";
+
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📋 Lihat Log Void Hari Ini', 'callback_data' => 'cmd_void'],
+                        ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+                    ],
+                    [
+                        ['text' => '🗑️ Tutup', 'callback_data' => 'cmd_close'],
+                    ],
+                ],
+            ];
+
+            $this->deliverResponse($chatId, $text, $keyboard, $messageId);
+            return;
+        }
+
+        $text .= "Pilih nota yang ingin dibatalkan:\n\n";
+        $buttons = [];
+
+        foreach ($activeTransactions as $tx) {
+            $invoice = htmlspecialchars($tx->invoice_number);
+            $nominal = number_format((float) $tx->total, 0, ',', '.');
+            $time = Carbon::parse($tx->created_at)->format('H:i');
+            $type = $tx->order_type ? ucwords(str_replace('_', ' ', $tx->order_type)) : 'Order';
+            $cust = !empty($tx->customer_name) ? " • " . htmlspecialchars($tx->customer_name) : '';
+
+            $text .= "• <code>#{$invoice}</code> [{$time}] Rp {$nominal} ({$type}{$cust})\n";
+
+            $btnLabel = "❌ Void #{$invoice} (Rp {$nominal})";
+            $buttons[] = [
+                ['text' => $btnLabel, 'callback_data' => "void_req_{$tx->id}"],
+            ];
+        }
+
+        $buttons[] = [
+            ['text' => '📋 Log Void', 'callback_data' => 'cmd_void'],
+            ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+        ];
+        $buttons[] = [
+            ['text' => '🗑️ Tutup Pesan', 'callback_data' => 'cmd_close'],
+        ];
+
+        $text .= "────────────────────";
+
+        $this->deliverResponse($chatId, $text, ['inline_keyboard' => $buttons], $messageId);
+    }
+
+    /**
+     * Tampilkan konfirmasi dan opsi alasan pembatalan nota (Flow A & B).
+     */
+    public function handleVoidRequest(string $chatId, int $txId, ?int $messageId, string $callbackId, string $fromName): void
+    {
+        $transaction = Transaction::with(['user', 'details.product'])->find($txId);
+
+        if (!$transaction) {
+            $this->telegramService->answerCallbackQuery($callbackId, 'Nota tidak ditemukan di sistem.', true);
+            return;
+        }
+
+        if ($transaction->status === 'cancelled') {
+            $transaction->load(['cancelledBy', 'user', 'details.product.category', 'shift']);
+            $setting = $this->telegramService->getSetting();
+            $voidAlertText = $this->telegramService->formatVoidMessage($transaction, $setting);
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📋 Log Void', 'callback_data' => 'cmd_void'],
+                        ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+                    ],
+                ],
+            ];
+            $this->deliverResponse($chatId, $voidAlertText, $keyboard, $messageId);
+            $this->telegramService->answerCallbackQuery($callbackId, 'Nota ini sudah dibatalkan sebelumnya.', true);
+            return;
+        }
+
+        $invoice = htmlspecialchars($transaction->invoice_number);
+        $nominal = number_format((float) $transaction->total, 0, ',', '.');
+        $time = Carbon::parse($transaction->created_at)->translatedFormat('d M Y, H:i') . ' WIB';
+        $cashier = htmlspecialchars($transaction->user?->name ?? 'Kasir');
+        $orderType = ucwords(str_replace('_', ' ', $transaction->order_type ?? 'dine in'));
+
+        $text = "⚠️ <b>KONFIRMASI PEMBATALAN NOTA (VOID)</b>\n";
+        $text .= "────────────────────\n";
+        $text .= "📄 Nota    : <code>#{$invoice}</code>\n";
+        $text .= "🕒 Waktu   : {$time}\n";
+        $text .= "👤 Kasir   : {$cashier}\n";
+        $text .= "📦 Layanan : {$orderType}\n";
+        $text .= "💰 Total   : <b>Rp {$nominal}</b>\n";
+        $text .= "────────────────────\n";
+        $text .= "Pilih alasan pembatalan di bawah ini:";
+
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '📝 Salah Input Kasir', 'callback_data' => "void_do_{$txId}_salah_input"],
+                    ['text' => '👤 Pelanggan Batal', 'callback_data' => "void_do_{$txId}_pelanggan_batal"],
+                ],
+                [
+                    ['text' => '🔄 Double Transaksi', 'callback_data' => "void_do_{$txId}_double_trx"],
+                    ['text' => '❓ Alasan Lainnya', 'callback_data' => "void_do_{$txId}_lainnya"],
+                ],
+                [
+                    ['text' => '🔙 Batalkan / Jangan Hapus', 'callback_data' => "void_cancel_{$txId}"],
+                    ['text' => '📋 Daftar Nota Lain', 'callback_data' => "menu_void_list"],
+                ],
+            ],
+        ];
+
+        $this->deliverResponse($chatId, $text, $keyboard, $messageId);
+        $this->telegramService->answerCallbackQuery($callbackId, 'Pilih alasan pembatalan nota');
+    }
+
+    /**
+     * Batalkan dialog void dan kembalikan tampilan nota seperti semula.
+     */
+    public function handleVoidCancel(string $chatId, int $txId, ?int $messageId, string $callbackId): void
+    {
+        $transaction = Transaction::with(['details.product.category', 'user', 'shift', 'cancelledBy'])->find($txId);
+
+        if (!$transaction) {
+            $this->telegramService->answerCallbackQuery($callbackId, 'Transaksi tidak ditemukan.', true);
+            return;
+        }
+
+        $setting = $this->telegramService->getSetting();
+
+        if ($transaction->status === 'cancelled') {
+            $voidAlertText = $this->telegramService->formatVoidMessage($transaction, $setting);
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📋 Log Void', 'callback_data' => 'cmd_void'],
+                        ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+                    ],
+                ],
+            ];
+            $this->deliverResponse($chatId, $voidAlertText, $keyboard, $messageId);
+            $this->telegramService->answerCallbackQuery($callbackId, 'Nota sudah dibatalkan sebelumnya.');
+            return;
+        }
+
+        $text = $this->telegramService->formatTransactionMessage($transaction, $setting);
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '🚫 Batalkan Nota (Void)', 'callback_data' => 'void_req_' . $transaction->id],
+                ],
+            ],
+        ];
+
+        $this->deliverResponse($chatId, $text, $keyboard, $messageId);
+        $this->telegramService->answerCallbackQuery($callbackId, 'Pembatalan nota dibatalkan.');
+    }
+
+    /**
+     * Eksekusi pembatalan nota (Void) di database secara atomic dan recalculate shift.
+     */
+    public function handleVoidExecution(string $chatId, int $txId, string $reasonKey, ?int $messageId, string $callbackId, string $fromName): void
+    {
+        $reasonMap = [
+            'salah_input' => 'Salah Input Menu/Item oleh Kasir',
+            'pelanggan_batal' => 'Pelanggan Membatalkan Pesanan',
+            'double_trx' => 'Double Transaksi / Salah Cetak',
+            'lainnya' => 'Dibatalkan oleh Owner/Admin via Telegram',
+        ];
+        $reasonText = $reasonMap[$reasonKey] ?? 'Dibatalkan oleh Owner/Admin via Telegram';
+
+        DB::beginTransaction();
+        try {
+            $transaction = Transaction::with(['shift', 'user', 'details.product.category'])->lockForUpdate()->find($txId);
+
+            if (!$transaction) {
+                DB::rollBack();
+                $this->telegramService->answerCallbackQuery($callbackId, 'Transaksi tidak ditemukan di database.', true);
+                return;
+            }
+
+            if ($transaction->status === 'cancelled') {
+                DB::rollBack();
+                $this->telegramService->answerCallbackQuery($callbackId, 'Transaksi ini sudah dibatalkan sebelumnya.', true);
+                $transaction->load(['cancelledBy', 'user', 'details.product.category', 'shift']);
+                $setting = $this->telegramService->getSetting();
+                $voidAlertText = $this->telegramService->formatVoidMessage($transaction, $setting);
+                $keyboard = [
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '📋 Log Void', 'callback_data' => 'cmd_void'],
+                            ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+                        ],
+                    ],
+                ];
+                $this->deliverResponse($chatId, $voidAlertText, $keyboard, $messageId);
+                return;
+            }
+
+            $adminUser = \App\Models\User::where('role', 'admin')->first() ?? \App\Models\User::first();
+
+            $transaction->status = 'cancelled';
+            $transaction->cancelled_at = now();
+            $transaction->cancelled_by = $adminUser ? $adminUser->id : null;
+            $transaction->cancelled_reason = $reasonText . ' (via Telegram oleh ' . ($fromName ?: 'Owner') . ')';
+            $transaction->save();
+
+            // Hitung ulang omset dan laci shift kasir secara atomic
+            if ($transaction->shift) {
+                $transaction->shift->recalculateTotals();
+            }
+
+            DB::commit();
+
+            // Tampilkan popup notifikasi sukses di layar HP owner
+            $this->telegramService->answerCallbackQuery($callbackId, "✅ Nota #{$transaction->invoice_number} BERHASIL DIBATALKAN!", true);
+
+            // Perbarui pesan Telegram menjadi format alert Void resmi dengan tombol navigasi
+            $transaction->load(['cancelledBy', 'user', 'details.product.category', 'shift']);
+            $setting = $this->telegramService->getSetting();
+            $voidAlertText = $this->telegramService->formatVoidMessage($transaction, $setting);
+
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📋 Log Void', 'callback_data' => 'cmd_void'],
+                        ['text' => '🏠 Menu Utama', 'callback_data' => 'menu_main'],
+                    ],
+                ],
+            ];
+
+            $this->deliverResponse($chatId, $voidAlertText, $keyboard, $messageId);
+
+            // Jika dieksekusi di chat pribadi dan ada group notifikasi toko terpisah, kirim alert ke group toko
+            $settingChatId = $this->telegramService->getChatId($setting);
+            if ($settingChatId && (string) $settingChatId !== (string) $chatId) {
+                $this->telegramService->sendVoidNotification($transaction);
+            }
+
+            Log::info("Transaction {$transaction->invoice_number} successfully voided via Telegram by {$fromName}");
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Telegram void execution failed: ' . $e->getMessage());
+            $this->telegramService->answerCallbackQuery($callbackId, 'Gagal memproses void: ' . $e->getMessage(), true);
+        }
     }
 }
