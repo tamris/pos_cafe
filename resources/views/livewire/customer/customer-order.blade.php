@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-[#f8faf9] flex flex-col justify-between pb-28 lg:pb-12 text-slate-800">
+<div class="min-h-screen bg-[#faf8f5] flex flex-col justify-between pb-28 lg:pb-12 text-slate-800 selection:bg-[#0e382c] selection:text-white">
     
     {{-- ========================================================================= --}}
     {{-- 1. FORE COFFEE SIGNATURE HEADER (SPACIOUS & LUXURIOUS)                    --}}
@@ -35,13 +35,12 @@
                     </h1>
                 </div>
 
-                {{-- Action Buttons: Beranda & Riwayat Pesanan --}}
+                {{-- Action Buttons: Riwayat Pesanan --}}
                 @php
                     $activeOrdersCount = $this->activeOrders->count();
                     $activeOrder = $this->activeOrders->first();
                 @endphp
                 <div class="shrink-0 flex items-center gap-2">
-
                     <button type="button" 
                             wire:click="openHistoryModal"
                             class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-left flex items-center gap-2 shadow-sm relative cursor-pointer">
@@ -131,7 +130,6 @@
                 <a href="{{ route('customer.status', $activeOrder->order_token) }}" 
                    class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs shrink-0 shadow-2xs flex items-center gap-1.5">
                     <span>Cek Status</span>
-                  
                 </a>
             </div>
         </div>
@@ -174,11 +172,11 @@
             <div class="lg:col-span-8 space-y-4">
                 
                 {{-- Sticky Category Chips (Fore Clean Style) --}}
-                <div class="sticky top-[180px] sm:top-[170px] z-20 bg-[#f8faf9]/95 backdrop-blur-md py-2 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+                <div class="sticky top-[180px] sm:top-[170px] z-20 bg-[#faf8f5]/95 backdrop-blur-md py-2.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
                     <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
                         <button type="button" 
                                 wire:click="clearCategory"
-                                class="px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap flex items-center gap-1.5 {{ empty($selectedCategory) ? 'bg-[#0e382c] text-white shadow-xs' : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50' }}">
+                                class="px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap flex items-center gap-1.5 transition-all {{ empty($selectedCategory) ? 'bg-[#0e382c] text-white shadow-md shadow-[#0e382c]/20' : 'bg-white border border-stone-200/80 text-stone-700 hover:bg-stone-50' }}">
                             <i class="fas fa-border-all text-[11px]"></i>
                             <span>Semua Menu</span>
                         </button>
@@ -186,9 +184,9 @@
                         @foreach($categories as $category)
                             <button type="button" 
                                     wire:click="selectCategory({{ $category->id }})"
-                                    class="px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap flex items-center gap-1.5 {{ $selectedCategory == $category->id ? 'bg-[#0e382c] text-white shadow-xs' : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50' }}">
+                                    class="px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap flex items-center gap-1.5 transition-all {{ $selectedCategory == $category->id ? 'bg-[#0e382c] text-white shadow-md shadow-[#0e382c]/20' : 'bg-white border border-stone-200/80 text-stone-700 hover:bg-stone-50' }}">
                                 <span>{{ $category->name }}</span>
-                                <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold {{ $selectedCategory == $category->id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500' }}">
+                                <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold {{ $selectedCategory == $category->id ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500' }}">
                                     {{ $category->products->count() }}
                                 </span>
                             </button>
@@ -198,12 +196,12 @@
 
                 {{-- Product List Grid (ENTIRE CARD IS CLICKABLE - NO ANIMATION DELAY) --}}
                 @if($products->isEmpty())
-                    <div class="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs my-6">
-                        <div class="w-16 h-16 bg-emerald-50 text-[#0e382c] rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <div class="bg-white rounded-3xl p-12 text-center border border-stone-200/80 shadow-xs my-6">
+                        <div class="w-16 h-16 bg-stone-50 border border-stone-200/80 text-[#0e382c] rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-2xs">
                             <i class="fas fa-mug-hot"></i>
                         </div>
-                        <h3 class="text-base font-bold text-slate-800 font-heading">Menu Tidak Ditemukan</h3>
-                        <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                        <h3 class="text-base font-bold text-slate-900 font-heading">Menu Tidak Ditemukan</h3>
+                        <p class="text-xs text-stone-500 mt-1 max-w-xs mx-auto">
                             @if(!empty($search))
                                 Tidak ada hasil untuk kata kunci "{{ $search }}". Silakan coba kata kunci lain.
                             @else
@@ -222,25 +220,25 @@
                                     }
                                 }
                             @endphp
-                            {{-- WHOLE CARD CLICKABLE (INSTANT RESPONSE, NO BORDER/HOVER ANIMATIONS) --}}
+                            {{-- WHOLE CARD CLICKABLE (INSTANT RESPONSE WITH SMOOTH LIFT) --}}
                             <div wire:click="openCustomizeModal({{ $product->id }})"
-                                 class="bg-white rounded-3xl p-3 border border-slate-200/80 shadow-xs flex flex-col justify-between relative cursor-pointer select-none">
+                                 class="bg-white rounded-3xl p-3 sm:p-3.5 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between relative cursor-pointer select-none group">
                                 
                                 {{-- Image Thumbnail Container --}}
-                                <div class="w-full aspect-square rounded-2xl bg-slate-100 overflow-hidden relative mb-2.5">
-                                    {{-- Fore-Style Badge: Best Seller, Top Ordered, Most Popular --}}
+                                <div class="w-full aspect-square rounded-2xl bg-stone-50 overflow-hidden relative mb-2.5 border border-stone-100">
+                                    {{-- Fore-Style Badge: Best Seller, Top Ordered, Most Popular with Sweep Shine --}}
                                     @if(in_array($product->id, $bestSellerIds ?? []))
-                                        <div class="absolute top-2 left-2 z-10 bg-[#b88646] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                                        <div class="absolute top-2 left-2 z-10 bg-[#b88646] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1.5 leading-none badge-shine">
                                             <i class="fas fa-star text-[9px] text-amber-100"></i>
                                             <span>Best Seller</span>
                                         </div>
                                     @elseif(in_array($product->id, $topOrderIds ?? []))
-                                        <div class="absolute top-2 left-2 z-10 bg-[#0e382c] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                                        <div class="absolute top-2 left-2 z-10 bg-[#0e382c] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1.5 leading-none badge-shine">
                                             <i class="fas fa-award text-[9px] text-emerald-300"></i>
                                             <span>Top Ordered</span>
                                         </div>
                                     @elseif(in_array($product->id, $mostPopularIds ?? []))
-                                        <div class="absolute top-2 left-2 z-10 bg-[#784421] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                                        <div class="absolute top-2 left-2 z-10 bg-[#784421] text-white text-[9.5px] font-black px-2.5 py-1 rounded-full shadow-xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1.5 leading-none badge-shine">
                                             <i class="fas fa-thumbs-up text-[9px] text-amber-100"></i>
                                             <span>Most Popular</span>
                                         </div>
@@ -256,11 +254,11 @@
                                     @if(!empty($product->image))
                                         <img src="{{ asset('storage/' . $product->image) }}" 
                                              alt="{{ $product->name }}" 
-                                             class="w-full h-full object-cover">
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                     @else
-                                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-gradient-to-br from-slate-50 to-slate-100">
+                                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-stone-50">
                                             <i class="fas fa-coffee text-3xl mb-1 text-slate-300"></i>
-                                            <span class="text-[10px] text-slate-400 font-bold uppercase">{{ $product->category?->name ?? 'Menu' }}</span>
+                                            <span class="text-[10px] text-stone-400 font-bold uppercase">{{ $product->category?->name ?? 'Menu' }}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -271,18 +269,18 @@
                                         <span class="text-[10px] uppercase font-black tracking-wider text-emerald-800 block">
                                             {{ $product->category?->name }}
                                         </span>
-                                        <h3 class="font-extrabold text-slate-900 text-xs sm:text-sm line-clamp-1 font-heading leading-tight mt-0.5" title="{{ $product->name }}">
+                                        <h3 class="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 font-heading group-hover:text-[#0e382c] transition-colors leading-tight mt-0.5" title="{{ $product->name }}">
                                             {{ $product->name }}
                                         </h3>
                                         @if(!empty($product->description))
-                                            <p class="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed hidden xs:block">
+                                            <p class="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed hidden xs:block">
                                                 {{ $product->description }}
                                             </p>
                                         @endif
                                     </div>
 
                                     {{-- Price & Plus Icon --}}
-                                    <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
+                                    <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between gap-1">
                                         <div>
                                             <span class="text-xs sm:text-sm font-black text-slate-900 block font-heading">
                                                 Rp {{ number_format($product->price, 0, ',', '.') }}
@@ -290,8 +288,8 @@
                                         </div>
 
                                         {{-- Plus Icon --}}
-                                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 text-[#0e382c] flex items-center justify-center shadow-2xs">
-                                            <i class="fas fa-plus text-xs"></i>
+                                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-stone-50 border border-stone-200/80 text-[#0e382c] group-hover:bg-[#0e382c] group-hover:text-white group-hover:border-[#0e382c] transition-all flex items-center justify-center shadow-2xs">
+                                            <i class="fas fa-plus text-[10px]"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -300,57 +298,58 @@
                         @endforeach
                     </div>
                 @endif
-
             </div>
 
             {{-- RIGHT COLUMN: TABLET & DESKTOP PERSISTENT CART (>= 1024px) --}}
             <div class="hidden lg:block lg:col-span-4 sticky top-[80px]">
-                <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md flex flex-col max-h-[calc(100vh-100px)]">
+                <div class="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col max-h-[calc(100vh-100px)]">
                     
                     {{-- Cart Header --}}
-                    <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                    <div class="flex items-center justify-between pb-3.5 border-b border-stone-100">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-2xl bg-emerald-50 text-[#0e382c] flex items-center justify-center text-sm font-black">
+                            <div class="w-9 h-9 rounded-2xl bg-stone-50 border border-stone-200/80 text-[#0e382c] flex items-center justify-center text-sm font-black shadow-2xs">
                                 <i class="fas fa-shopping-bag"></i>
                             </div>
                             <div>
                                 <h3 class="font-extrabold text-slate-900 text-sm font-heading">Pesanan Anda</h3>
-                                <span class="text-[11px] text-slate-400 font-medium">{{ $totalItemsInCart }} menu dipilih</span>
+                                <span class="text-[11px] text-stone-400 font-medium">{{ $totalItemsInCart }} menu dipilih</span>
                             </div>
                         </div>
 
                         <button type="button" 
                                 wire:click="$set('showIdentityModal', true)" 
-                                class="text-[11px] font-black text-[#0e382c] hover:underline">
+                                class="text-[11px] font-black text-[#0e382c] hover:underline cursor-pointer">
                             {{ $orderType === 'dine_in' ? (!empty($tableNumber) ? 'Meja ' . $tableNumber : 'Pilih Meja') : 'Takeaway' }}
                         </button>
                     </div>
 
                     {{-- Customer Identity Mini Bar --}}
-                    <div class="my-3 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200/60 flex items-center justify-between text-xs">
+                    <div class="my-3 p-3 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-center justify-between text-xs">
                         <div class="truncate pr-2">
-                            <span class="text-[10px] text-emerald-900/80 uppercase font-bold block">Pemesan</span>
-                            <strong class="text-slate-900 font-black truncate block">{{ $customerName ?: 'Belum diisi' }}</strong>
+                            <span class="text-[10px] text-stone-400 uppercase font-bold tracking-wider block">Pemesan</span>
+                            <strong class="text-slate-900 font-black truncate block mt-0.5">{{ $customerName ?: 'Belum diisi' }}</strong>
                         </div>
-                        <button type="button" wire:click="$set('showIdentityModal', true)" class="px-2.5 py-1 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-[11px] font-extrabold shadow-2xs hover:bg-emerald-50 shrink-0">
+                        <button type="button" wire:click="$set('showIdentityModal', true)" class="px-2.5 py-1 rounded-xl bg-white border border-stone-200/90 text-stone-700 hover:bg-stone-50 text-[11px] font-bold shadow-2xs shrink-0 cursor-pointer transition">
                             Ubah
                         </button>
                     </div>
 
                     {{-- Cart Items Scrollable List --}}
                     @if(empty($cart))
-                        <div class="py-12 text-center text-slate-400">
-                            <i class="fas fa-shopping-basket text-3xl mb-2 text-slate-300"></i>
-                            <p class="text-xs font-bold">Keranjang masih kosong</p>
-                            <span class="text-[11px] text-slate-400 block mt-0.5">Pilih menu favoritmu di samping</span>
+                        <div class="py-12 text-center text-stone-400">
+                            <div class="w-12 h-12 rounded-2xl bg-stone-50 text-stone-300 flex items-center justify-center mx-auto mb-2 text-xl">
+                                <i class="fas fa-shopping-basket"></i>
+                            </div>
+                            <p class="text-xs font-bold text-stone-700">Keranjang masih kosong</p>
+                            <span class="text-[11px] text-stone-400 block mt-0.5">Pilih menu favoritmu di samping</span>
                         </div>
                     @else
                         <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 my-2 max-h-[320px]">
                             @foreach($cart as $key => $item)
-                                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-start justify-between gap-2.5">
+                                <div class="p-3 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-start justify-between gap-2.5">
                                     <div class="flex-1 min-w-0">
                                         <h4 class="font-black text-slate-900 text-xs font-heading truncate">{{ $item['name'] }}</h4>
-                                        <span class="text-xs font-black text-emerald-800 block mt-0.5">
+                                        <span class="text-xs font-black text-slate-900 block mt-0.5 font-heading">
                                             Rp {{ number_format($item['price'], 0, ',', '.') }}
                                         </span>
                                         @if(!empty($item['addons']))
@@ -360,14 +359,14 @@
                                                         $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
                                                         $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
                                                     @endphp
-                                                    <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                    <span class="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white text-emerald-800 border border-stone-200">
                                                         + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
                                                     </span>
                                                 @endforeach
                                             </div>
                                         @endif
                                         @if(!empty($item['notes']))
-                                            <div class="text-[11px] text-slate-500 font-medium mt-0.5">
+                                            <div class="text-[11px] text-stone-500 font-medium mt-0.5">
                                                 {{ $item['notes'] }}
                                             </div>
                                         @endif
@@ -380,16 +379,16 @@
                                     </div>
 
                                     {{-- Quantity Controls --}}
-                                    <div class="flex items-center space-x-1.5 bg-white px-2 py-1 rounded-xl border border-slate-200 shrink-0">
+                                    <div class="flex items-center space-x-1.5 bg-white px-2 py-1 rounded-xl border border-stone-200 shadow-2xs shrink-0">
                                         <button type="button" 
                                                 wire:click="updateQuantity('{{ $key }}', 'decrease')"
-                                                class="w-5 h-5 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold text-xs">
+                                                class="w-5 h-5 rounded-lg text-stone-600 hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
                                             <i class="fas fa-minus text-[9px]"></i>
                                         </button>
-                                        <span class="font-black text-xs text-slate-900 w-4 text-center">{{ $item['quantity'] }}</span>
+                                        <span class="font-black text-xs text-slate-900 w-4 text-center font-heading">{{ $item['quantity'] }}</span>
                                         <button type="button" 
                                                 wire:click="updateQuantity('{{ $key }}', 'increase')"
-                                                class="w-5 h-5 rounded-lg text-emerald-700 hover:bg-emerald-50 flex items-center justify-center font-bold text-xs">
+                                                class="w-5 h-5 rounded-lg text-[#0e382c] hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
                                             <i class="fas fa-plus text-[9px]"></i>
                                         </button>
                                     </div>
@@ -398,7 +397,7 @@
                         </div>
 
                         {{-- Calculation Summary --}}
-                        <div class="border-t border-slate-100 pt-3 space-y-1.5 text-xs text-slate-600">
+                        <div class="border-t border-stone-100 pt-3 space-y-1.5 text-xs text-stone-600">
                             <div class="flex justify-between">
                                 <span>Subtotal</span>
                                 <span class="font-bold text-slate-900">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
@@ -409,9 +408,9 @@
                                     <span class="font-bold text-slate-900">Rp {{ number_format($taxAmount, 0, ',', '.') }}</span>
                                 </div>
                             @endif
-                            <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+                            <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-stone-200">
                                 <span>Total Pembayaran</span>
-                                <span class="text-[#0e382c] font-heading">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                                <span class="text-[#0e382c] font-heading font-black">Rp {{ number_format($total, 0, ',', '.') }}</span>
                             </div>
                         </div>
 
@@ -420,7 +419,7 @@
                             @if(!$isStoreOpen)
                                 <button type="button" 
                                         disabled
-                                        class="w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-black text-xs shadow-none cursor-not-allowed flex items-center justify-center gap-2">
+                                        class="w-full py-3.5 rounded-2xl bg-stone-200 text-stone-400 font-black text-xs shadow-none cursor-not-allowed flex items-center justify-center gap-2">
                                     <i class="fas fa-lock text-xs"></i>
                                     <span>Kafe Sedang Tutup</span>
                                 </button>
@@ -433,8 +432,8 @@
                                 </button>
                             @elseif(empty($customerName))
                                 <button type="button" 
-                                        wire:click="openIdentityModal"
-                                        class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2">
+                                        wire:click="openIdentityModal" 
+                                        class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs shadow-md shadow-[#0e382c]/20 flex items-center justify-center gap-2 transition cursor-pointer">
                                     <i class="fas fa-user-edit"></i>
                                     <span>Isi Nama Pemesan Dulu</span>
                                 </button>
@@ -442,10 +441,10 @@
                                 <button type="button" 
                                         wire:click="proceedToCheckout"
                                         wire:loading.attr="disabled"
-                                        class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-lg shadow-[#0e382c]/25 transition flex items-center justify-center gap-2">
+                                        class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-lg shadow-[#0e382c]/25 transition flex items-center justify-center gap-2 group cursor-pointer">
                                     <span wire:loading.remove>Lanjut ke Pembayaran QRIS</span>
                                     <span wire:loading><i class="fas fa-spinner fa-spin mr-1"></i> Memproses...</span>
-                                    <i wire:loading.remove class="fas fa-arrow-right text-[10px]"></i>
+                                    <i wire:loading.remove class="fas fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
                                 </button>
                             @endif
                         </div>
@@ -462,12 +461,12 @@
     {{-- ========================================================================= --}}
     @if(!empty($cart))
         <div class="lg:hidden fixed bottom-4 left-0 right-0 z-40 px-4 max-w-md mx-auto">
-            <div class="bg-[#0e382c] text-white p-2.5 pl-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-emerald-900/60">
+            <div class="bg-[#0e382c]/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl flex items-center justify-between border border-emerald-800/60">
                 
                 <div class="flex items-center gap-3 cursor-pointer" wire:click="openCartDrawer">
                     <div class="relative w-10 h-10 rounded-xl bg-white/15 text-white flex items-center justify-center font-bold text-sm shadow-inner">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center font-black border-2 border-[#0e382c]">
+                        <i class="fas fa-shopping-bag text-emerald-300"></i>
+                        <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-400 text-[#0e382c] text-[10px] rounded-full flex items-center justify-center font-black border-2 border-[#0e382c]">
                             {{ $totalItemsInCart }}
                         </span>
                     </div>
@@ -481,7 +480,7 @@
 
                 <button type="button" 
                         wire:click="openCartDrawer"
-                        class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-[#0e382c] text-xs font-black shadow-md flex items-center gap-1.5 transition">
+                        class="px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-[#0e382c] text-xs font-black shadow-sm flex items-center gap-1.5 transition cursor-pointer">
                     <span>Lihat Pesanan</span>
                     <i class="fas fa-arrow-right text-[10px]"></i>
                 </button>
@@ -494,12 +493,12 @@
     {{-- ========================================================================= --}}
     @if($showIdentityModal)
         <div class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs">
-            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden"></div>
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-stone-200/80 relative max-h-[90vh] overflow-y-auto animate-pop">
+                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mb-4 sm:hidden cursor-pointer" wire:click="closeIdentityModal"></div>
 
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                    <h3 class="font-extrabold text-slate-900 text-base font-heading">Informasi Pemesan</h3>
-                    <button type="button" wire:click="closeIdentityModal" class="text-slate-400 hover:text-slate-600 p-1">
+                <div class="flex items-center justify-between pb-3.5 border-b border-stone-100 mb-4">
+                    <h3 class="font-black text-slate-900 text-base font-heading">Informasi Pemesan</h3>
+                    <button type="button" wire:click="closeIdentityModal" class="text-stone-400 hover:text-stone-600 p-1 cursor-pointer">
                         <i class="fas fa-times text-base"></i>
                     </button>
                 </div>
@@ -507,19 +506,19 @@
                 <div class="space-y-4">
                     {{-- Order Type Toggle --}}
                     <div>
-                        <label class="block text-xs font-black text-slate-700 mb-2 uppercase tracking-wide">Pilihan Santap</label>
+                        <label class="block text-xs font-black text-stone-700 mb-2 uppercase tracking-wide">Pilihan Santap</label>
                         <div class="grid grid-cols-2 gap-2.5">
                             <button type="button" 
                                     wire:click="setOrderType('dine_in')"
-                                    class="p-3.5 rounded-2xl border-2 text-center flex flex-col items-center justify-center gap-1.5 {{ $orderType === 'dine_in' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] font-black shadow-xs' : 'border-slate-200 text-slate-600 hover:bg-slate-50' }}">
-                                <i class="fas fa-chair text-lg {{ $orderType === 'dine_in' ? 'text-[#0e382c]' : 'text-slate-400' }}"></i>
+                                    class="p-3.5 rounded-2xl border-2 text-center flex flex-col items-center justify-center gap-1.5 transition cursor-pointer {{ $orderType === 'dine_in' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] font-black shadow-xs' : 'border-stone-200 text-stone-600 hover:bg-stone-50' }}">
+                                <i class="fas fa-chair text-lg {{ $orderType === 'dine_in' ? 'text-[#0e382c]' : 'text-stone-400' }}"></i>
                                 <span class="text-xs">Makan di Tempat</span>
                             </button>
 
                             <button type="button" 
                                     wire:click="setOrderType('take_away')"
-                                    class="p-3.5 rounded-2xl border-2 text-center flex flex-col items-center justify-center gap-1.5 {{ $orderType === 'take_away' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] font-black shadow-xs' : 'border-slate-200 text-slate-600 hover:bg-slate-50' }}">
-                                <i class="fas fa-bag-shopping text-lg {{ $orderType === 'take_away' ? 'text-[#0e382c]' : 'text-slate-400' }}"></i>
+                                    class="p-3.5 rounded-2xl border-2 text-center flex flex-col items-center justify-center gap-1.5 transition cursor-pointer {{ $orderType === 'take_away' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] font-black shadow-xs' : 'border-stone-200 text-stone-600 hover:bg-stone-50' }}">
+                                <i class="fas fa-bag-shopping text-lg {{ $orderType === 'take_away' ? 'text-[#0e382c]' : 'text-stone-400' }}"></i>
                                 <span class="text-xs">Bawa Pulang (Takeaway)</span>
                             </button>
                         </div>
@@ -527,36 +526,36 @@
 
                     {{-- Customer Name --}}
                     <div>
-                        <label class="block text-xs font-black text-slate-700 mb-1.5">Nama Pemesan <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-black text-stone-700 mb-1.5">Nama Pemesan <span class="text-rose-500">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-sm">
                                 <i class="fas fa-user"></i>
                             </span>
                             <input type="text" 
                                    wire:model="customerName" 
                                    placeholder="Nama Anda" 
-                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
+                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0e382c] focus:border-[#0e382c] transition">
                         </div>
                         @error('customerName') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     {{-- Customer Phone (Optional) --}}
                     <div>
-                        <label class="block text-xs font-black text-slate-700 mb-1.5">No. WhatsApp <span class="text-slate-400 font-normal text-[11px]">(Opsional)</span></label>
+                        <label class="block text-xs font-black text-stone-700 mb-1.5">No. WhatsApp <span class="text-stone-400 font-normal text-[11px]">(Opsional)</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-sm">
                                 <i class="fab fa-whatsapp"></i>
                             </span>
                             <input type="tel" 
                                    wire:model="customerPhone" 
                                    placeholder="081234567890" 
-                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600">
+                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0e382c] focus:border-[#0e382c] transition">
                         </div>
                     </div>
 
                     {{-- Info Banner Pick-Up Counter --}}
-                    <div class="p-3 bg-emerald-50/80 border border-emerald-200/70 rounded-2xl flex items-start gap-2.5 text-xs text-[#0e382c]">
-                        <i class="fas fa-bullhorn text-emerald-600 mt-0.5 text-[11px]"></i>
+                    <div class="p-3 bg-[#faf8f5] border border-stone-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-stone-700">
+                        <i class="fas fa-bullhorn text-[#0e382c] mt-0.5 text-[11px]"></i>
                         <span class="leading-snug">Pesanan yang sudah siap dapat diambil di <strong>Pick-up Counter</strong> saat nomor pesananmu dipanggil.</span>
                     </div>
                 </div>
@@ -564,7 +563,7 @@
                 <div class="mt-6">
                     <button type="button" 
                             wire:click="closeIdentityModal" 
-                            class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs shadow-md transition">
+                            class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-md shadow-[#0e382c]/20 transition cursor-pointer">
                         Simpan Informasi
                     </button>
                 </div>
@@ -577,27 +576,27 @@
     {{-- ========================================================================= --}}
     @if($showCustomizeModal && $selectedProduct)
         <div class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs">
-            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden"></div>
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-stone-200/80 relative max-h-[90vh] overflow-y-auto animate-pop">
+                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mb-4 sm:hidden cursor-pointer" wire:click="closeCustomizeModal"></div>
 
-                <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+                <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-stone-100">
                     <div>
                         <div class="flex items-center gap-1.5 mb-1">
                             <span class="text-[10px] uppercase font-black text-emerald-800">
                                 {{ $editingCartKey ? 'Ubah Pesanan • ' : '' }}{{ $selectedProduct->category?->name }}
                             </span>
                             @if(in_array($selectedProduct->id, $bestSellerIds ?? []))
-                                <span class="bg-[#b88646] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1">
+                                <span class="bg-[#b88646] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1 badge-shine">
                                     <i class="fas fa-star text-[8px] text-amber-100"></i>
                                     <span>Best Seller</span>
                                 </span>
                             @elseif(in_array($selectedProduct->id, $topOrderIds ?? []))
-                                <span class="bg-[#0e382c] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1">
+                                <span class="bg-[#0e382c] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1 badge-shine">
                                     <i class="fas fa-award text-[8px] text-emerald-300"></i>
                                     <span>Top Ordered</span>
                                 </span>
                             @elseif(in_array($selectedProduct->id, $mostPopularIds ?? []))
-                                <span class="bg-[#784421] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1">
+                                <span class="bg-[#784421] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1 badge-shine">
                                     <i class="fas fa-thumbs-up text-[8px] text-amber-100"></i>
                                     <span>Most Popular</span>
                                 </span>
@@ -608,7 +607,7 @@
                             Rp {{ number_format($selectedProduct->price, 0, ',', '.') }}
                         </span>
                     </div>
-                    <button type="button" wire:click="closeCustomizeModal" class="text-slate-400 hover:text-slate-600 p-1">
+                    <button type="button" wire:click="closeCustomizeModal" class="text-stone-400 hover:text-stone-600 p-1 cursor-pointer">
                         <i class="fas fa-times text-base"></i>
                     </button>
                 </div>
@@ -622,19 +621,19 @@
                     @if($isBeverage)
                         {{-- Drink Serving Type: Ice vs Hot --}}
                         <div>
-                            <label class="block text-xs font-black text-slate-700 mb-2">Varian Sajian</label>
+                            <label class="block text-xs font-black text-stone-700 mb-2">Varian Sajian</label>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <button type="button" 
                                         wire:click="$set('drinkType', 'Ice')"
-                                        class="py-2.5 px-3 rounded-2xl text-xs font-black text-center border-2 flex items-center justify-center gap-2 {{ $drinkType === 'Ice' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-slate-200 text-slate-600 hover:bg-slate-50' }}">
-                                    <i class="fas fa-snowflake text-xs {{ $drinkType === 'Ice' ? 'text-emerald-700' : 'text-slate-400' }}"></i>
+                                        class="py-2.5 px-3 rounded-2xl text-xs font-black text-center border-2 flex items-center justify-center gap-2 transition cursor-pointer {{ $drinkType === 'Ice' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-600 hover:bg-stone-50' }}">
+                                    <i class="fas fa-snowflake text-xs {{ $drinkType === 'Ice' ? 'text-emerald-700' : 'text-stone-400' }}"></i>
                                     <span>Ice (Dingin)</span>
                                 </button>
 
                                 <button type="button" 
                                         wire:click="$set('drinkType', 'Hot')"
-                                        class="py-2.5 px-3 rounded-2xl text-xs font-black text-center border-2 flex items-center justify-center gap-2 {{ $drinkType === 'Hot' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-slate-200 text-slate-600 hover:bg-slate-50' }}">
-                                    <i class="fas fa-mug-hot text-xs {{ $drinkType === 'Hot' ? 'text-emerald-700' : 'text-slate-400' }}"></i>
+                                        class="py-2.5 px-3 rounded-2xl text-xs font-black text-center border-2 flex items-center justify-center gap-2 transition cursor-pointer {{ $drinkType === 'Hot' ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-600 hover:bg-stone-50' }}">
+                                    <i class="fas fa-mug-hot text-xs {{ $drinkType === 'Hot' ? 'text-emerald-700' : 'text-stone-400' }}"></i>
                                     <span>Hot (Panas)</span>
                                 </button>
                             </div>
@@ -642,12 +641,12 @@
 
                         {{-- Sugar Level (Tingkat Kemanisan) --}}
                         <div>
-                            <label class="block text-xs font-black text-slate-700 mb-2">Tingkat Kemanisan (Sugar)</label>
+                            <label class="block text-xs font-black text-stone-700 mb-2">Tingkat Kemanisan (Sugar)</label>
                             <div class="grid grid-cols-3 gap-2">
                                 @foreach(['Normal', 'Less Sugar', 'No Sugar'] as $sugar)
                                     <button type="button" 
                                             wire:click="$set('sugarLevel', '{{ $sugar }}')"
-                                            class="py-2.5 px-2 rounded-2xl text-xs font-black text-center border-2 {{ $sugarLevel === $sugar ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+                                            class="py-2.5 px-2 rounded-2xl text-xs font-black text-center border-2 transition cursor-pointer {{ $sugarLevel === $sugar ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-600 hover:bg-stone-50' }}">
                                         {{ $sugar }}
                                     </button>
                                 @endforeach
@@ -657,12 +656,12 @@
                         {{-- Ice Level (Tingkat Es - HANYA MUNCUL JIKA PILIH ICE) --}}
                         @if($drinkType === 'Ice')
                             <div>
-                                <label class="block text-xs font-black text-slate-700 mb-2">Tingkat Es (Ice)</label>
+                                <label class="block text-xs font-black text-stone-700 mb-2">Tingkat Es (Ice)</label>
                                 <div class="grid grid-cols-3 gap-2">
                                     @foreach(['Normal', 'Less Ice', 'No Ice'] as $ice)
                                         <button type="button" 
                                                 wire:click="$set('iceLevel', '{{ $ice }}')"
-                                                class="py-2.5 px-2 rounded-2xl text-xs font-black text-center border-2 {{ $iceLevel === $ice ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+                                                class="py-2.5 px-2 rounded-2xl text-xs font-black text-center border-2 transition cursor-pointer {{ $iceLevel === $ice ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-600 hover:bg-stone-50' }}">
                                             {{ $ice }}
                                         </button>
                                     @endforeach
@@ -686,7 +685,7 @@
                     @if($availableProductAddons->count() > 0)
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <label class="block text-xs font-black text-slate-700">Pilihan Tambahan (Add-ons)</label>
+                                <label class="block text-xs font-black text-stone-700">Pilihan Tambahan (Add-ons)</label>
                                 @if(!empty($selectedAddonIds))
                                     <button type="button" wire:click="$set('selectedAddonIds', [])" class="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer">
                                         Reset Tambahan
@@ -700,9 +699,9 @@
                                     @endphp
                                     <button type="button" 
                                             wire:click="toggleAddon({{ $addon->id }})"
-                                            class="p-2.5 rounded-2xl text-xs font-bold text-left border-2 flex items-center justify-between gap-2 transition cursor-pointer {{ $isAddonSelected ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                                            class="p-2.5 rounded-2xl text-xs font-bold text-left border-2 flex items-center justify-between gap-2 transition cursor-pointer {{ $isAddonSelected ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-700 hover:bg-stone-50' }}">
                                         <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 {{ $isAddonSelected ? 'bg-[#0e382c] border-[#0e382c] text-white' : 'border-slate-300 bg-white' }}">
+                                            <div class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 {{ $isAddonSelected ? 'bg-[#0e382c] border-[#0e382c] text-white' : 'border-stone-300 bg-white' }}">
                                                 @if($isAddonSelected)
                                                     <i class="fas fa-check text-[9px]"></i>
                                                 @endif
@@ -720,26 +719,26 @@
 
                     {{-- Special Instructions / Notes --}}
                     <div>
-                        <label class="block text-xs font-black text-slate-700 mb-1.5">Catatan Khusus (Opsional)</label>
+                        <label class="block text-xs font-black text-stone-700 mb-1.5">Catatan Khusus (Opsional)</label>
                         <textarea wire:model="itemNotes" 
                                   rows="2" 
                                   placeholder="Contoh: Pisahkan gula, jangan terlalu manis, dll..."
-                                  class="w-full p-3 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"></textarea>
+                                  class="w-full p-3 rounded-xl border border-stone-300 text-xs focus:outline-none focus:ring-2 focus:ring-[#0e382c] focus:border-[#0e382c] transition"></textarea>
                     </div>
 
                     {{-- Quantity Selector --}}
-                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                        <span class="text-xs font-black text-slate-700">Jumlah Pesanan:</span>
-                        <div class="flex items-center space-x-3 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between pt-2 border-t border-stone-100">
+                        <span class="text-xs font-black text-stone-700">Jumlah Pesanan:</span>
+                        <div class="flex items-center space-x-3 bg-stone-100 p-1 rounded-xl border border-stone-200">
                             <button type="button" 
                                     wire:click="decrementModalQty"
-                                    class="w-8 h-8 rounded-lg bg-white shadow-xs text-slate-700 hover:bg-slate-200 flex items-center justify-center font-bold text-sm">
+                                    class="w-8 h-8 rounded-lg bg-white shadow-xs text-stone-700 hover:bg-stone-200 flex items-center justify-center font-bold text-sm transition cursor-pointer">
                                 <i class="fas fa-minus text-xs"></i>
                             </button>
-                            <span class="font-extrabold text-sm text-slate-900 w-6 text-center">{{ $modalQty }}</span>
+                            <span class="font-black text-sm text-slate-900 w-6 text-center font-heading">{{ $modalQty }}</span>
                             <button type="button" 
                                     wire:click="incrementModalQty"
-                                    class="w-8 h-8 rounded-lg bg-[#0e382c] shadow-xs text-white hover:bg-[#134e3f] flex items-center justify-center font-bold text-sm">
+                                    class="w-8 h-8 rounded-lg bg-[#0e382c] shadow-xs text-white hover:bg-[#134e3f] flex items-center justify-center font-bold text-sm transition cursor-pointer">
                                 <i class="fas fa-plus text-xs"></i>
                             </button>
                         </div>
@@ -752,7 +751,7 @@
                             wire:click="addConfiguredToCart"
                             class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-md shadow-[#0e382c]/20 flex items-center justify-between px-5 transition cursor-pointer">
                         <span>{{ $editingCartKey ? 'Simpan Perubahan' : 'Tambahkan ke Pesanan' }}</span>
-                        <span>Rp {{ number_format($modalEffectiveUnitPrice * $modalQty, 0, ',', '.') }}</span>
+                        <span class="font-heading">Rp {{ number_format($modalEffectiveUnitPrice * $modalQty, 0, ',', '.') }}</span>
                     </button>
                 </div>
             </div>
@@ -764,34 +763,36 @@
     {{-- ========================================================================= --}}
     @if($showCartDrawer)
         <div class="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-xs">
-            <div class="bg-white w-full max-w-md rounded-t-3xl p-5 shadow-2xl relative max-h-[92vh] flex flex-col">
-                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-3"></div>
+            <div class="bg-white w-full max-w-md rounded-t-3xl p-5 sm:p-6 shadow-2xl border-t border-stone-200/80 relative max-h-[92vh] flex flex-col animate-pop">
+                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mb-3 cursor-pointer" wire:click="closeCartDrawer"></div>
 
                 {{-- Header Drawer --}}
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center justify-between pb-3.5 border-b border-stone-100">
                     <div class="flex items-center gap-2">
-                        <i class="fas fa-shopping-bag text-[#0e382c] text-base"></i>
+                        <div class="w-8 h-8 rounded-xl bg-stone-50 border border-stone-200/80 text-[#0e382c] flex items-center justify-center text-sm font-bold shadow-2xs">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
                         <h3 class="font-extrabold text-slate-900 text-base font-heading">Ringkasan Pesanan</h3>
                     </div>
-                    <button type="button" wire:click="closeCartDrawer" class="text-slate-400 hover:text-slate-600 p-1">
+                    <button type="button" wire:click="closeCartDrawer" class="text-stone-400 hover:text-stone-600 p-1 cursor-pointer">
                         <i class="fas fa-times text-base"></i>
                     </button>
                 </div>
 
                 {{-- Identity Summary in Drawer --}}
-                <div class="my-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between text-xs">
+                <div class="my-3 p-3 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-center justify-between text-xs">
                     <div>
-                        <div class="font-extrabold text-emerald-950">
+                        <div class="font-extrabold text-slate-900">
                             {{ $orderType === 'dine_in' ? 'Makan di Tempat' : 'Bawa Pulang' }}
                             @if($orderType === 'dine_in' && !empty($tableNumber))
-                                <span class="text-emerald-800 font-black">• Meja {{ $tableNumber }}</span>
+                                <span class="text-[#0e382c] font-black">• Meja {{ $tableNumber }}</span>
                             @endif
                         </div>
-                        <div class="text-[11px] text-emerald-800/90">
+                        <div class="text-[11px] text-stone-500 mt-0.5">
                             Pemesan: <strong class="text-slate-900 font-bold">{{ $customerName ?: 'Belum diisi' }}</strong>
                         </div>
                     </div>
-                    <button type="button" wire:click="openIdentityModal" class="px-2.5 py-1 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-[11px] font-black shadow-2xs">
+                    <button type="button" wire:click="openIdentityModal" class="px-2.5 py-1 rounded-xl bg-white border border-stone-200 text-stone-700 text-[11px] font-bold shadow-2xs hover:bg-stone-50 transition cursor-pointer">
                         Ubah
                     </button>
                 </div>
@@ -799,10 +800,10 @@
                 {{-- Cart Items List --}}
                 <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 my-1">
                     @foreach($cart as $key => $item)
-                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-start justify-between gap-3">
+                        <div class="p-3 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-start justify-between gap-3">
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-black text-slate-900 text-xs font-heading truncate">{{ $item['name'] }}</h4>
-                                <span class="text-xs font-black text-emerald-800 block mt-0.5">
+                                <span class="text-xs font-black text-slate-900 block mt-0.5 font-heading">
                                     Rp {{ number_format($item['price'], 0, ',', '.') }}
                                 </span>
                                 @if(!empty($item['addons']))
@@ -812,14 +813,14 @@
                                                 $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
                                                 $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
                                             @endphp
-                                            <span class="inline-flex items-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                            <span class="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white text-emerald-800 border border-stone-200">
                                                 + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
                                             </span>
                                         @endforeach
                                     </div>
                                 @endif
                                 @if(!empty($item['notes']))
-                                    <div class="text-[11px] text-slate-500 font-medium mt-0.5">
+                                    <div class="text-[11px] text-stone-500 font-medium mt-0.5">
                                         {{ $item['notes'] }}
                                     </div>
                                 @endif
@@ -832,16 +833,16 @@
                             </div>
 
                             {{-- Quantity Controller --}}
-                            <div class="flex items-center space-x-1.5 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+                            <div class="flex items-center space-x-1.5 bg-white px-2 py-1 rounded-xl border border-stone-200 shadow-2xs shrink-0">
                                 <button type="button" 
                                         wire:click="updateQuantity('{{ $key }}', 'decrease')"
-                                        class="w-6 h-6 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold text-xs">
+                                        class="w-6 h-6 rounded-lg text-stone-600 hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
                                     <i class="fas fa-minus text-[10px]"></i>
                                 </button>
-                                <span class="font-black text-xs text-slate-900 w-4 text-center">{{ $item['quantity'] }}</span>
+                                <span class="font-black text-xs text-slate-900 w-4 text-center font-heading">{{ $item['quantity'] }}</span>
                                 <button type="button" 
                                         wire:click="updateQuantity('{{ $key }}', 'increase')"
-                                        class="w-6 h-6 rounded-lg text-emerald-700 hover:bg-emerald-50 flex items-center justify-center font-bold text-xs">
+                                        class="w-6 h-6 rounded-lg text-[#0e382c] hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
                                     <i class="fas fa-plus text-[10px]"></i>
                                 </button>
                             </div>
@@ -850,7 +851,7 @@
                 </div>
 
                 {{-- Bill Calculation --}}
-                <div class="border-t border-slate-100 pt-3 space-y-1.5 text-xs text-slate-600">
+                <div class="border-t border-stone-100 pt-3 space-y-1.5 text-xs text-stone-600">
                     <div class="flex justify-between">
                         <span>Subtotal</span>
                         <span class="font-bold text-slate-900">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
@@ -861,9 +862,9 @@
                             <span class="font-bold text-slate-900">Rp {{ number_format($taxAmount, 0, ',', '.') }}</span>
                         </div>
                     @endif
-                    <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+                    <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-stone-200">
                         <span>Total Pembayaran</span>
-                        <span class="text-[#0e382c] font-heading">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                        <span class="text-[#0e382c] font-heading font-black">Rp {{ number_format($total, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
@@ -872,7 +873,7 @@
                     @if(!$isStoreOpen)
                         <button type="button" 
                                 disabled
-                                class="w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-black text-xs shadow-none cursor-not-allowed flex items-center justify-center gap-2">
+                                class="w-full py-3.5 rounded-2xl bg-stone-200 text-stone-400 font-black text-xs shadow-none cursor-not-allowed flex items-center justify-center gap-2">
                             <i class="fas fa-lock text-xs"></i>
                             <span>Kafe Sedang Tutup</span>
                         </button>
@@ -885,16 +886,16 @@
                         </button>
                     @elseif(empty($customerName))
                         <button type="button" 
-                                wire:click="openIdentityModal"
-                                class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2">
+                                wire:click="openIdentityModal" 
+                                class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs shadow-md shadow-[#0e382c]/20 transition flex items-center justify-center gap-2 cursor-pointer">
                             <i class="fas fa-user-edit"></i>
                             <span>Isi Nama Pemesan Dulu</span>
                         </button>
                     @else
                         <button type="button" 
-                                wire:click="proceedToCheckout"
+                                wire:click="proceedToCheckout" 
                                 wire:loading.attr="disabled"
-                                class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-lg shadow-[#0e382c]/20 transition flex items-center justify-center gap-2">
+                                class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-lg shadow-[#0e382c]/25 transition flex items-center justify-center gap-2 cursor-pointer">
                             <span wire:loading.remove>Lanjut ke Pembayaran QRIS</span>
                             <span wire:loading><i class="fas fa-spinner fa-spin mr-1"></i> Memproses Pesanan...</span>
                             <i wire:loading.remove class="fas fa-arrow-right text-[11px]"></i>
@@ -914,21 +915,21 @@
             $historyList = $this->historyOrders;
         @endphp
         <div class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs">
-            <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
-                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-3 sm:hidden"></div>
+            <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-stone-200/80 relative max-h-[90vh] flex flex-col animate-pop">
+                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mb-3 sm:hidden cursor-pointer" wire:click="closeHistoryModal"></div>
 
                 {{-- Header Modal --}}
-                <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
+                <div class="flex items-center justify-between pb-3.5 border-b border-stone-100 shrink-0">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-[#0e382c] flex items-center justify-center text-sm font-bold shadow-2xs">
+                        <div class="w-9 h-9 rounded-xl bg-stone-50 border border-stone-200/80 text-[#0e382c] flex items-center justify-center text-sm font-bold shadow-2xs">
                             <i class="fas fa-clock-rotate-left"></i>
                         </div>
                         <div>
                             <h3 class="font-extrabold text-slate-900 text-base font-heading leading-tight">Riwayat Pesanan Saya</h3>
-                            <span class="text-[11px] text-slate-400">Daftar pesanan aktif & riwayat</span>
+                            <span class="text-[11px] text-stone-400">Daftar pesanan aktif & riwayat</span>
                         </div>
                     </div>
-                    <button type="button" wire:click="closeHistoryModal" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                    <button type="button" wire:click="closeHistoryModal" class="text-stone-400 hover:text-stone-600 p-1 cursor-pointer">
                         <i class="fas fa-times text-base"></i>
                     </button>
                 </div>
@@ -936,12 +937,12 @@
                 {{-- Orders List --}}
                 <div class="flex-1 overflow-y-auto space-y-3 pr-1 my-3">
                     @if($historyList->isEmpty())
-                        <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 my-4">
-                            <div class="w-14 h-14 rounded-2xl bg-white text-slate-300 flex items-center justify-center mx-auto mb-3 text-2xl shadow-2xs">
+                        <div class="p-8 text-center bg-[#faf8f5] rounded-2xl border border-stone-200/80 my-4">
+                            <div class="w-14 h-14 rounded-2xl bg-white text-stone-300 flex items-center justify-center mx-auto mb-3 text-2xl shadow-2xs border border-stone-100">
                                 <i class="fas fa-receipt"></i>
                             </div>
-                            <h4 class="text-sm font-black text-slate-800 font-heading">Belum Ada Riwayat Pesanan</h4>
-                            <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                            <h4 class="text-sm font-black text-slate-900 font-heading">Belum Ada Riwayat Pesanan</h4>
+                            <p class="text-xs text-stone-400 mt-1 max-w-xs mx-auto">
                                 Pesanan yang kamu buat di kafe ini akan otomatis tersimpan di sini untuk dipantau statusnya.
                             </p>
                         </div>
@@ -951,10 +952,10 @@
                                 $status = $hist->status;
                                 $isPaid = $hist->payment_status === 'paid';
                             @endphp
-                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition-all space-y-2.5">
+                            <div class="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs hover:border-[#0e382c]/30 transition-all space-y-2.5">
                                 
                                 {{-- Top Status Row --}}
-                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 text-xs">
+                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-stone-100 text-xs">
                                     <div class="flex items-center gap-1.5">
                                         @if($hist->order_type === 'dine_in')
                                             <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-black text-[10px] border border-amber-200">
@@ -965,7 +966,7 @@
                                                 Takeaway
                                             </span>
                                         @endif
-                                        <span class="font-bold text-slate-800 text-xs">Pesanan {{ $hist->short_order_number }}</span>
+                                        <span class="font-bold text-slate-900 text-xs">Pesanan {{ $hist->short_order_number }}</span>
                                     </div>
 
                                     <div>
@@ -988,7 +989,7 @@
                                                 Siap Diambil
                                             </span>
                                         @elseif($status === 'completed')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-600">
                                                 <i class="fas fa-check text-[9px] text-emerald-600"></i> Selesai
                                             </span>
                                         @endif
@@ -998,7 +999,7 @@
                                 {{-- Details --}}
                                 <div class="text-xs space-y-1.5">
                                     @foreach($hist->details as $d)
-                                        <div class="flex items-start justify-between text-slate-700 py-1 border-b border-slate-50 last:border-0">
+                                        <div class="flex items-start justify-between text-stone-700 py-1 border-b border-stone-50 last:border-0">
                                             <div class="flex-1 min-w-0 pr-2">
                                                 <div class="font-bold text-slate-900 text-xs truncate">
                                                     {{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}
@@ -1017,7 +1018,7 @@
                                                     </div>
                                                 @endif
                                                 @if(!empty($d->notes))
-                                                    <span class="text-slate-400 text-[11px] block mt-0.5">({{ $d->notes }})</span>
+                                                    <span class="text-stone-400 text-[11px] block mt-0.5">({{ $d->notes }})</span>
                                                 @endif
                                             </div>
                                             <span class="font-mono text-slate-700 font-bold shrink-0 text-xs">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span>
@@ -1026,9 +1027,9 @@
                                 </div>
 
                                 {{-- Total & Action Links --}}
-                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                                <div class="pt-2 border-t border-stone-100 flex items-center justify-between gap-2">
                                     <div>
-                                        <span class="text-[10px] text-slate-400 block leading-none">{{ $hist->created_at->diffForHumans() }}</span>
+                                        <span class="text-[10px] text-stone-400 block leading-none">{{ $hist->created_at->diffForHumans() }}</span>
                                         <span class="font-black text-sm text-slate-900 font-heading">
                                             Rp {{ number_format($hist->total, 0, ',', '.') }}
                                         </span>
@@ -1037,7 +1038,7 @@
                                     <div class="flex items-center gap-1.5">
                                         @if($status === 'cancelled')
                                             <a href="{{ route('customer.status', $hist->order_token) }}" 
-                                               class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs shadow-2xs">
+                                               class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-xs shadow-2xs">
                                                 Detail
                                             </a>
                                         @elseif(!$isPaid)
@@ -1060,10 +1061,10 @@
                 </div>
 
                 {{-- Footer Button --}}
-                <div class="pt-2 border-t border-slate-100 shrink-0">
+                <div class="pt-2 border-t border-stone-100 shrink-0">
                     <button type="button" 
                             wire:click="closeHistoryModal"
-                            class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer">
+                            class="w-full py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-slate-800 font-bold text-xs transition cursor-pointer">
                         Tutup Riwayat
                     </button>
                 </div>

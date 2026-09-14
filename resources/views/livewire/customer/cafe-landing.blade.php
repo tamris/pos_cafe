@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-[#f8faf9] text-slate-800 font-sans selection:bg-[#0e382c] selection:text-white pb-28 sm:pb-16 overflow-x-hidden">
+<div class="min-h-screen bg-[#faf8f5] text-slate-800 font-sans selection:bg-[#0e382c] selection:text-white pb-28 sm:pb-16 overflow-x-hidden">
 
 
     {{-- ========================================================================= --}}
@@ -25,13 +25,13 @@
     {{-- ========================================================================= --}}
     {{-- 2. PREMIUM EDITORIAL NAVBAR                                               --}}
     {{-- ========================================================================= --}}
-    <header class="sticky {{ !empty($tableNumber) ? 'top-10' : 'top-0' }} z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all reveal-down">
+    <header class="sticky {{ !empty($tableNumber) ? 'top-10' : 'top-0' }} z-40 bg-[#faf8f5]/90 backdrop-blur-md border-b border-stone-200/80 transition-all reveal-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             
             {{-- Brand Logo & Meta --}}
             <a href="{{ route('customer.landing') }}" class="flex items-center gap-3.5 group">
                 @if(!empty($setting->shop_logo))
-                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 border border-slate-200/80 shadow-2xs flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 border border-stone-200/80 shadow-2xs flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition">
                         <img src="{{ asset('storage/' . $setting->shop_logo) }}" 
                              alt="{{ $setting->shop_name ?? 'Noli Coffee' }}" 
                              class="w-full h-full object-contain">
@@ -53,7 +53,7 @@
             </a>
 
             {{-- Desktop Navigation Links --}}
-            <nav class="hidden lg:flex items-center gap-8 text-xs font-bold tracking-wide text-slate-600">
+            <nav class="hidden lg:flex items-center gap-8 text-xs font-bold tracking-wide text-stone-600">
                 <a href="#hero" class="hover:text-[#0e382c] transition py-1">Beranda</a>
                 <a href="#signature-spotlight" class="hover:text-[#0e382c] transition py-1">Menu Unggulan</a>
                 <a href="#tentang-noli" class="hover:text-[#0e382c] transition py-1">Tentang Kami</a>
@@ -77,53 +77,68 @@
     {{-- ========================================================================= --}}
     {{-- 3. HERO SECTION (IMPRESSIVE, CONFIDENT & ATMOSPHERIC)                     --}}
     {{-- ========================================================================= --}}
-    <section id="hero" class="relative pt-12 sm:pt-20 pb-16 sm:pb-24 border-b border-slate-200/80 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="hero" class="relative pt-12 sm:pt-20 pb-16 sm:pb-24 border-b border-stone-200/80 bg-[#faf8f5] overflow-hidden">
+        {{-- Ambient Warm Lighting Atmosphere (Cozy Cafe Glow) --}}
+        <div class="absolute -top-28 -left-28 w-96 h-96 bg-emerald-200/25 rounded-full blur-3xl pointer-events-none -z-0"></div>
+        <div class="absolute top-1/4 -right-28 w-[32rem] h-[32rem] bg-amber-200/25 rounded-full blur-3xl pointer-events-none -z-0"></div>
+        <div class="absolute -bottom-24 left-1/3 w-80 h-80 bg-stone-200/40 rounded-full blur-2xl pointer-events-none -z-0"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
                 
                 {{-- Left Column: Hero Narrative --}}
                 <div class="lg:col-span-7 space-y-6 text-left">
                     
 
-                    {{-- Main Headline --}}
-                    <h2 class="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.1] font-heading reveal-up delay-100">
-                        Ruang Bertemu,<br/>
-                        Rasa yang <span class="text-[#0e382c] underline decoration-emerald-400 decoration-4 underline-offset-4">Selalu Dirindu.</span>
+                    {{-- Main Headline (Bold Modern Sans + Sweeping Editorial Italic) --}}
+                    <h2 class="text-4xl sm:text-6xl lg:text-[4.5rem] font-black text-slate-900 tracking-tight leading-[1.06] font-heading reveal-up delay-100">
+                        <span class="block text-slate-900">Tell People</span>
+                        <span class="font-editorial italic font-normal text-[#0e382c] block text-4xl sm:text-6xl lg:text-[4.75rem] -mt-1 sm:-mt-2 relative inline-block">
+                            you love them.
+                            {{-- Organic Hand-drawn Underline SVG Accent --}}
+                            <svg class="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-3 text-emerald-400/80 -z-1" viewBox="0 0 240 12" fill="none" preserveAspectRatio="none">
+                                <path d="M3 9C60 2 180 2 237 9" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" />
+                            </svg>
+                        </span>
                     </h2>
 
                     {{-- Subheadline --}}
                     <p class="text-sm sm:text-base text-slate-600 font-normal leading-relaxed max-w-xl reveal-up delay-200">
-                        Dari racikan kopi klasik hingga aneka minuman segar pilihan barista. Ruang ternyaman di Slawi Kulon untuk bekerja, bercerita bersama kawan, dan menikmati setiap momen berkualitas.
+                        Karena secangkir kopi lebih dari sekadar rasa—ia adalah cara kita menyapa, bertukar cerita, dan menghangatkan kebersamaan. Ruang ternyaman di Slawi Kulon untuk bercengkrama dan merayakan setiap momen.
                     </p>
 
                     {{-- Hero Action Buttons --}}
                     <div class="pt-2 flex flex-row items-center gap-3 max-w-md reveal-up delay-300">
                         <a href="{{ route('customer.order', array_filter(['table' => $tableNumber])) }}" 
-                           class="flex-1 sm:flex-initial justify-center px-5 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs sm:text-sm tracking-wide shadow-lg shadow-[#0e382c]/25 hover:shadow-emerald-900/40 hover:-translate-y-0.5 transition-all flex items-center gap-2 group">
-                            <i class="fas fa-cart-shopping text-emerald-300 group-hover:scale-110 transition-transform"></i>
+                           class="flex-1 sm:flex-initial justify-center px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs sm:text-sm tracking-wide shadow-xl shadow-[#0e382c]/25 hover:shadow-2xl hover:shadow-[#0e382c]/35 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 group">
+                            <i class="fas fa-bag-shopping text-emerald-300 group-hover:scale-110 transition-transform"></i>
                             <span>Mulai Pesan</span>
+                            <i class="fas fa-arrow-right text-[10px] text-emerald-300 group-hover:translate-x-1 transition-transform"></i>
                         </a>
 
                         <a href="#menu-katalog" 
-                           class="shrink-0 px-4 sm:px-7 py-3.5 sm:py-4 rounded-2xl bg-[#f8faf9] hover:bg-slate-100 active:scale-95 text-slate-800 font-extrabold text-xs sm:text-sm border border-slate-200 shadow-2xs hover:shadow-sm hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                           class="shrink-0 px-5 sm:px-7 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-stone-50 active:scale-95 text-slate-800 font-extrabold text-xs sm:text-sm border border-stone-200/90 shadow-2xs hover:shadow-sm hover:-translate-y-0.5 transition-all flex items-center gap-2 backdrop-blur-sm">
                             <i class="fas fa-book-open text-[#0e382c]"></i>
                             <span>Buku Menu</span>
                         </a>
                     </div>
 
                     {{-- Quick Trust Indicators --}}
-                    <div class="pt-6 grid grid-cols-3 gap-4 border-t border-slate-100 max-w-lg reveal-up delay-400">
+                    <div class="pt-6 grid grid-cols-3 gap-4 border-t border-stone-200/70 max-w-lg reveal-up delay-400">
                         <div>
-                            <span class="text-lg sm:text-2xl font-black text-slate-900 block font-heading">{{ $soldFormatted }}</span>
+                            <span class="text-xl sm:text-2xl font-black text-slate-900 block font-heading">{{ $soldFormatted }}</span>
                             <span class="text-[11px] font-semibold text-slate-500">Cup Terjual</span>
                         </div>
                         <div>
-                            <span class="text-lg sm:text-2xl font-black text-[#0e382c] block font-heading">4.9 ★</span>
+                            <span class="text-xl sm:text-2xl font-black text-[#0e382c] block font-heading flex items-center gap-1">
+                                <span>4.9</span>
+                                <i class="fas fa-star text-amber-400 text-xs"></i>
+                            </span>
                             <span class="text-[11px] font-semibold text-slate-500">Rating Pengunjung</span>
                         </div>
                         <div>
-                            <span class="text-lg sm:text-2xl font-black text-slate-900 block font-heading">100%</span>
-                            <span class="text-[11px] font-semibold text-slate-500">Biji Kopi Segar</span>
+                            <span class="text-xl sm:text-2xl font-black text-slate-900 block font-heading">100%</span>
+                            <span class="text-[11px] font-semibold text-slate-500">Biji Kopi Pilihan</span>
                         </div>
                     </div>
 
@@ -133,52 +148,57 @@
                 <div class="hidden lg:flex lg:col-span-5 justify-end reveal-scale delay-200">
                     @if($signatures->count() > 0)
                         @php $leadProduct = $signatures->first(); @endphp
-                        <div class="w-full max-w-sm sm:max-w-md bg-[#f8faf9] rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xl relative group animate-float">
+                        <div class="relative w-full max-w-sm sm:max-w-md">
                             
-                            {{-- Photo Container --}}
-                            <div class="w-full aspect-[4/3] rounded-2xl bg-white overflow-hidden relative shadow-inner mb-5 border border-slate-200/70">
-                                @if(!empty($leadProduct->image))
-                                    <img src="{{ asset('storage/' . $leadProduct->image) }}" 
-                                         alt="{{ $leadProduct->name }}" 
-                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-slate-300">
-                                        <i class="fas fa-mug-hot text-5xl"></i>
-                                    </div>
-                                @endif
+                            {{-- Ambient Glow Aura behind card --}}
+                            <div class="absolute -inset-4 bg-gradient-to-tr from-emerald-200/50 via-amber-100/40 to-transparent rounded-[2.5rem] blur-2xl -z-10 pointer-events-none"></div>
 
-                                {{-- Fore-Style Badge with Luxury Sweep Shine --}}
-                                <div class="absolute top-3 left-3 {{ $leadProduct->badge_bg ?? 'bg-[#b88646]' }} text-white text-[10.5px] font-black px-3.5 py-1 rounded-full shadow-md {{ $leadProduct->badge_border ?? 'border border-amber-200/40' }} uppercase tracking-wider flex items-center gap-1.5 badge-shine">
-                                    <i class="{{ $leadProduct->badge_icon ?? 'fas fa-star text-amber-100' }} text-[10px]"></i>
-                                    <span>{{ $leadProduct->badge_label ?? 'Best Seller' }}</span>
+                            <div class="w-full bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-xl relative group animate-float">
+                                
+                                {{-- Photo Container --}}
+                                <div class="w-full aspect-[4/3] rounded-2xl bg-stone-100 overflow-hidden relative shadow-inner mb-5 border border-stone-200/70">
+                                    @if(!empty($leadProduct->image))
+                                        <img src="{{ asset('storage/' . $leadProduct->image) }}" 
+                                             alt="{{ $leadProduct->name }}" 
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                            <i class="fas fa-mug-hot text-5xl"></i>
+                                        </div>
+                                    @endif
+
+                                    {{-- Fore-Style Badge with Luxury Sweep Shine --}}
+                                    <div class="absolute top-3 left-3 {{ $leadProduct->badge_bg ?? 'bg-[#b88646]' }} text-white text-[10.5px] font-black px-3.5 py-1 rounded-full shadow-md {{ $leadProduct->badge_border ?? 'border border-amber-200/40' }} uppercase tracking-wider flex items-center gap-1.5 badge-shine">
+                                        <i class="{{ $leadProduct->badge_icon ?? 'fas fa-star text-amber-100' }} text-[10px]"></i>
+                                        <span>{{ $leadProduct->badge_label ?? 'Best Seller' }}</span>
+                                    </div>
+
                                 </div>
 
+                                {{-- Card Details --}}
+                                <div class="space-y-2">
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
+                                        {{ $leadProduct->category?->name }}
+                                    </span>
+                                    <h3 class="text-xl font-black text-slate-900 font-heading">
+                                        {{ $leadProduct->name }}
+                                    </h3>
+                                    <p class="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                                        {{ !empty($leadProduct->description) ? $leadProduct->description : ($leadProduct->category?->description ?? 'Pilihan racikan kopi & minuman favorit pelanggan di Noli Coffee.') }}
+                                    </p>
+                                </div>
+
+                                {{-- Bottom Action --}}
+                                <div class="pt-4 mt-4 border-t border-stone-200/70 flex items-center justify-between">
+                                    <span class="text-xs text-slate-500 font-medium">Bisa pesan dari meja</span>
+                                    <a href="{{ route('customer.order', array_filter(['table' => $tableNumber, 'select' => $leadProduct->id])) }}" 
+                                       class="px-4 py-2 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-2xs">
+                                        <span>Pesan Menu Ini</span>
+                                        <i class="fas fa-arrow-right text-[10px] text-emerald-300"></i>
+                                    </a>
+                                </div>
 
                             </div>
-
-                            {{-- Card Details --}}
-                            <div class="space-y-2">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
-                                    {{ $leadProduct->category?->name }}
-                                </span>
-                                <h3 class="text-xl font-black text-slate-900 font-heading">
-                                    {{ $leadProduct->name }}
-                                </h3>
-                                <p class="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                                    {{ !empty($leadProduct->description) ? $leadProduct->description : ($leadProduct->category?->description ?? 'Pilihan racikan kopi & minuman favorit pelanggan di Noli Coffee.') }}
-                                </p>
-                            </div>
-
-                            {{-- Bottom Action --}}
-                            <div class="pt-4 mt-4 border-t border-slate-200/70 flex items-center justify-between">
-                                <span class="text-xs text-slate-500 font-medium">Bisa pesan langsung dari meja</span>
-                                <a href="{{ route('customer.order', array_filter(['table' => $tableNumber, 'select' => $leadProduct->id])) }}" 
-                                   class="px-4 py-2 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-2xs">
-                                    <span>Pesan Menu Ini</span>
-                                    <i class="fas fa-arrow-right text-[10px] text-emerald-300"></i>
-                                </a>
-                            </div>
-
                         </div>
                     @endif
                 </div>
@@ -191,36 +211,38 @@
     {{-- 4. SIGNATURE SPOTLIGHT (CURATED MENU SHOWCASE)                            --}}
     {{-- ========================================================================= --}}
     @if($signatures->count() > 1)
-        <section id="signature-spotlight" class="py-16 sm:py-24 border-b border-slate-200/80 bg-[#f8faf9]">
+        <section id="signature-spotlight" class="py-16 sm:py-24 border-b border-stone-200/80 bg-[#faf8f5]">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
                 
                 {{-- Header --}}
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 reveal-on-scroll">
                     <div>
-                        <span class="text-xs font-black uppercase tracking-wider text-emerald-800 block">
-                            Paling Banyak di Minati
-                        </span>
-                        <h3 class="text-2xl sm:text-4xl font-black text-slate-900 font-heading mt-1">
-                            Menu Pilihan Favorit
+                        <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0e382c]">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Kurasi Barista • Paling Diminati</span>
+                        </div>
+                        <h3 class="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight mt-1.5">
+                            Menu Pilihan <span class="font-editorial italic font-normal text-[#0e382c]">Favorit.</span>
                         </h3>
                     </div>
-                    <a href="#menu-katalog" class="text-xs font-bold text-[#0e382c] hover:text-emerald-700 flex items-center gap-1.5 self-start sm:self-auto group">
+                    <a href="#menu-katalog" class="text-xs font-bold text-stone-700 hover:text-[#0e382c] flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200/80 shadow-2xs hover:shadow-xs transition group self-start sm:self-auto">
                         <span>Lihat Semua Menu</span>
-                        <i class="fas fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                        <i class="fas fa-arrow-right text-[10px] text-[#0e382c] group-hover:translate-x-1 transition-transform"></i>
                     </a>
                 </div>
 
-                {{-- Cards Grid --}}
+                {{-- Cards Grid (Clean Minimalist Luxury) --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
                     @foreach($signatures->take(4) as $sig)
-                        <div wire:key="sig-{{ $sig->id }}" class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs hover:border-[#0e382c]/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group reveal-on-scroll stagger-{{ min($loop->iteration, 4) }}">
+                        <div wire:key="sig-{{ $sig->id }}" class="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between group reveal-on-scroll stagger-{{ min($loop->iteration, 4) }}">
                             <div>
-                                <div class="w-full aspect-square rounded-2xl bg-slate-100 overflow-hidden relative mb-4 cursor-pointer"
+                                {{-- Photo Frame --}}
+                                <div class="w-full aspect-square rounded-2xl bg-stone-50 overflow-hidden relative mb-4 cursor-pointer border border-stone-100"
                                      wire:click="openQuickView({{ $sig->id }})">
                                     @if(!empty($sig->image))
                                         <img src="{{ asset('storage/' . $sig->image) }}" 
                                              alt="{{ $sig->name }}" 
-                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                     @else
                                         <div class="w-full h-full flex items-center justify-center text-slate-300">
                                             <i class="fas fa-mug-hot text-4xl"></i>
@@ -234,28 +256,35 @@
                                             <span>{{ $sig->badge_label ?? 'Top Ordered' }}</span>
                                         </span>
                                     </div>
+
+                                    {{-- Quick View Floating Indicator --}}
+                                    <div class="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-stone-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm text-xs">
+                                        <i class="fas fa-eye text-[10px]"></i>
+                                    </div>
                                 </div>
 
+                                {{-- Meta --}}
                                 <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
                                     {{ $sig->category?->name }}
                                 </span>
-                                <h4 class="text-base font-black text-slate-900 mt-1 font-heading group-hover:text-[#0e382c] transition cursor-pointer"
+                                <h4 class="text-base font-bold text-slate-900 mt-0.5 font-heading group-hover:text-[#0e382c] transition cursor-pointer line-clamp-1"
                                     wire:click="openQuickView({{ $sig->id }})">
                                     {{ $sig->name }}
                                 </h4>
-                                <p class="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                                <p class="text-xs text-stone-500 line-clamp-2 mt-1 leading-relaxed">
                                     {{ !empty($sig->description) ? $sig->description : ($sig->category?->description ?? 'Pilihan racikan istimewa barista Noli.') }}
                                 </p>
                             </div>
 
-                            <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                                <span class="text-sm sm:text-base font-black text-slate-900 font-heading">
+                            {{-- Footer: Price & Order --}}
+                            <div class="pt-3.5 mt-3.5 border-t border-stone-100 flex items-center justify-between gap-2">
+                                <span class="text-base font-black text-slate-900 font-heading">
                                     Rp {{ number_format($sig->price, 0, ',', '.') }}
                                 </span>
                                 <a href="{{ route('customer.order', array_filter(['table' => $tableNumber, 'select' => $sig->id])) }}" 
-                                   class="px-4 py-2 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-2xs">
+                                   class="px-3.5 py-2 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs">
                                     <span>Pesan</span>
-                                    <i class="fas fa-plus text-[9px]"></i>
+                                    <i class="fas fa-plus text-[9px] text-emerald-300"></i>
                                 </a>
                             </div>
                         </div>
@@ -269,13 +298,13 @@
     {{-- ========================================================================= --}}
     {{-- 5. ABOUT NOLI SPACE (OUR STORY & PURPOSE)                                 --}}
     {{-- ========================================================================= --}}
-    <section id="tentang-noli" class="py-16 sm:py-24 bg-white border-b border-slate-200/80">
+    <section id="tentang-noli" class="py-16 sm:py-24 bg-white border-b border-stone-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
                 
                 {{-- Left Image Showcase (Focus on Coffee Craft & Barista Dedication) --}}
                 <div class="lg:col-span-6 reveal-on-scroll-left">
-                    <div class="relative rounded-3xl overflow-hidden shadow-lg border border-slate-200 aspect-[4/3] group">
+                    <div class="relative rounded-[2rem] overflow-hidden shadow-xl border border-stone-200/90 aspect-[4/3] group">
                         <img src="https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1200&q=80" 
                              alt="Seni Meracik Kopi Noli Coffee" 
                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -290,11 +319,12 @@
 
                 {{-- Right Narrative --}}
                 <div class="lg:col-span-6 space-y-5 reveal-on-scroll-right">
-                    <span class="text-xs font-black uppercase tracking-wider text-emerald-800 block">
-                        Filosofi & Cerita Rasa
-                    </span>
-                    <h3 class="text-3xl sm:text-4xl font-black text-slate-900 font-heading leading-tight">
-                        Diracik Sepenuh Hati, Disajikan untuk Setiap Momenmu.
+                    <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0e382c]">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Filosofi & Cerita Rasa</span>
+                    </div>
+                    <h3 class="text-3xl sm:text-4xl font-black text-slate-900 font-heading leading-tight tracking-tight mt-1.5">
+                        Diracik Sepenuh Hati, <span class="font-editorial italic font-normal text-[#0e382c]">untuk Setiap Momenmu.</span>
                     </h3>
                     <div class="space-y-3.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
                         <p>
@@ -305,17 +335,17 @@
                         </p>
                     </div>
 
-                    <div class="pt-3 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700 font-bold">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-check-circle text-[#0e382c]"></i>
+                    <div class="pt-3 flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs font-bold text-stone-800">
+                        <div class="px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-200/70 flex items-center gap-2">
+                            <i class="fas fa-check text-emerald-600 text-[11px]"></i>
                             <span>Biji Kopi Pilihan</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-check-circle text-[#0e382c]"></i>
+                        <div class="px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-200/70 flex items-center gap-2">
+                            <i class="fas fa-check text-emerald-600 text-[11px]"></i>
                             <span>Ekstraksi Presisi</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-check-circle text-[#0e382c]"></i>
+                        <div class="px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-200/70 flex items-center gap-2">
+                            <i class="fas fa-check text-emerald-600 text-[11px]"></i>
                             <span>Racikan Khas Barista</span>
                         </div>
                     </div>
@@ -328,32 +358,33 @@
     {{-- ========================================================================= --}}
     {{-- 6. FULL DIGITAL MENU CATALOG (AUTHENTIC DATABASE PRODUCTS)                --}}
     {{-- ========================================================================= --}}
-    <main id="menu-katalog" class="py-16 sm:py-24 bg-[#f8faf9] border-b border-slate-200/80">
+    <main id="menu-katalog" class="py-16 sm:py-24 bg-[#faf8f5] border-b border-stone-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             
             {{-- Header & Search --}}
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-5 reveal-on-scroll">
                 <div>
-                    <span class="text-xs font-black uppercase tracking-wider text-emerald-800 block">
-                        Katalog Online
-                    </span>
-                    <h3 class="text-2xl sm:text-4xl font-black text-slate-900 font-heading mt-1">
-                        Daftar Menu Noli Coffee
+                    <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0e382c]">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Katalog Menu Digital</span>
+                    </div>
+                    <h3 class="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight mt-1.5">
+                        Eksplorasi Rasa <span class="font-editorial italic font-normal text-[#0e382c]">Noli Coffee.</span>
                     </h3>
-                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                        Klik menu untuk melihat komposisi atau tekan pesan untuk langsung memesan dari meja.
+                    <p class="text-xs sm:text-sm text-stone-500 mt-1">
+                        Pilih menu favoritmu, klik untuk melihat komposisi, atau pesan langsung dari meja tanpa antre.
                     </p>
                 </div>
 
                 {{-- Clean Search --}}
                 <div class="w-full md:w-80 relative">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
                     <input type="text" 
                            wire:model.live.debounce.300ms="search" 
-                           placeholder="Cari kopi, taro, matcha..." 
-                           class="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0e382c] shadow-xs transition">
+                           placeholder="Cari kopi, matcha, pastry..." 
+                           class="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-stone-200/90 text-xs font-medium text-slate-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0e382c] shadow-xs transition">
                     @if(!empty($search))
-                        <button type="button" wire:click="$set('search', '')" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <button type="button" wire:click="$set('search', '')" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
                             <i class="fas fa-times-circle text-xs"></i>
                         </button>
                     @endif
@@ -361,14 +392,14 @@
             </div>
 
             {{-- Category Filter Bar --}}
-            <div class="sticky top-[76px] sm:top-[80px] z-30 bg-[#f8faf9]/95 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div class="sticky top-[76px] sm:top-[80px] z-30 bg-[#faf8f5]/95 backdrop-blur-md py-2.5 -mx-4 px-4 sm:mx-0 sm:px-0">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                     <button type="button" 
                             wire:click="selectCategory('all')"
-                            class="px-5 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 {{ $selectedCategory === 'all' ? 'bg-[#0e382c] text-white shadow-md' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                            class="px-5 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 {{ $selectedCategory === 'all' ? 'bg-[#0e382c] text-white shadow-md shadow-[#0e382c]/20' : 'bg-white border border-stone-200/80 text-stone-700 hover:bg-stone-50' }}">
                         <i class="fas fa-border-all text-[11px]"></i>
                         <span>Semua Menu</span>
-                        <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500' }}">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500' }}">
                             {{ $products->count() }}
                         </span>
                     </button>
@@ -376,9 +407,9 @@
                     @foreach($categories as $cat)
                         <button type="button" 
                                 wire:click="selectCategory({{ $cat->id }})"
-                                class="px-5 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 {{ $selectedCategory == $cat->id ? 'bg-[#0e382c] text-white shadow-md' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                                class="px-5 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 {{ $selectedCategory == $cat->id ? 'bg-[#0e382c] text-white shadow-md shadow-[#0e382c]/20' : 'bg-white border border-stone-200/80 text-stone-700 hover:bg-stone-50' }}">
                             <span>{{ $cat->name }}</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $selectedCategory == $cat->id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500' }}">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $selectedCategory == $cat->id ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500' }}">
                                 {{ $cat->products_count }}
                             </span>
                         </button>
@@ -388,30 +419,30 @@
 
             {{-- Products Grid --}}
             @if($products->isEmpty())
-                <div class="bg-white rounded-3xl p-12 text-center border border-slate-200">
-                    <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl">
+                <div class="bg-white rounded-3xl p-12 text-center border border-stone-200/80 shadow-xs">
+                    <div class="w-14 h-14 rounded-2xl bg-stone-100 text-stone-400 flex items-center justify-center mx-auto mb-3 text-2xl">
                         <i class="fas fa-mug-hot"></i>
                     </div>
                     <h4 class="text-sm font-black text-slate-800">Menu Tidak Ditemukan</h4>
-                    <p class="text-xs text-slate-500 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
+                    <p class="text-xs text-stone-500 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
                 </div>
             @else
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                     @foreach($products as $product)
-                        <div wire:key="prod-{{ $product->id }}" class="bg-white rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between group hover:border-[#0e382c]/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 reveal-on-scroll stagger-{{ (($loop->index % 4) + 1) }}">
+                        <div wire:key="prod-{{ $product->id }}" class="bg-white rounded-3xl p-3.5 sm:p-4 border border-stone-200/80 shadow-xs flex flex-col justify-between group hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 reveal-on-scroll stagger-{{ (($loop->index % 4) + 1) }}">
                             
                             <div>
                                 {{-- Thumbnail --}}
-                                <div class="w-full aspect-square rounded-2xl bg-slate-100 overflow-hidden relative mb-3 cursor-pointer"
+                                <div class="w-full aspect-square rounded-2xl bg-stone-50 overflow-hidden relative mb-3 cursor-pointer border border-stone-100"
                                      wire:click="openQuickView({{ $product->id }})">
                                     @if(!empty($product->image))
                                         <img src="{{ asset('storage/' . $product->image) }}" 
                                              alt="{{ $product->name }}" 
-                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                     @else
-                                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50">
+                                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-stone-50">
                                             <i class="fas fa-coffee text-3xl mb-1 text-slate-300"></i>
-                                            <span class="text-[9px] text-slate-400 font-bold uppercase">{{ $product->category?->name ?? 'Menu' }}</span>
+                                            <span class="text-[9px] text-stone-400 font-bold uppercase">{{ $product->category?->name ?? 'Menu' }}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -420,28 +451,28 @@
                                 <span class="text-[9.5px] font-black uppercase tracking-wider text-emerald-800 block">
                                     {{ $product->category?->name }}
                                 </span>
-                                <h4 class="text-xs sm:text-sm font-black text-slate-900 font-heading leading-tight mt-0.5 line-clamp-1 cursor-pointer hover:text-[#0e382c] transition"
+                                <h4 class="text-xs sm:text-sm font-bold text-slate-900 font-heading leading-tight mt-0.5 line-clamp-1 cursor-pointer hover:text-[#0e382c] transition"
                                     wire:click="openQuickView({{ $product->id }})"
                                     title="{{ $product->name }}">
                                     {{ $product->name }}
                                 </h4>
 
                                 {{-- Description from DB --}}
-                                <p class="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                                <p class="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed">
                                     {{ !empty($product->description) ? $product->description : ($product->category?->description ?? 'Racikan pilihan istimewa barista Noli.') }}
                                 </p>
                             </div>
 
                             {{-- Price & Direct Order Action --}}
-                            <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div class="pt-3 mt-3 border-t border-stone-100 flex items-center justify-between">
                                 <span class="text-xs sm:text-sm font-black text-slate-900 font-heading">
                                     Rp {{ number_format($product->price, 0, ',', '.') }}
                                 </span>
 
                                 <a href="{{ route('customer.order', array_filter(['table' => $tableNumber, 'select' => $product->id])) }}" 
-                                   class="px-3 py-1.5 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white text-[11px] font-extrabold transition flex items-center gap-1 shadow-2xs">
+                                   class="px-3 py-1.5 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs hover:shadow-xs">
                                     <span>Pesan</span>
-                                    <i class="fas fa-plus text-[9px]"></i>
+                                    <i class="fas fa-plus text-[9px] text-emerald-300"></i>
                                 </a>
                             </div>
 
@@ -456,51 +487,79 @@
     {{-- ========================================================================= --}}
     {{-- 7. SPACE AMENITIES & EXPERIENCE                                           --}}
     {{-- ========================================================================= --}}
-    <section id="space-fasilitas" class="py-16 sm:py-24 bg-white border-b border-slate-200/80">
+    <section id="space-fasilitas" class="py-16 sm:py-24 bg-white border-b border-stone-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             
             <div class="text-center max-w-xl mx-auto space-y-2 reveal-on-scroll">
-                <span class="text-xs font-black uppercase tracking-wider text-emerald-800 block">
-                    Kenyamanan & Fasilitas
-                </span>
-                <h3 class="text-2xl sm:text-4xl font-black text-slate-900 font-heading">
-                    Dirancang untuk Kenyamananmu
+                <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0e382c]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Kenyamanan & Fasilitas</span>
+                </div>
+                <h3 class="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight mt-1.5">
+                    Dirancang untuk <span class="font-editorial italic font-normal text-[#0e382c]">Kenyamananmu.</span>
                 </h3>
-                <p class="text-xs sm:text-sm text-slate-500">
-                    Bukan sekadar ngopi sebentar, Noli Space siap menemani produktivitas dan relaksasimu.
+                <p class="text-xs sm:text-sm text-stone-500 mt-2 max-w-lg mx-auto">
+                    Bukan sekadar ngopi sebentar, Noli Space siap menemani produktivitas, diskusi hangat, dan relaksasimu.
                 </p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
                 
-                <div class="bg-[#f8faf9] rounded-3xl p-6 sm:p-8 border border-slate-200/80 space-y-4 reveal-on-scroll stagger-1">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
-                        <i class="fas fa-laptop-code"></i>
+                {{-- Amenity 1 --}}
+                <div class="bg-[#faf8f5] rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between space-y-5 reveal-on-scroll stagger-1 group">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-white border border-stone-200/80 text-[#0e382c] shadow-2xs flex items-center justify-center text-xl group-hover:bg-[#0e382c] group-hover:text-white group-hover:scale-105 transition-all duration-300">
+                            <i class="fas fa-laptop-code"></i>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-black text-slate-900 font-heading group-hover:text-[#0e382c] transition-colors">
+                            Work & Study Friendly
+                        </h4>
+                        <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                            Koneksi WiFi berkecepatan tinggi dengan ketersediaan stopkontak di banyak titik meja untuk kenyamanan laptop dan gadgetmu.
+                        </p>
                     </div>
-                    <h4 class="text-base font-black text-slate-900 font-heading">Work & Study Friendly</h4>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        Koneksi WiFi berkecepatan tinggi dengan ketersediaan stopkontak di banyak titik meja untuk kenyamanan laptop dan gadgetmu.
-                    </p>
+                    <div class="pt-3.5 border-t border-stone-200/60 flex items-center gap-2 text-[11px] font-bold text-emerald-800">
+                        <i class="fas fa-wifi text-[10px]"></i>
+                        <span>WiFi Cepat & Port Charger Melimpah</span>
+                    </div>
                 </div>
 
-                <div class="bg-[#f8faf9] rounded-3xl p-6 sm:p-8 border border-slate-200/80 space-y-4 reveal-on-scroll stagger-2">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
-                        <i class="fas fa-couch"></i>
+                {{-- Amenity 2 --}}
+                <div class="bg-[#faf8f5] rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between space-y-5 reveal-on-scroll stagger-2 group">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-white border border-stone-200/80 text-[#0e382c] shadow-2xs flex items-center justify-center text-xl group-hover:bg-[#0e382c] group-hover:text-white group-hover:scale-105 transition-all duration-300">
+                            <i class="fas fa-couch"></i>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-black text-slate-900 font-heading group-hover:text-[#0e382c] transition-colors">
+                            Indoor AC & Outdoor
+                        </h4>
+                        <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                            Pilihan ruang dingin ber-AC yang tenang untuk fokus kerja, atau area outdoor yang asri untuk bercengkerama santai di sore hari.
+                        </p>
                     </div>
-                    <h4 class="text-base font-black text-slate-900 font-heading">Indoor AC & Outdoor</h4>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        Pilihan ruang dingin ber-AC yang tenang untuk fokus kerja, atau area outdoor yang asri untuk bercengkerama santai di sore hari.
-                    </p>
+                    <div class="pt-3.5 border-t border-stone-200/60 flex items-center gap-2 text-[11px] font-bold text-emerald-800">
+                        <i class="fas fa-wind text-[10px]"></i>
+                        <span>Zona Dingin AC & Semi-Outdoor Asri</span>
+                    </div>
                 </div>
 
-                <div class="bg-[#f8faf9] rounded-3xl p-6 sm:p-8 border border-slate-200/80 space-y-4 reveal-on-scroll stagger-3">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
-                        <i class="fas fa-heart"></i>
+                {{-- Amenity 3 --}}
+                <div class="bg-[#faf8f5] rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between space-y-5 reveal-on-scroll stagger-3 group">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-white border border-stone-200/80 text-[#0e382c] shadow-2xs flex items-center justify-center text-xl group-hover:bg-[#0e382c] group-hover:text-white group-hover:scale-105 transition-all duration-300">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-black text-slate-900 font-heading group-hover:text-[#0e382c] transition-colors">
+                            Musholla & Bersih Terjaga
+                        </h4>
+                        <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                            Fasilitas ibadah musholla yang bersih dan toilet terawat untuk memastikan ketenangan dan kenyamanan Anda selama berkunjung.
+                        </p>
                     </div>
-                    <h4 class="text-base font-black text-slate-900 font-heading">Musholla & Kebersihan Terjaga</h4>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        Fasilitas ibadah musholla yang bersih dan toilet terawat untuk memastikan kenyamanan Anda selama berkunjung.
-                    </p>
+                    <div class="pt-3.5 border-t border-stone-200/60 flex items-center gap-2 text-[11px] font-bold text-emerald-800">
+                        <i class="fas fa-sparkles text-[10px]"></i>
+                        <span>Fasilitas Ibadah & Sanitasi Terawat</span>
+                    </div>
                 </div>
 
             </div>
@@ -511,56 +570,90 @@
     {{-- ========================================================================= --}}
     {{-- 8. CUSTOMER REVIEWS (SOCIAL PROOF)                                        --}}
     {{-- ========================================================================= --}}
-    <section class="py-16 sm:py-24 bg-[#f8faf9] border-b border-slate-200/80">
+    <section class="py-16 sm:py-24 bg-[#faf8f5] border-b border-stone-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             
             <div class="text-center max-w-xl mx-auto space-y-2 reveal-on-scroll">
-                <span class="text-xs font-black uppercase tracking-wider text-emerald-800 block">
-                    Kata Pengunjung
-                </span>
-                <h3 class="text-2xl sm:text-4xl font-black text-slate-900 font-heading">
-                    Kesan Hangat di Noli Space
+                <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0e382c]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Kata Pengunjung • Testimoni Hangat</span>
+                </div>
+                <h3 class="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight mt-1.5">
+                    Kesan Hangat di <span class="font-editorial italic font-normal text-[#0e382c]">Noli Space.</span>
                 </h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 reveal-on-scroll stagger-1">
-                    <div class="flex items-center gap-1 text-amber-400 text-xs">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                {{-- Review 1 --}}
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between space-y-5 reveal-on-scroll stagger-1 group">
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1 text-amber-400 text-xs">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-stone-400 font-mono">5.0 / 5.0</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed font-normal">
+                            "Tempat ngopi paling nyaman di Slawi. Rasa kopinya pas, tempatnya estetik dan bersih banget. Nyaman banget buat nugas berjam-jam."
+                        </p>
                     </div>
-                    <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                        "Tempat ngopi paling nyaman di Slawi. Rasa kopinya pas, tempatnya estetik dan bersih banget. Nyaman banget buat nugas berjam-jam."
-                    </p>
-                    <div class="pt-2 border-t border-slate-100">
-                        <strong class="text-xs font-bold text-slate-900 block">Rizky Pratama</strong>
-                        <span class="text-[10px] text-slate-400">Pengunjung Setia</span>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 reveal-on-scroll stagger-2">
-                    <div class="flex items-center gap-1 text-amber-400 text-xs">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                        "Butterscotch Sea Salt-nya juara! Self order lewat HP di mejanya juga praktis banget, nggak perlu ngantre di kasir."
-                    </p>
-                    <div class="pt-2 border-t border-slate-100">
-                        <strong class="text-xs font-bold text-slate-900 block">Anisa Dian</strong>
-                        <span class="text-[10px] text-slate-400">Coffee Enthusiast</span>
+                    <div class="pt-3.5 border-t border-stone-100 flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-[#0e382c] text-emerald-200 flex items-center justify-center text-xs font-black shadow-2xs shrink-0">
+                            R
+                        </div>
+                        <div>
+                            <strong class="text-xs font-black text-slate-900 block font-heading">Rizky Pratama</strong>
+                            <span class="text-[10.5px] text-stone-400">Pengunjung Setia • Slawi</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 reveal-on-scroll stagger-3">
-                    <div class="flex items-center gap-1 text-amber-400 text-xs">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                {{-- Review 2 --}}
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between space-y-5 reveal-on-scroll stagger-2 group">
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1 text-amber-400 text-xs">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-stone-400 font-mono">5.0 / 5.0</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed font-normal">
+                            "Butterscotch Sea Salt-nya juara! Self order lewat HP di mejanya juga praktis banget, nggak perlu ngantre di kasir."
+                        </p>
                     </div>
-                    <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                        "Staff-nya ramah, musholanya bersih dan wangi. Area indoor-nya dingin dan outdoor-nya asik kalau sore ke malam."
-                    </p>
-                    <div class="pt-2 border-t border-slate-100">
-                        <strong class="text-xs font-bold text-slate-900 block">Bagus Wicaksono</strong>
-                        <span class="text-[10px] text-slate-400">WFC Slawi</span>
+                    <div class="pt-3.5 border-t border-stone-100 flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-[#0e382c] text-emerald-200 flex items-center justify-center text-xs font-black shadow-2xs shrink-0">
+                            A
+                        </div>
+                        <div>
+                            <strong class="text-xs font-black text-slate-900 block font-heading">Anisa Dian</strong>
+                            <span class="text-[10.5px] text-stone-400">Coffee Enthusiast</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Review 3 --}}
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs hover:border-[#0e382c]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between space-y-5 reveal-on-scroll stagger-3 group">
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1 text-amber-400 text-xs">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-stone-400 font-mono">5.0 / 5.0</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed font-normal">
+                            "Staff-nya ramah, musholanya bersih dan wangi. Area indoor-nya dingin dan outdoor-nya asik kalau sore ke malam."
+                        </p>
+                    </div>
+                    <div class="pt-3.5 border-t border-stone-100 flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-[#0e382c] text-emerald-200 flex items-center justify-center text-xs font-black shadow-2xs shrink-0">
+                            B
+                        </div>
+                        <div>
+                            <strong class="text-xs font-black text-slate-900 block font-heading">Bagus Wicaksono</strong>
+                            <span class="text-[10.5px] text-stone-400">WFC Slawi</span>
+                        </div>
                     </div>
                 </div>
 
@@ -572,34 +665,49 @@
     {{-- ========================================================================= --}}
     {{-- 9. LOCATION & CONTACT (GRAND CALLOUT CARD)                                --}}
     {{-- ========================================================================= --}}
-    <section id="lokasi-kontak" class="py-16 sm:py-24 bg-white">
+    <section id="lokasi-kontak" class="py-16 sm:py-24 bg-white border-b border-stone-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-[#0e382c] rounded-3xl sm:rounded-[2.5rem] p-8 sm:p-14 text-white shadow-xl reveal-on-scroll-scale">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="relative bg-[#0e382c] rounded-3xl sm:rounded-[2.5rem] p-8 sm:p-14 text-white shadow-2xl border border-emerald-900/60 overflow-hidden reveal-on-scroll-scale">
+                
+                {{-- Ambient Inner Glows --}}
+                <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -top-24 -left-24 w-72 h-72 bg-amber-200/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
                     
                     <div class="lg:col-span-8 space-y-4">
-                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-xs font-bold uppercase tracking-wider">
-                            <i class="fas fa-location-dot"></i>
+                        <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-emerald-300 text-xs font-bold uppercase tracking-widest border border-white/10 backdrop-blur-xs">
+                            <i class="fas fa-location-dot text-[11px]"></i>
                             <span>Kunjungi Noli Coffee & Space</span>
                         </span>
                         
-                        <h3 class="text-2xl sm:text-4xl font-black font-heading text-white">
-                            Singgah & Rasakan Pengalamannya Sendiri.
+                        <h3 class="text-3xl sm:text-4xl lg:text-5xl font-black font-heading text-white tracking-tight leading-tight">
+                            Singgah & Rasakan <span class="font-editorial italic font-normal text-emerald-300">Pengalamannya Sendiri.</span>
                         </h3>
 
-                        <div class="space-y-2 text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
-                            <p class="flex items-start gap-2.5">
-                                <i class="fas fa-map-pin text-emerald-400 mt-1 shrink-0"></i>
-                                <span>{{ $setting->address ?? 'Jl. Kh Wahid Hasyim, Slawi Kulon Kec. Slawi, Kab. Tegal' }}</span>
+                        <p class="text-xs sm:text-sm text-emerald-100/80 leading-relaxed max-w-xl">
+                            Dari secangkir kopi racikan barista hingga suasana ruang yang tenang dan nyaman, kami menanti kehadiranmu di Slawi Kulon.
+                        </p>
+
+                        <div class="space-y-2.5 pt-2 text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+                            <p class="flex items-start gap-3">
+                                <span class="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center text-emerald-300 shrink-0 text-xs">
+                                    <i class="fas fa-map-pin"></i>
+                                </span>
+                                <span class="pt-0.5">{{ $setting->address ?? 'Jl. Kh Wahid Hasyim, Slawi Kulon Kec. Slawi, Kab. Tegal' }}</span>
                             </p>
-                            <p class="flex items-center gap-2.5">
-                                <i class="fas fa-clock text-emerald-400 shrink-0"></i>
-                                <span>Buka Setiap Hari: <strong>08:00 - 22:00 WIB</strong></span>
+                            <p class="flex items-center gap-3">
+                                <span class="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center text-emerald-300 shrink-0 text-xs">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <span>Buka Setiap Hari: <strong class="text-white">08:00 - 22:00 WIB</strong></span>
                             </p>
                             @if(!empty($setting->phone))
-                                <p class="flex items-center gap-2.5">
-                                    <i class="fab fa-whatsapp text-emerald-400 shrink-0"></i>
-                                    <span>Kontak WhatsApp: <strong>{{ $setting->phone }}</strong></span>
+                                <p class="flex items-center gap-3">
+                                    <span class="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center text-emerald-300 shrink-0 text-xs">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </span>
+                                    <span>Kontak WhatsApp: <strong class="text-white">{{ $setting->phone }}</strong></span>
                                 </p>
                             @endif
                         </div>
@@ -607,15 +715,15 @@
 
                     <div class="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3">
                         <a href="{{ route('customer.order', array_filter(['table' => $tableNumber])) }}" 
-                           class="w-full py-4 px-6 rounded-2xl bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-[#0e382c] font-black text-xs sm:text-sm text-center shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fas fa-bag-shopping"></i>
+                           class="w-full py-4 px-6 rounded-2xl bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-[#0e382c] font-black text-xs sm:text-sm text-center shadow-lg shadow-emerald-950/25 transition flex items-center justify-center gap-2 group">
+                            <i class="fas fa-bag-shopping group-hover:scale-110 transition-transform"></i>
                             <span>Pesan Sekarang (Self-Order)</span>
                         </a>
 
                         <a href="https://maps.google.com/?q={{ urlencode($setting->address ?? 'Noli Coffee Space Slawi') }}" 
                            target="_blank"
-                           class="w-full py-4 px-6 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs sm:text-sm text-center border border-white/20 transition flex items-center justify-center gap-2">
-                            <i class="fas fa-map-location-dot"></i>
+                           class="w-full py-4 px-6 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 text-white font-bold text-xs sm:text-sm text-center border border-white/20 transition flex items-center justify-center gap-2 backdrop-blur-xs group">
+                            <i class="fas fa-map-location-dot text-emerald-300 group-hover:scale-110 transition-transform"></i>
                             <span>Buka di Google Maps</span>
                         </a>
                     </div>
@@ -628,21 +736,22 @@
     {{-- ========================================================================= --}}
     {{-- 10. EDITORIAL FOOTER                                                      --}}
     {{-- ========================================================================= --}}
-    <footer class="bg-white border-t border-slate-200/80 py-10 text-xs text-slate-500">
+    <footer class="bg-white py-12 text-xs text-stone-500">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
                 <div>
-                    <strong class="text-slate-900 font-black text-sm block">{{ $setting->shop_name ?? 'Noli Coffee & Space' }}</strong>
-                    <span class="text-[11px] text-slate-400">Slawi Kulon, Kec. Slawi, Kabupaten Tegal, Jawa Tengah.</span>
+                    <strong class="text-slate-900 font-black text-sm block font-heading">{{ $setting->shop_name ?? 'Noli Coffee & Space' }}</strong>
+                    <span class="text-[11px] text-stone-400">Slawi Kulon, Kec. Slawi, Kabupaten Tegal, Jawa Tengah.</span>
                 </div>
-                <div class="flex items-center gap-6 text-xs font-bold text-slate-600">
-                    <a href="#hero" class="hover:text-[#0e382c]">Beranda</a>
-                    <a href="#signature-spotlight" class="hover:text-[#0e382c]">Menu Unggulan</a>
-                    <a href="#menu-katalog" class="hover:text-[#0e382c]">Daftar Menu</a>
+                <div class="flex items-center gap-6 text-xs font-bold text-stone-600">
+                    <a href="#hero" class="hover:text-[#0e382c] transition">Beranda</a>
+                    <a href="#signature-spotlight" class="hover:text-[#0e382c] transition">Menu Unggulan</a>
+                    <a href="#tentang-noli" class="hover:text-[#0e382c] transition">Tentang Kami</a>
+                    <a href="#menu-katalog" class="hover:text-[#0e382c] transition">Daftar Menu</a>
                     <a href="{{ route('customer.order', array_filter(['table' => $tableNumber])) }}" class="text-[#0e382c] font-black hover:underline">Self-Order</a>
                 </div>
             </div>
-            <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
+            <div class="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-stone-400">
                 <p>© {{ date('Y') }} {{ $setting->shop_name ?? 'Noli Coffee & Space' }}. All rights reserved.</p>
                 <p>Designed for seamless in-store & online cafe dining experience.</p>
             </div>
@@ -653,7 +762,7 @@
     {{-- 11. MOBILE STICKY ORDER BUTTON                                            --}}
     {{-- ========================================================================= --}}
     <div class="sm:hidden fixed bottom-4 left-4 right-4 z-40">
-        <div class="bg-[#0e382c]/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-emerald-900/60 flex items-center justify-between gap-3">
+        <div class="bg-[#0e382c]/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-emerald-800/60 flex items-center justify-between gap-3">
             <div class="min-w-0 pl-1">
                 <span class="text-[10px] text-emerald-300 font-bold uppercase tracking-wider block">
                     {{ !empty($tableNumber) ? 'Meja ' . $tableNumber : 'Noli Coffee' }}
@@ -681,16 +790,16 @@
                  title="Klik di luar untuk menutup"></div>
 
             {{-- Modal Content Card --}}
-            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto z-10 animate-pop"
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 sm:p-7 shadow-2xl border border-stone-200/80 relative max-h-[90vh] overflow-y-auto z-10 animate-pop"
                  wire:click.stop
                  onclick="event.stopPropagation()">
                 {{-- Mobile Pull Bar (also tap to close) --}}
-                <div class="w-12 h-1.5 bg-slate-200 hover:bg-slate-300 rounded-full mx-auto mb-4 sm:hidden cursor-pointer"
+                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mb-4 sm:hidden cursor-pointer"
                      wire:click="closeQuickView"
                      title="Tutup"></div>
 
                 {{-- Image --}}
-                <div class="w-full aspect-[4/3] rounded-2xl bg-slate-100 overflow-hidden relative mb-4 border border-slate-200">
+                <div class="w-full aspect-[4/3] rounded-2xl bg-stone-50 overflow-hidden relative mb-4 border border-stone-100">
                     @if(!empty($previewProduct->image))
                         <img src="{{ asset('storage/' . $previewProduct->image) }}" 
                              alt="{{ $previewProduct->name }}" 
@@ -701,37 +810,41 @@
                         </div>
                     @endif
 
-                    <div class="absolute top-3 left-3 bg-[#0e382c] text-white text-[10px] font-black px-2.5 py-1 rounded-xl shadow-sm uppercase">
-                        {{ $previewProduct->category?->name }}
+                    <div class="absolute top-3 left-3 bg-[#0e382c] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1.5 badge-shine">
+                        <i class="fas fa-award text-emerald-300 text-[9px]"></i>
+                        <span>{{ $previewProduct->category?->name }}</span>
                     </div>
                 </div>
 
                 {{-- Details --}}
-                <div class="space-y-3">
+                <div class="space-y-3.5">
                     <div>
-                        <h3 class="text-xl font-black text-slate-900 font-heading">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
+                            {{ $previewProduct->category?->name }}
+                        </span>
+                        <h3 class="text-xl font-black text-slate-900 font-heading mt-0.5">
                             {{ $previewProduct->name }}
                         </h3>
-                        <span class="text-base font-black text-[#0e382c] font-heading block mt-0.5">
+                        <span class="text-lg font-black text-[#0e382c] font-heading block mt-1">
                             Rp {{ number_format($previewProduct->price, 0, ',', '.') }}
                         </span>
                     </div>
 
                     {{-- Description --}}
-                    <div class="pt-2 border-t border-slate-100">
-                        <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                    <div class="pt-3 border-t border-stone-100">
+                        <label class="text-[10px] font-black uppercase tracking-wider text-stone-400 block mb-1">
                             Deskripsi Menu
                         </label>
-                        <p class="text-xs text-slate-600 leading-relaxed">
+                        <p class="text-xs text-stone-600 leading-relaxed">
                             {{ !empty($previewProduct->description) ? $previewProduct->description : ($previewProduct->category?->description ?? 'Racikan pilihan istimewa barista Noli Coffee.') }}
                         </p>
                     </div>
 
                     {{-- Action Button --}}
-                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center gap-3">
+                    <div class="pt-4 mt-4 border-t border-stone-100 flex items-center gap-3">
                         <button type="button" 
                                 wire:click="closeQuickView" 
-                                class="w-1/3 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition">
+                                class="w-1/3 py-3 rounded-2xl border border-stone-200/90 text-stone-600 hover:bg-stone-50 font-bold text-xs transition">
                             Tutup
                         </button>
 

@@ -1,10 +1,10 @@
-<div class="min-h-screen bg-[#f8faf9] flex flex-col justify-between p-3.5 sm:p-6 lg:p-8 pt-safe pb-8"
+<div class="min-h-screen bg-[#faf8f5] text-slate-800 flex flex-col justify-between p-3.5 sm:p-6 lg:p-8 pt-safe pb-8 selection:bg-[#0e382c] selection:text-white"
      wire:poll.3s="checkPaymentStatus">
 
     {{-- Top Header --}}
-    <div class="max-w-sm sm:max-w-md mx-auto w-full flex items-center justify-between pb-2.5 border-b border-slate-200/80 shrink-0">
+    <div class="max-w-sm sm:max-w-md mx-auto w-full flex items-center justify-between pb-2.5 border-b border-stone-200/80 shrink-0">
         <a href="{{ route('customer.order') }}" 
-           class="w-9 h-9 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-[#0e382c] hover:border-emerald-300 active:scale-95 flex items-center justify-center text-xs shadow-2xs transition">
+           class="w-9 h-9 rounded-2xl bg-white border border-stone-200/80 text-stone-700 hover:text-[#0e382c] hover:border-emerald-300 active:scale-95 flex items-center justify-center text-xs shadow-2xs transition">
             <i class="fas fa-arrow-left"></i>
         </a>
         <span class="text-xs font-black text-slate-900 uppercase tracking-widest font-heading">
@@ -17,7 +17,7 @@
     <div class="max-w-sm sm:max-w-md mx-auto w-full my-auto py-2 space-y-3">
 
         {{-- Main Payment Card --}}
-        <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border border-slate-200/80 text-center relative overflow-hidden">
+        <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-stone-200/80 text-center relative overflow-hidden">
             
             {{-- Payment Expiry Countdown Timer --}}
             <div x-data="paymentTimer({{ $expiresAtTimestamp }})" x-init="start()" class="mb-3">
@@ -29,9 +29,9 @@
 
             {{-- Invoice & Table Info --}}
             <div class="text-center mb-3">
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">No. Pesanan</span>
+                <span class="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">No. Pesanan</span>
                 <span class="text-sm font-black text-slate-900 font-heading tracking-wide">{{ $transaction->short_order_number }}</span>
-                <div class="mt-1 flex items-center justify-center gap-1.5 text-xs text-slate-600">
+                <div class="mt-1 flex items-center justify-center gap-1.5 text-xs text-stone-600">
                     @if($transaction->order_type === 'dine_in')
                         <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0e382c] font-black text-[11px] border border-emerald-200/70">
                             <i class="{{ !empty($transaction->table_number) ? 'fas fa-chair' : 'fas fa-mug-hot' }} text-[10px]"></i> 
@@ -42,14 +42,14 @@
                             <i class="fas fa-bag-shopping text-[10px]"></i> Takeaway
                         </span>
                     @endif
-                    <span class="text-slate-300">•</span>
+                    <span class="text-stone-300">•</span>
                     <span class="font-bold text-slate-800 truncate max-w-[150px]">{{ $transaction->customer_name }}</span>
                 </div>
             </div>
 
             {{-- Total Amount Display --}}
-            <div class="bg-slate-50 py-2.5 px-4 rounded-2xl border border-slate-200/60 mb-2.5">
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Total yang Harus Dibayar</span>
+            <div class="bg-[#faf8f5] py-2.5 px-4 rounded-2xl border border-stone-200/80 mb-2.5">
+                <span class="text-[10px] text-stone-400 font-bold uppercase tracking-wider block mb-0.5">Total yang Harus Dibayar</span>
                 <span class="text-2xl sm:text-3xl font-black text-slate-900 font-heading tracking-tight">
                     Rp {{ number_format($transaction->total, 0, ',', '.') }}
                 </span>
@@ -58,16 +58,16 @@
             {{-- Collapsible Order Breakdown with Add-ons --}}
             <div x-data="{ openDetail: false }" class="mb-3 text-left">
                 <button type="button" @click="openDetail = !openDetail" 
-                        class="w-full py-2 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between transition cursor-pointer">
+                        class="w-full py-2 px-3.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-bold flex items-center justify-between transition cursor-pointer">
                     <span class="flex items-center gap-1.5">
                         <i class="fas fa-receipt text-emerald-700 text-[11px]"></i>
                         <span>Lihat Rincian Pesanan ({{ $transaction->details->count() }} menu)</span>
                     </span>
-                    <i class="fas fa-chevron-down text-[10px] text-slate-500 transition-transform duration-200" :class="openDetail ? 'rotate-180' : ''"></i>
+                    <i class="fas fa-chevron-down text-[10px] text-stone-500 transition-transform duration-200" :class="openDetail ? 'rotate-180' : ''"></i>
                 </button>
-                <div x-show="openDetail" x-collapse class="mt-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-2 text-xs">
+                <div x-show="openDetail" x-collapse class="mt-2 p-3 bg-[#faf8f5] rounded-2xl border border-stone-200/80 space-y-2 text-xs">
                     @foreach($transaction->details as $d)
-                        <div class="flex justify-between items-start pb-2 border-b border-slate-200/60 last:border-0 last:pb-0">
+                        <div class="flex justify-between items-start pb-2 border-b border-stone-200/60 last:border-0 last:pb-0">
                             <div class="flex-1 pr-2">
                                 <span class="font-bold text-slate-900">{{ $d->quantity }}x {{ $d->product?->name ?? 'Menu' }}</span>
                                 @if(!empty($d->addons))
@@ -94,7 +94,7 @@
             </div>
 
             {{-- The Authentic QRIS Frame --}}
-            <div class="bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-slate-200 shadow-xs text-center relative overflow-hidden max-w-[260px] sm:max-w-[280px] mx-auto">
+            <div class="bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-stone-200/90 shadow-xs text-center relative overflow-hidden max-w-[260px] sm:max-w-[280px] mx-auto">
                 
                 {{-- Left Red Chevron Accent --}}
                 <div class="absolute left-0 top-1/4 -translate-y-2 w-3 h-16 bg-[#e5252d] clip-chevron-left"></div>
@@ -117,7 +117,7 @@
                              alt="Kode QRIS" 
                              class="w-44 h-44 sm:w-52 sm:h-52 mx-auto object-contain">
                     @else
-                        <div class="w-44 h-44 sm:w-52 sm:h-52 flex flex-col items-center justify-center bg-slate-50 rounded-lg text-slate-400">
+                        <div class="w-44 h-44 sm:w-52 sm:h-52 flex flex-col items-center justify-center bg-stone-50 rounded-lg text-stone-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2 text-[#0e382c]"></i>
                             <span class="text-xs font-semibold">Memuat Kode QRIS...</span>
                         </div>
@@ -130,15 +130,15 @@
             <div class="mt-2.5">
                 <button type="button" 
                         onclick="downloadQrisImage()" 
-                        class="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#0e382c] text-xs font-black border border-emerald-200/80 shadow-2xs inline-flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                        class="px-3.5 py-1.5 rounded-xl bg-stone-50 hover:bg-stone-100 text-[#0e382c] text-xs font-black border border-stone-200/80 shadow-2xs inline-flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i class="fas fa-download text-[10px]"></i>
                     <span>Unduh Gambar QR</span>
                 </button>
             </div>
 
             {{-- Minimalist Payment Note --}}
-            <div class="mt-2 text-[10px] text-slate-400 font-medium max-w-[260px] mx-auto leading-tight">
-                Scan atau upload gambar QR dengan <span class="text-slate-600 font-bold">BCA, GoPay, OVO, DANA, ShopeePay</span> & semua M-Banking.
+            <div class="mt-2 text-[10px] text-stone-400 font-medium max-w-[260px] mx-auto leading-tight">
+                Scan atau upload gambar QR dengan <span class="text-stone-700 font-bold">BCA, GoPay, OVO, DANA, ShopeePay</span> & semua M-Banking.
             </div>
 
         </div>
@@ -170,7 +170,7 @@
     </div>
 
     {{-- Footer Security Info --}}
-    <div class="max-w-sm sm:max-w-md mx-auto w-full text-center text-[10.5px] text-slate-400 pb-safe shrink-0">
+    <div class="max-w-sm sm:max-w-md mx-auto w-full text-center text-[10.5px] text-stone-400 pb-safe shrink-0">
         Pembayaran terverifikasi otomatis. Pesanan langsung masuk ke antrean dapur.
     </div>
 

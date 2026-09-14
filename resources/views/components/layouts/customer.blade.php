@@ -45,8 +45,8 @@
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
                         heading: ['Plus Jakarta Sans', 'sans-serif'],
-                        serif: ['Playfair Display', 'Cormorant Garamond', 'serif'],
-                        editorial: ['Cormorant Garamond', 'Playfair Display', 'serif'],
+                        serif: ['"Playfair Display"', 'Cormorant Garamond', 'serif'],
+                        editorial: ['"Instrument Serif"', '"Playfair Display"', 'serif'],
                     },
                     boxShadow: {
                         'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
@@ -59,11 +59,11 @@
         }
     </script>
 
-    {{-- FontAwesome & Google Fonts (Plus Jakarta Sans, Playfair Display & Cormorant Garamond) --}}
+    {{-- FontAwesome & Google Fonts (Plus Jakarta Sans, Instrument Serif, Playfair Display & Cormorant Garamond) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>

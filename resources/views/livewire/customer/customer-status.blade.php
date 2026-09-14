@@ -4,12 +4,12 @@
     $status = $transaction->status; // 'pending', 'processing', 'ready', 'completed', 'cancelled'
 @endphp
 
-<div class="min-h-screen bg-[#f8faf9] flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-6 pb-12" 
+<div class="min-h-screen bg-[#faf8f5] text-slate-800 flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-6 pb-12 selection:bg-[#0e382c] selection:text-white" 
      @if(!$isFinished) wire:poll.10s @endif>
 
     {{-- Clean Top Navigation Bar --}}
-    <div class="max-w-lg mx-auto w-full flex items-center justify-between pb-3.5 border-b border-slate-200/80">
-        <a href="{{ route('customer.order') }}" class="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#0e382c] hover:border-slate-300 shadow-2xs flex items-center justify-center transition">
+    <div class="max-w-lg mx-auto w-full flex items-center justify-between pb-3.5 border-b border-stone-200/80">
+        <a href="{{ route('customer.order') }}" class="w-8 h-8 rounded-xl bg-white border border-stone-200/80 text-stone-700 hover:text-[#0e382c] hover:border-stone-300 shadow-2xs flex items-center justify-center transition">
             <i class="fas fa-arrow-left text-xs"></i>
         </a>
         <span class="font-extrabold text-xs text-slate-900 font-heading tracking-wide">{{ $setting->shop_name ?? 'POS Cafe' }}</span>
