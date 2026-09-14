@@ -1033,12 +1033,12 @@ class TelegramBotCommandService
     public function handleVoidExecution(string $chatId, int $txId, string $reasonKey, ?int $messageId, string $callbackId, string $fromName): void
     {
         $reasonMap = [
-            'salah_input' => 'Salah Input Menu/Item oleh Kasir',
-            'pelanggan_batal' => 'Pelanggan Membatalkan Pesanan',
-            'double_trx' => 'Double Transaksi / Salah Cetak',
-            'lainnya' => 'Dibatalkan oleh Owner/Admin via Telegram',
+            'salah_input' => 'Salah Input Kasir',
+            'pelanggan_batal' => 'Pelanggan Batal',
+            'double_trx' => 'Double Transaksi',
+            'lainnya' => 'Alasan Lainnya',
         ];
-        $reasonText = $reasonMap[$reasonKey] ?? 'Dibatalkan oleh Owner/Admin via Telegram';
+        $reasonText = $reasonMap[$reasonKey] ?? 'Salah Input Kasir';
 
         DB::beginTransaction();
         try {
@@ -1073,7 +1073,7 @@ class TelegramBotCommandService
             $transaction->status = 'cancelled';
             $transaction->cancelled_at = now();
             $transaction->cancelled_by = $adminUser ? $adminUser->id : null;
-            $transaction->cancelled_reason = $reasonText . ' (via Telegram oleh ' . ($fromName ?: 'Owner') . ')';
+            $transaction->cancelled_reason = $reasonText;
             $transaction->save();
 
             // Hitung ulang omset dan laci shift kasir secara atomic
@@ -1084,7 +1084,7 @@ class TelegramBotCommandService
             DB::commit();
 
             // Tampilkan popup notifikasi sukses di layar HP owner
-            $this->telegramService->answerCallbackQuery($callbackId, "✅ Nota #{$transaction->invoice_number} BERHASIL DIBATALKAN!", true);
+            $this->telegramService->answerCallbackQuery($callbackId, "✅ Nota #{$transaction->invoice_number} DIBATALKAN!\nAlasan: {$reasonText}", true);
 
             // Perbarui pesan Telegram menjadi format alert Void resmi dengan tombol navigasi
             $transaction->load(['cancelledBy', 'user', 'details.product.category', 'shift']);
