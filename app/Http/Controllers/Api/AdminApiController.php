@@ -492,6 +492,22 @@ class AdminApiController extends Controller
             ];
         });
 
+        $totalCount = $transactions->total();
+
+        // Calculate summary aggregates matching the current active filters
+        $completedQuery = (clone $query)->where('status', 'completed');
+        $completedCount = (int) $completedQuery->count();
+        $totalRevenue = (float) $completedQuery->sum('total');
+
+        $completedIds = (clone $completedQuery)->pluck('id');
+        $rawProfit = !empty($completedIds) ? (float) \Illuminate\Support\Facades\DB::table('transaction_details')
+            ->whereIn('transaction_id', $completedIds)
+            ->sum('profit') : 0.0;
+        $totalDiscount = (float) $completedQuery->sum('discount');
+        $totalProfit = max(0.0, $rawProfit - $totalDiscount);
+        $aov = $completedCount > 0 ? ($totalRevenue / $completedCount) : 0.0;
+        $profitMargin = $totalRevenue > 0 ? ($totalProfit / $totalRevenue) * 100 : 0.0;
+
         return response()->json([
             'success' => true,
             'message' => 'Daftar transaksi berhasil dimuat.',
@@ -500,7 +516,15 @@ class AdminApiController extends Controller
                 'current_page' => $transactions->currentPage(),
                 'last_page' => $transactions->lastPage(),
                 'per_page' => $transactions->perPage(),
-                'total' => $transactions->total(),
+                'total' => $totalCount,
+            ],
+            'summary' => [
+                'total_transactions' => $totalCount,
+                'completed_count' => $completedCount,
+                'total_revenue' => $totalRevenue,
+                'total_profit' => $totalProfit,
+                'aov' => $aov,
+                'profit_margin' => $profitMargin,
             ],
         ]);
     }
