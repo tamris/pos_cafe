@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\MenuSalesApiController;
 use App\Http\Controllers\Api\CashFlowApiController;
 use App\Http\Controllers\Api\TelegramWebhookController;
+use App\Http\Controllers\Api\ProductApiController;
+use App\Http\Controllers\Api\HppApiController;
 
 // Public Telegram Bot Webhook
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handleWebhook']);
@@ -66,6 +68,26 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         Route::post('/', [CashFlowApiController::class, 'storeCategory']);
         Route::put('/{id}', [CashFlowApiController::class, 'updateCategory']);
         Route::delete('/{id}', [CashFlowApiController::class, 'deleteCategory']);
+    });
+
+    // 9. Categories Master for Apps
+    Route::get('/categories', [HppApiController::class, 'categories']);
+
+    // 10. HPP Management & Strategy (Calculator, AI Recipe, Summary)
+    Route::prefix('hpp')->group(function () {
+        Route::post('/calculate', [HppApiController::class, 'calculate']);
+        Route::post('/ai-recipe', [HppApiController::class, 'aiRecipe']);
+        Route::get('/summary', [HppApiController::class, 'summary']);
+    });
+
+    // 11. Product & Recipe Master CRUD
+    Route::prefix('products')->group(function () {
+        Route::get('/', [ProductApiController::class, 'index']);
+        Route::get('/{id}', [ProductApiController::class, 'show']);
+        Route::post('/', [ProductApiController::class, 'store']);
+        Route::match(['put', 'post'], '/{id}', [ProductApiController::class, 'update']);
+        Route::post('/{id}/restore', [ProductApiController::class, 'restore']);
+        Route::delete('/{id}', [ProductApiController::class, 'destroy']);
     });
 });
 
