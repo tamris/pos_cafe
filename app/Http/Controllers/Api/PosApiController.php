@@ -4,6 +4,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\HppCalculationService;
+
 
 
 use App\Http\Controllers\Controller;
@@ -49,6 +51,13 @@ class PosApiController extends Controller
     {
 
         $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
 
 
 
@@ -100,6 +109,8 @@ class PosApiController extends Controller
 
         // 3. Active Products
 
+        $hppService = app(HppCalculationService::class);
+
         $products = Product::query()
 
             ->whereHas('category', function ($q) {
@@ -108,7 +119,7 @@ class PosApiController extends Controller
 
             })
 
-            ->with(['category:id,name', 'category.addons'])
+            ->with(['category:id,name', 'category.addons', 'ingredients.ingredient:id,name,stock,unit'])
 
             ->withSum('transactionDetails as total_sold', 'quantity')
 
@@ -118,7 +129,8 @@ class PosApiController extends Controller
 
             ->get()
 
-            ->map(function ($p) {
+            ->map(function ($p) use ($hppService) {
+                $capacity = $hppService->calculateCupCapacity($p);
 
                 $imageUrl = null;
 
@@ -177,6 +189,10 @@ class PosApiController extends Controller
                     'is_active' => (bool) $p->is_active,
 
                     'total_sold' => (int) ($p->total_sold ?? 0),
+
+                    'estimated_stock' => $capacity['estimated_stock'],
+
+                    'bottleneck_ingredient' => $capacity['bottleneck_details'],
 
                     'available_addons' => $availableAddons,
 
@@ -414,6 +430,13 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
+
         $shift = null;
         if ($request->filled('shift_id')) {
             $shift = CashierShift::where('user_id', $user->id)
@@ -501,6 +524,13 @@ class PosApiController extends Controller
 
 
         $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
 
 
 
@@ -611,6 +641,13 @@ class PosApiController extends Controller
 
 
         $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
 
         $shift = null;
         if ($request->filled('shift_id')) {
@@ -791,6 +828,13 @@ class PosApiController extends Controller
 
 
         $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
 
 
 
@@ -1066,6 +1110,9 @@ class PosApiController extends Controller
 
             $freshTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
 
+            // Deduct Ingredient Stock
+            app(\App\Services\IngredientService::class)->deductStockForTransaction($freshTransaction);
+
             // Kirim notifikasi transaksi baru ke Telegram (Background Job)
             app(\App\Services\TelegramService::class)->sendTransactionNotification($freshTransaction, $isFromOpenBill);
 
@@ -1300,6 +1347,13 @@ class PosApiController extends Controller
 
 
         $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
 
         $tableNumber = $request->input('table_number');
 
@@ -1653,6 +1707,13 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
+
         $transaction = Transaction::find($id);
 
 
@@ -1708,6 +1769,13 @@ class PosApiController extends Controller
     {
 
         $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
 
         $search = $request->input('search');
 
@@ -2056,6 +2124,13 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
+
         $offlineList = $request->input('transactions', []);
 
         $syncedResults = [];
@@ -2260,11 +2335,12 @@ class PosApiController extends Controller
 
             DB::commit();
 
-            // Kirim notifikasi Telegram untuk transaksi offline yang tersinkronisasi
+            // Deduct stock & kirim notifikasi Telegram untuk transaksi offline yang tersinkronisasi
             foreach ($syncedResults as $res) {
-                if (!empty($res['server_id'])) {
+                if (!empty($res['server_id']) && ($res['status'] ?? '') === 'synced') {
                     $tx = Transaction::with(['details.product', 'user', 'shift'])->find($res['server_id']);
                     if ($tx && $tx->status === 'completed') {
+                        app(\App\Services\IngredientService::class)->deductStockForTransaction($tx);
                         app(\App\Services\TelegramService::class)->sendTransactionNotification($tx);
                     }
                 }
@@ -3262,6 +3338,13 @@ class PosApiController extends Controller
 
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated or session expired.',
+            ], 401);
+        }
+
         $newStatus = $request->input('status');
 
 
@@ -3310,16 +3393,17 @@ class PosApiController extends Controller
 
 
 
-        if ($newStatus === 'cancelled') {
-
-            $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
-
+        if ($newStatus === 'completed') {
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift']);
             if ($freshTx) {
-
-                app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
-
+                app(\App\Services\IngredientService::class)->deductStockForTransaction($freshTx);
             }
-
+        } elseif ($newStatus === 'cancelled') {
+            $freshTx = $transaction->fresh(['details.product', 'user', 'shift', 'cancelledBy']);
+            if ($freshTx) {
+                app(\App\Services\IngredientService::class)->returnStockForVoidTransaction($freshTx);
+                app(\App\Services\TelegramService::class)->sendVoidNotification($freshTx);
+            }
         }
 
 

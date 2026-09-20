@@ -17,14 +17,15 @@ class ResetTransactions extends Command
     protected $signature = 'app:reset-transactions 
                             {--force : Paksa eksekusi tanpa konfirmasi interaktif}
                             {--keep-announcements : Pertahankan data pengumuman kasir}
-                            {--keep-tokens : Pertahankan personal access token API}';
+                            {--keep-tokens : Pertahankan personal access token API}
+                            {--reset-stocks : Reset semua angka stok bahan baku ke 0 untuk siap opname fisik}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Mengosongkan semua riwayat transaksi, detail penjualan, shift kasir, dan session testing tanpa menyentuh data produk, user, dan master data lainnya.';
+    protected $description = 'Mengosongkan semua riwayat transaksi, detail penjualan, shift kasir, mutasi stok, dan session testing tanpa menyentuh data produk, user, dan master data lainnya.';
 
     /**
      * Execute the console command.
@@ -32,7 +33,7 @@ class ResetTransactions extends Command
     public function handle()
     {
         $this->newLine();
-        $this->output->block('🚀 PERSIAPAN PRODUCTION: PEMBERSIHAN DATA TRANSAKSI', 'INFO', 'fg=white;bg=blue', ' ', true);
+        $this->output->block('🚀 PERSIAPAN PRODUCTION: PEMBERSIHAN DATA TRANSAKSI & MUTASI', 'INFO', 'fg=white;bg=blue', ' ', true);
         $this->newLine();
 
         // 1. Tampilkan Data Master yang DIJAMIN AMAN
@@ -42,7 +43,8 @@ class ResetTransactions extends Command
             'users' => 'Users / Kasir / Admin',
             'categories' => 'Kategori Menu',
             'products' => 'Produk / Menu & Harga',
-            'product_ingredients' => 'Resep / Bahan Baku Menu',
+            'ingredients' => 'Master Bahan Baku & Satuan',
+            'product_ingredients' => 'Resep / Komposisi Menu (BOM)',
             'expense_categories' => 'Kategori Pengeluaran & Arus Kas',
             'settings' => 'Pengaturan Cafe / Struk / Logo',
         ];
@@ -63,9 +65,10 @@ class ResetTransactions extends Command
 
         $tablesToWipe = [
             'cash_movements' => 'Riwayat Arus Kas & Pengeluaran (Cash Flow)',
-            'transaction_details' => 'Detail Item Penjualan',
+            'transaction_details' => 'Detail Item Penjualan POS',
             'transactions' => 'Transaksi Penjualan (POS & Online)',
             'cashier_shifts' => 'Riwayat Shift Kasir',
+            'stock_mutations' => 'Riwayat Mutasi Stok Bahan Baku (POS, Restock, Opname, Rusak)',
         ];
 
         if (!$this->option('keep-tokens')) {
@@ -92,11 +95,17 @@ class ResetTransactions extends Command
         }
         $this->table(['Tabel yang akan Direset', 'Jumlah Data Saat Ini'], $wipeDataCount);
 
+        if ($this->option('reset-stocks')) {
+            $this->components->warn('⚠️  Opsi --reset-stocks aktif: Kolom stok di tabel ingredients akan di-set ke 0.');
+        } else {
+            $this->components->info('ℹ️  Angka stok bahan saat ini DIPERTAHANKAN. (Gunakan --reset-stocks jika ingin di-set ke 0).');
+        }
+
         $this->newLine();
 
         // 3. Konfirmasi Keamanan
         if (!$this->option('force')) {
-            $confirmed = $this->confirm('⚠️  Apakah Anda yakin ingin MENGOSONGKAN data transaksi di atas?', false);
+            $confirmed = $this->confirm('⚠️  Apakah Anda yakin ingin MENGOSONGKAN data transaksi & mutasi di atas?', false);
             if (!$confirmed) {
                 $this->components->warn('Operasi dibatalkan. Tidak ada data yang diubah.');
                 return Command::SUCCESS;
@@ -118,6 +127,11 @@ class ResetTransactions extends Command
             }
         }
 
+        if ($this->option('reset-stocks') && Schema::hasTable('ingredients')) {
+            DB::table('ingredients')->update(['stock' => 0]);
+            $this->line("  <fg=green>✔</> Berhasil me-reset semua stok bahan baku ke <fg=cyan>0</>");
+        }
+
         Schema::enableForeignKeyConstraints();
 
         // 5. Bersihkan Cache & Optimize
@@ -132,8 +146,8 @@ class ResetTransactions extends Command
         }
 
         $this->newLine();
-        $this->output->success('✨ SEMUA DATA TRANSAKSI BERHASIL DIKOSONGKAN DENGAN AMAN!');
-        $this->line('Semua data Produk, Kategori, User, dan Setting tetap terjaga 100%.');
+        $this->output->success('✨ SEMUA DATA TRANSAKSI & MUTASI BERHASIL DIKOSONGKAN DENGAN AMAN!');
+        $this->line('Semua data Master (Produk, Resep, Bahan Baku, Kategori, User, Setting) tetap terjaga 100%.');
         $this->line('Aplikasi siap digunakan untuk transaksi baru di Production.');
         $this->newLine();
 

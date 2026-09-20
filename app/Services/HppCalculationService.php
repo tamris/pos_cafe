@@ -111,6 +111,7 @@ class HppCalculationService
             $totalVariableCost += $subtotal;
 
             $processedIngredients[] = [
+                'ingredient_id' => !empty($item['ingredient_id']) ? (int) $item['ingredient_id'] : null,
                 'name' => $name,
                 'amount' => $amount,
                 'unit' => $this->normalizeUnit($unit),
@@ -258,6 +259,122 @@ class HppCalculationService
                 'margin' => round((($premium - $baseHpp) / $premium) * 100, 1),
                 'profit' => round($premium - $baseHpp, 2),
             ],
+        ];
+    }
+
+    /**
+     * Hitung kapasitas cup/porsi produk berdasarkan resep dan stok fisik bahan baku terkini.
+     * Menggunakan Teori Faktor Pembatas (The Bottleneck Reagent).
+     *
+     * @param \App\Models\Product $product
+     * @param \Illuminate\Support\Collection|null $ingredientsMap Map ingredient_id => Ingredient
+     * @return array
+     */
+    public function calculateCupCapacity(\App\Models\Product $product, $ingredientsMap = null): array
+    {
+        $ingredients = $product->ingredients;
+        if (!$ingredients || $ingredients->isEmpty()) {
+            return [
+                'has_recipe' => false,
+                'estimated_stock' => null,
+                'bottleneck_ingredient' => null,
+                'bottleneck_details' => null,
+                'breakdowns' => [],
+            ];
+        }
+
+        $minCups = PHP_INT_MAX;
+        $bottleneckName = null;
+        $bottleneckDetails = null;
+        $breakdowns = [];
+
+        foreach ($ingredients as $ing) {
+            $ingredientModel = null;
+            if ($ingredientsMap && isset($ingredientsMap[$ing->ingredient_id])) {
+                $ingredientModel = $ingredientsMap[$ing->ingredient_id];
+            } elseif (method_exists($ing, 'relationLoaded') && $ing->relationLoaded('ingredient') && $ing->ingredient) {
+                $ingredientModel = $ing->ingredient;
+            } elseif ($ing->ingredient_id) {
+                $ingredientModel = \App\Models\Ingredient::find($ing->ingredient_id);
+            }
+
+            $recipeAmount = (float) $ing->amount;
+            $recipeUnit = $ing->unit;
+
+            if ($recipeAmount <= 0) {
+                continue;
+            }
+
+            if (!$ingredientModel) {
+                $breakdowns[] = [
+                    'ingredient_id' => $ing->ingredient_id,
+                    'name' => (isset($ing->name) && !empty($ing->name)) ? $ing->name : 'Bahan Belum Ditautkan',
+                    'recipe_amount' => $recipeAmount,
+                    'recipe_unit' => $recipeUnit,
+                    'current_stock' => null,
+                    'stock_unit' => $recipeUnit,
+                    'max_cups' => null,
+                ];
+                continue;
+            }
+
+            $currentStock = (float) ($ingredientModel->stock ?? $ingredientModel->current_stock ?? 0);
+            $stockUnit = $ingredientModel->unit ?? $ing->unit;
+
+            $normStockUnit = $this->normalizeUnit($stockUnit);
+            $normRecipeUnit = $this->normalizeUnit($recipeUnit);
+
+            $availableInRecipeUnit = $currentStock;
+            if ($normStockUnit === 'kg' && $normRecipeUnit === 'gram') {
+                $availableInRecipeUnit = $currentStock * 1000.0;
+            } elseif ($normStockUnit === 'gram' && $normRecipeUnit === 'kg') {
+                $availableInRecipeUnit = $currentStock / 1000.0;
+            } elseif ($normStockUnit === 'liter' && $normRecipeUnit === 'ml') {
+                $availableInRecipeUnit = $currentStock * 1000.0;
+            } elseif ($normStockUnit === 'ml' && $normRecipeUnit === 'liter') {
+                $availableInRecipeUnit = $currentStock / 1000.0;
+            }
+
+            $cupsForThisIngredient = $availableInRecipeUnit <= 0 
+                ? 0 
+                : (int) floor($availableInRecipeUnit / $recipeAmount);
+
+            $ingName = (isset($ing->name) && !empty($ing->name)) ? $ing->name : ($ingredientModel->name ?? 'Bahan Baku');
+
+            $breakdowns[] = [
+                'ingredient_id' => $ing->ingredient_id,
+                'name' => $ingName,
+                'recipe_amount' => $recipeAmount,
+                'recipe_unit' => $recipeUnit,
+                'current_stock' => $currentStock,
+                'stock_unit' => $stockUnit,
+                'max_cups' => $cupsForThisIngredient,
+            ];
+
+            if ($cupsForThisIngredient < $minCups) {
+                $minCups = $cupsForThisIngredient;
+                $bottleneckName = $ingName;
+                $formattedStock = $currentStock == (int) $currentStock ? (int) $currentStock : round($currentStock, 1);
+                $bottleneckDetails = "{$ingName} (sisa {$formattedStock} {$stockUnit})";
+            }
+        }
+
+        if ($minCups === PHP_INT_MAX) {
+            return [
+                'has_recipe' => false,
+                'estimated_stock' => null,
+                'bottleneck_ingredient' => null,
+                'bottleneck_details' => null,
+                'breakdowns' => [],
+            ];
+        }
+
+        return [
+            'has_recipe' => true,
+            'estimated_stock' => (int) max(0, $minCups),
+            'bottleneck_ingredient' => $bottleneckName,
+            'bottleneck_details' => $bottleneckDetails,
+            'breakdowns' => $breakdowns,
         ];
     }
 }

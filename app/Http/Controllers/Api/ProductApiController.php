@@ -32,7 +32,7 @@ class ProductApiController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::query()
-            ->with(['category:id,name', 'ingredients'])
+            ->with(['category:id,name', 'ingredients.ingredient:id,name,stock,unit'])
             ->orderBy('name', 'asc');
 
         // Filter: Pencarian nama, SKU, atau barcode
@@ -104,7 +104,7 @@ class ProductApiController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $product = Product::with(['category:id,name', 'ingredients'])->find($id);
+        $product = Product::with(['category:id,name', 'ingredients.ingredient:id,name,stock,unit'])->find($id);
 
         if (!$product) {
             return response()->json([
@@ -169,6 +169,7 @@ class ProductApiController extends Controller
             'is_active' => 'nullable|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'ingredients' => 'nullable|array',
+            'ingredients.*.ingredient_id' => 'nullable|integer',
             'ingredients.*.name' => 'required_with:ingredients|string|max:255',
             'ingredients.*.amount' => 'required_with:ingredients|numeric|min:0',
             'ingredients.*.unit' => 'required_with:ingredients|string|max:50',
@@ -261,6 +262,7 @@ class ProductApiController extends Controller
                     foreach ($calculation['ingredients'] as $ing) {
                         ProductIngredient::create([
                             'product_id' => $product->id,
+                            'ingredient_id' => $ing['ingredient_id'] ?? null,
                             'name' => $ing['name'],
                             'amount' => (float) $ing['amount'],
                             'unit' => $ing['unit'],
@@ -324,6 +326,7 @@ class ProductApiController extends Controller
             'is_active' => 'nullable|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'ingredients' => 'nullable|array',
+            'ingredients.*.ingredient_id' => 'nullable|integer',
             'ingredients.*.name' => 'required_with:ingredients|string|max:255',
             'ingredients.*.amount' => 'required_with:ingredients|numeric|min:0',
             'ingredients.*.unit' => 'required_with:ingredients|string|max:50',
@@ -395,6 +398,7 @@ class ProductApiController extends Controller
                         foreach ($calculation['ingredients'] as $ing) {
                             ProductIngredient::create([
                                 'product_id' => $product->id,
+                                'ingredient_id' => $ing['ingredient_id'] ?? null,
                                 'name' => $ing['name'],
                                 'amount' => (float) $ing['amount'],
                                 'unit' => $ing['unit'],
@@ -586,6 +590,8 @@ class ProductApiController extends Controller
         $marginPercent = $price > 0 ? round(($profit / $price) * 100, 1) : 0.0;
         $foodCostPercent = $price > 0 ? round(($hpp / $price) * 100, 1) : 0.0;
 
+        $capacity = $this->hppService->calculateCupCapacity($product);
+
         $data = [
             'id' => $product->id,
             'name' => $product->name,
@@ -607,15 +613,21 @@ class ProductApiController extends Controller
             'image' => $product->image,
             'image_url' => $imageUrl,
             'ingredients_count' => $product->relationLoaded('ingredients') ? $product->ingredients->count() : 0,
+            'estimated_stock' => $capacity['estimated_stock'],
+            'bottleneck_ingredient' => $capacity['bottleneck_details'],
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),
         ];
 
         if ($includeDetails) {
             $data['pricing_metadata'] = $product->ai_pricing_data;
-            $data['ingredients'] = $product->ingredients->map(function ($ing) {
+            $breakdownsByIngId = collect($capacity['breakdowns'])->keyBy('ingredient_id');
+
+            $data['ingredients'] = $product->ingredients->map(function ($ing) use ($breakdownsByIngId) {
+                $b = $breakdownsByIngId->get($ing->ingredient_id);
                 return [
                     'id' => $ing->id,
+                    'ingredient_id' => $ing->ingredient_id,
                     'name' => $ing->name,
                     'amount' => (float) $ing->amount,
                     'unit' => $ing->unit,
@@ -623,6 +635,9 @@ class ProductApiController extends Controller
                     'buy_amount' => (float) $ing->buy_amount,
                     'buy_unit' => $ing->buy_unit,
                     'subtotal' => (float) $ing->subtotal,
+                    'current_stock' => $b ? $b['current_stock'] : null,
+                    'stock_unit' => $b ? $b['stock_unit'] : null,
+                    'max_cups' => $b ? $b['max_cups'] : null,
                 ];
             });
         }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CashFlowApiController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\ProductApiController;
 use App\Http\Controllers\Api\HppApiController;
+use App\Http\Controllers\Api\IngredientApiController;
 
 // Public Telegram Bot Webhook
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handleWebhook']);
@@ -88,6 +89,24 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         Route::match(['put', 'post'], '/{id}', [ProductApiController::class, 'update']);
         Route::post('/{id}/restore', [ProductApiController::class, 'restore']);
         Route::delete('/{id}', [ProductApiController::class, 'destroy']);
+    });
+
+    // 12. Ingredient Inventory & Stock Opname
+    Route::prefix('ingredients')->group(function () {
+        Route::get('/', [IngredientApiController::class, 'index']);
+        Route::post('/', [IngredientApiController::class, 'store']);
+        Route::get('/mutations', [IngredientApiController::class, 'mutations']);
+        Route::post('/opname', [IngredientApiController::class, 'opname']);
+        Route::get('/{id}', [IngredientApiController::class, 'show']);
+        Route::put('/{id}', [IngredientApiController::class, 'update']);
+        Route::delete('/{id}', [IngredientApiController::class, 'destroy']);
+        Route::post('/{id}/restock', [IngredientApiController::class, 'restock']);
+        Route::post('/{id}/attach-product', [IngredientApiController::class, 'attachToProduct']);
+        Route::delete('/{id}/detach-product/{productId}', [IngredientApiController::class, 'detachFromProduct']);
+        Route::delete('/{id}/detach-all-products', [IngredientApiController::class, 'detachFromAllProducts']);
+        Route::put('/{id}/toggle-active', [IngredientApiController::class, 'toggleActive']);
+        Route::post('/{id}/restore', [IngredientApiController::class, 'restore']);
+        Route::delete('/{id}/force-delete', [IngredientApiController::class, 'forceDelete']);
     });
 });
 
