@@ -660,6 +660,9 @@ class AdminApiController extends Controller
                 $transaction->shift->recalculateTotals();
             }
 
+            // Return Ingredient Stock
+            app(\App\Services\IngredientService::class)->returnStockForVoidTransaction($transaction);
+
             DB::commit();
 
             // Trigger notifikasi alert pembatalan nota (Void) ke Telegram

@@ -8,6 +8,7 @@ class ProductIngredient extends Model
 {
     protected $fillable = [
         'product_id',
+        'ingredient_id',
         'name',
         'amount',
         'unit',
@@ -20,5 +21,10 @@ class ProductIngredient extends Model
     public function product()
     {
         return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    public function ingredient()
+    {
+        return $this->belongsTo(Ingredient::class)->withTrashed();
     }
 }
