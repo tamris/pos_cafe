@@ -8,13 +8,18 @@ use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\MenuSalesApiController;
 use App\Http\Controllers\Api\CashFlowApiController;
 use App\Http\Controllers\Api\TelegramWebhookController;
+use App\Http\Controllers\Api\TelegramOwnerWebhookController;
 use App\Http\Controllers\Api\ProductApiController;
 use App\Http\Controllers\Api\HppApiController;
 use App\Http\Controllers\Api\IngredientApiController;
 
-// Public Telegram Bot Webhook
+// Public Telegram Bot Webhook (Realtime Bot)
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handleWebhook']);
 Route::get('/telegram/webhook-info', [TelegramWebhookController::class, 'getWebhookInfo']);
+
+// Public Telegram Owner Bot Webhook (Executive & Reporting Bot)
+Route::post('/telegram/owner/webhook', [TelegramOwnerWebhookController::class, 'handleWebhook']);
+Route::get('/telegram/owner/webhook-info', [TelegramOwnerWebhookController::class, 'getWebhookInfo']);
 
 // Public Auth routes
 Route::prefix('auth')->group(function () {

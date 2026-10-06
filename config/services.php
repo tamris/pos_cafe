@@ -43,4 +43,10 @@ return [
         'notify_void' => env('TELEGRAM_NOTIFY_VOID', true),
     ],
 
+    'telegram_owner' => [
+        'bot_token' => env('TELEGRAM_OWNER_BOT_TOKEN', env('TELEGRAM_BOT_TOKEN')),
+        'chat_id' => env('TELEGRAM_OWNER_CHAT_ID', env('TELEGRAM_CHAT_ID')),
+        'admin_ids' => env('TELEGRAM_OWNER_ADMIN_IDS', ''),
+    ],
+
 ];

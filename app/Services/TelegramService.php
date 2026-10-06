@@ -325,6 +325,99 @@ class TelegramService
     }
 
     /**
+     * Kirim file dokumen (seperti Excel, PDF, dll) ke Telegram Bot API.
+     *
+     * @param string $filePath Path absolut file di server
+     * @param string $caption Caption teks dokumen (format HTML)
+     * @param string|null $token Bot token override
+     * @param string|null $chatId Target Chat ID override
+     * @param string|null $fileName Nama file saat diunduh user
+     * @param array|null $replyMarkup Array keyboard / button markup (opsional)
+     * @return array ['success' => bool, 'message' => string, 'data' => ?array]
+     */
+    public function sendDocument(string $filePath, string $caption = '', ?string $token = null, ?string $chatId = null, ?string $fileName = null, ?array $replyMarkup = null): array
+    {
+        $setting = $this->getSetting();
+        $botToken = trim($token ?: ($this->getBotToken($setting) ?? ''));
+        $targetChatId = trim($chatId ?: ($this->getChatId($setting) ?? ''));
+
+        if (empty($botToken)) {
+            return ['success' => false, 'message' => 'Telegram Bot Token belum diatur.'];
+        }
+
+        if (empty($targetChatId)) {
+            return ['success' => false, 'message' => 'Telegram Chat ID belum diatur.'];
+        }
+
+        if (!file_exists($filePath)) {
+            return ['success' => false, 'message' => "File dokumen tidak ditemukan di server: {$filePath}"];
+        }
+
+        try {
+            $url = "https://api.telegram.org/bot{$botToken}/sendDocument";
+            $customFileName = $fileName ?: basename($filePath);
+            $fileStream = fopen($filePath, 'r');
+
+            $request = Http::withOptions([
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
+            ])->timeout(30)->attach('document', $fileStream, $customFileName);
+
+            $payload = [
+                'chat_id' => $targetChatId,
+                'parse_mode' => 'HTML',
+            ];
+
+            if (!empty($caption)) {
+                $payload['caption'] = $caption;
+            }
+
+            if (!empty($replyMarkup)) {
+                $payload['reply_markup'] = json_encode($replyMarkup);
+            }
+
+            $response = $request->post($url, $payload);
+
+            if (is_resource($fileStream)) {
+                fclose($fileStream);
+            }
+
+            $body = $response->json();
+
+            if ($response->successful() && ($body['ok'] ?? false)) {
+                return [
+                    'success' => true,
+                    'message' => 'Dokumen berhasil dikirim ke Telegram.',
+                    'data' => $body['result'] ?? null,
+                ];
+            }
+
+            $errorDesc = $body['description'] ?? ('HTTP Error ' . $response->status());
+            Log::warning("Telegram sendDocument API Error [{$response->status()}]: {$errorDesc}", [
+                'chat_id' => $targetChatId,
+                'file' => $customFileName,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Telegram API Error: ' . $errorDesc,
+                'data' => $body,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Telegram sendDocument Exception: ' . $e->getMessage(), [
+                'chat_id' => $targetChatId,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal mengirim dokumen ke Telegram: ' . $e->getMessage(),
+                'data' => null,
+            ];
+        }
+    }
+
+    /**
      * Daftarkan webhook URL ke Telegram Bot API.
      */
     public function setWebhook(string $url, ?string $token = null): array
@@ -448,14 +541,22 @@ class TelegramService
      */
     public function sendShiftClosingNotification(CashierShift $shift): void
     {
+        $shift->loadMissing(['user', 'transactions.details.product.category', 'cashMovements.category']);
+
+        // 1. Notifikasi Audit Eksekutif ke Bot Khusus Owner (Anti-Fraud & Loss Prevention)
+        try {
+            app(TelegramOwnerBotService::class)->sendExecutiveShiftClosingAlert($shift);
+        } catch (\Throwable $e) {
+            Log::error('Error triggering Telegram Owner Bot shift alert: ' . $e->getMessage());
+        }
+
+        // 2. Notifikasi Operasional ke Bot/Grup Kasir
         try {
             $setting = $this->getSetting();
 
             if (!$this->isConfigured($setting) || !$this->isNotifyShiftEnabled($setting)) {
                 return;
             }
-
-            $shift->loadMissing(['user', 'transactions.details.product.category', 'cashMovements.category']);
 
             $message = $this->formatShiftClosingMessage($shift, $setting);
 
@@ -474,14 +575,22 @@ class TelegramService
      */
     public function sendVoidNotification(Transaction $transaction): void
     {
+        $transaction->loadMissing(['user', 'cancelledBy', 'details.product.category']);
+
+        // 1. Notifikasi Audit Eksekutif ke Bot Khusus Owner (Anti-Fraud Void Alert)
+        try {
+            app(TelegramOwnerBotService::class)->sendExecutiveVoidAlert($transaction);
+        } catch (\Throwable $e) {
+            Log::error('Error triggering Telegram Owner Bot void alert: ' . $e->getMessage());
+        }
+
+        // 2. Notifikasi Operasional ke Bot/Grup Kasir
         try {
             $setting = $this->getSetting();
 
             if (!$this->isConfigured($setting) || !$this->isNotifyVoidEnabled($setting)) {
                 return;
             }
-
-            $transaction->loadMissing(['user', 'cancelledBy', 'details.product.category']);
 
             $message = $this->formatVoidMessage($transaction, $setting);
 
