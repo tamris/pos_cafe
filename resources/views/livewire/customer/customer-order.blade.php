@@ -244,13 +244,6 @@
                                         </div>
                                     @endif
 
-                                    {{-- In-Cart Badge Indicator --}}
-                                    @if($inCartCount > 0)
-                                        <div class="absolute top-2 right-2 z-10 bg-[#0e382c] text-white text-[10.5px] font-black px-2 py-0.5 rounded-xl border border-emerald-400/40 shadow-sm flex items-center justify-center leading-none">
-                                            {{ $inCartCount }}x
-                                        </div>
-                                    @endif
-
                                     @if(!empty($product->image))
                                         <img src="{{ asset('storage/' . $product->image) }}" 
                                              alt="{{ $product->name }}" 
@@ -287,12 +280,19 @@
                                             </span>
                                         </div>
 
-                                        {{-- Plus Icon --}}
-                                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-stone-50 border border-stone-200/80 text-[#0e382c] group-hover:bg-[#0e382c] group-hover:text-white group-hover:border-[#0e382c] transition-all flex items-center justify-center shadow-2xs">
-                                            <i class="fas fa-plus text-[10px]"></i>
-                                        </div>
+                                        {{-- Fore Coffee Style Action: Circular Outline with Count when in cart, Solid Green Circle with Plus when 0 --}}
+                                        @if($inCartCount > 0)
+                                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#0e382c] bg-white text-[#0e382c] font-bold text-xs sm:text-sm flex items-center justify-center shadow-2xs shrink-0 font-heading">
+                                                {{ $inCartCount }}
+                                            </div>
+                                        @else
+                                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0e382c] text-white flex items-center justify-center shadow-2xs group-hover:bg-[#134e3f] transition-all shrink-0">
+                                                <i class="fas fa-plus text-[10px]"></i>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
+
 
                             </div>
                         @endforeach
@@ -344,37 +344,41 @@
                             <span class="text-[11px] text-stone-400 block mt-0.5">Pilih menu favoritmu di samping</span>
                         </div>
                     @else
-                        <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 my-2 max-h-[320px]">
+                        <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 my-2 max-h-[calc(100vh-340px)] min-h-[120px]">
                             @foreach($cart as $key => $item)
-                                <div class="p-3 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-start justify-between gap-2.5">
+                                <div class="p-3.5 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-start justify-between gap-3">
                                     <div class="flex-1 min-w-0">
-                                        <h4 class="font-black text-slate-900 text-xs font-heading truncate">{{ $item['name'] }}</h4>
-                                        <span class="text-xs font-black text-slate-900 block mt-0.5 font-heading">
+                                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm font-heading leading-tight truncate">
+                                            {{ $item['name'] }}
+                                        </h4>
+                                        <div class="font-bold text-xs text-slate-900 mt-0.5 font-heading">
                                             Rp {{ number_format($item['price'], 0, ',', '.') }}
-                                        </span>
-                                        @if(!empty($item['addons']))
-                                            <div class="flex flex-wrap gap-1 mt-1">
-                                                @foreach($item['addons'] as $addon)
-                                                    @php
-                                                        $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
-                                                        $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
-                                                    @endphp
-                                                    <span class="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white text-emerald-800 border border-stone-200">
-                                                        + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
-                                                    </span>
-                                                @endforeach
+                                        </div>
+
+                                        {{-- Variant & Addons as simple clean text --}}
+                                        @if(!empty($item['notes']) || !empty($item['addons']))
+                                            <div class="mt-1 space-y-0.5 text-xs text-stone-500">
+                                                @if(!empty($item['notes']))
+                                                    <div>{{ $item['notes'] }}</div>
+                                                @endif
+                                                @if(!empty($item['addons']))
+                                                    @foreach($item['addons'] as $addon)
+                                                        @php
+                                                            $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                            $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                                        @endphp
+                                                        <div>
+                                                            + {{ $addonName }} @if($addonPrice > 0)<span class="text-stone-400 font-medium">(+Rp {{ number_format($addonPrice, 0, ',', '.') }})</span>@endif
+                                                        </div>
+                                                    @endforeach
+                                                @endif
                                             </div>
                                         @endif
-                                        @if(!empty($item['notes']))
-                                            <div class="text-[11px] text-stone-500 font-medium mt-0.5">
-                                                {{ $item['notes'] }}
-                                            </div>
-                                        @endif
+
                                         <button type="button" 
                                                 wire:click="editCartItem('{{ $key }}')"
-                                                class="text-[11px] font-bold text-[#0e382c] hover:underline inline-flex items-center gap-1 mt-1 cursor-pointer">
-                                            <i class="fas fa-pencil-alt text-[9px]"></i>
-                                            <span>Ubah</span>
+                                                class="text-xs font-bold text-[#0e382c] hover:underline mt-1.5 inline-block cursor-pointer">
+                                            Ubah
                                         </button>
                                     </div>
 
@@ -382,13 +386,13 @@
                                     <div class="flex items-center space-x-1.5 bg-white px-2 py-1 rounded-xl border border-stone-200 shadow-2xs shrink-0">
                                         <button type="button" 
                                                 wire:click="updateQuantity('{{ $key }}', 'decrease')"
-                                                class="w-5 h-5 rounded-lg text-stone-600 hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
+                                                class="w-5 h-5 rounded-lg text-stone-600 hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition cursor-pointer">
                                             <i class="fas fa-minus text-[9px]"></i>
                                         </button>
-                                        <span class="font-black text-xs text-slate-900 w-4 text-center font-heading">{{ $item['quantity'] }}</span>
+                                        <span class="font-bold text-xs text-slate-900 w-4 text-center font-heading">{{ $item['quantity'] }}</span>
                                         <button type="button" 
                                                 wire:click="updateQuantity('{{ $key }}', 'increase')"
-                                                class="w-5 h-5 rounded-lg text-[#0e382c] hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
+                                                class="w-5 h-5 rounded-lg text-[#0e382c] hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition cursor-pointer">
                                             <i class="fas fa-plus text-[9px]"></i>
                                         </button>
                                     </div>
@@ -572,52 +576,92 @@
     @endif
 
     {{-- ========================================================================= --}}
-    {{-- MODAL 2: PRODUCT CUSTOMIZATION (Notes, Sugar, Ice Level)                  --}}
+    {{-- MODAL 2: PRODUCT CUSTOMIZATION (Fore Coffee Style: Sticky Header & Footer) --}}
     {{-- ========================================================================= --}}
     @if($showCustomizeModal && $selectedProduct)
-        <div class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs">
-            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-stone-200/80 relative max-h-[90vh] overflow-y-auto animate-pop">
-                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mb-4 sm:hidden cursor-pointer" wire:click="closeCustomizeModal"></div>
+        <div class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs transition-opacity"
+             x-data="{}"
+             x-on:keydown.escape.window="$wire.closeCustomizeModal()">
+            
+            {{-- Backdrop Click to Dismiss --}}
+            <div wire:click="closeCustomizeModal" class="absolute inset-0"></div>
 
-                <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-stone-100">
-                    <div>
-                        <div class="flex items-center gap-1.5 mb-1">
-                            <span class="text-[10px] uppercase font-black text-emerald-800">
-                                {{ $editingCartKey ? 'Ubah Pesanan • ' : '' }}{{ $selectedProduct->category?->name }}
-                            </span>
-                            @if(in_array($selectedProduct->id, $bestSellerIds ?? []))
-                                <span class="bg-[#b88646] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-200/40 uppercase tracking-wider flex items-center gap-1 badge-shine">
-                                    <i class="fas fa-star text-[8px] text-amber-100"></i>
-                                    <span>Best Seller</span>
-                                </span>
-                            @elseif(in_array($selectedProduct->id, $topOrderIds ?? []))
-                                <span class="bg-[#0e382c] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1 badge-shine">
-                                    <i class="fas fa-award text-[8px] text-emerald-300"></i>
-                                    <span>Top Ordered</span>
-                                </span>
-                            @elseif(in_array($selectedProduct->id, $mostPopularIds ?? []))
-                                <span class="bg-[#784421] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs border border-amber-100/30 uppercase tracking-wider flex items-center gap-1 badge-shine">
-                                    <i class="fas fa-thumbs-up text-[8px] text-amber-100"></i>
-                                    <span>Most Popular</span>
-                                </span>
+            {{-- Modal Dialog Box --}}
+            <div class="relative w-full max-w-lg bg-white rounded-t-[2rem] sm:rounded-3xl shadow-2xl border border-stone-200/90 max-h-[90vh] sm:max-h-[84vh] flex flex-col overflow-hidden animate-pop z-10">
+                
+                {{-- Drag Indicator for Mobile Screen --}}
+                <div class="w-12 h-1.5 bg-stone-200 hover:bg-stone-300 rounded-full mx-auto mt-3 -mb-1 sm:hidden cursor-pointer" wire:click="closeCustomizeModal"></div>
+
+                {{-- 1. FIXED HEADER: Product Thumbnail, Title, Price & Close Button --}}
+                <div class="p-4 sm:p-5 border-b border-stone-100 flex items-start justify-between gap-3 bg-[#faf8f5]/80 shrink-0">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        {{-- Product Thumbnail with Badge --}}
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-stone-100 overflow-hidden relative shrink-0 border border-stone-200/80 shadow-2xs">
+                            @if(!empty($selectedProduct->image))
+                                <img src="{{ asset('storage/' . $selectedProduct->image) }}" 
+                                     alt="{{ $selectedProduct->name }}" 
+                                     class="w-full h-full object-cover">
+                            @else
+                                <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                    <i class="fas fa-coffee text-xl"></i>
+                                </div>
                             @endif
                         </div>
-                        <h3 class="font-black text-slate-900 text-base font-heading">{{ $selectedProduct->name }}</h3>
-                        <span class="text-sm font-black text-slate-900 block mt-0.5 font-heading">
-                            Rp {{ number_format($selectedProduct->price, 0, ',', '.') }}
-                        </span>
+
+                        {{-- Product Info & Badge --}}
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <span class="text-[10px] uppercase font-black text-emerald-800 tracking-wider">
+                                    {{ $editingCartKey ? 'Ubah Pesanan • ' : '' }}{{ $selectedProduct->category?->name }}
+                                </span>
+                                @if(in_array($selectedProduct->id, $bestSellerIds ?? []))
+                                    <span class="bg-[#b88646] text-white text-[8.5px] font-black px-2 py-0.2 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                        <i class="fas fa-star text-[7.5px] text-amber-100"></i>
+                                        <span>Best Seller</span>
+                                    </span>
+                                @elseif(in_array($selectedProduct->id, $topOrderIds ?? []))
+                                    <span class="bg-[#0e382c] text-white text-[8.5px] font-black px-2 py-0.2 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                        <i class="fas fa-award text-[7.5px] text-emerald-300"></i>
+                                        <span>Top Ordered</span>
+                                    </span>
+                                @elseif(in_array($selectedProduct->id, $mostPopularIds ?? []))
+                                    <span class="bg-[#784421] text-white text-[8.5px] font-black px-2 py-0.2 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                        <i class="fas fa-thumbs-up text-[7.5px] text-amber-100"></i>
+                                        <span>Most Popular</span>
+                                    </span>
+                                @endif
+                            </div>
+                            <h3 class="font-black text-slate-900 text-sm sm:text-base font-heading truncate">{{ $selectedProduct->name }}</h3>
+                            <span class="text-xs sm:text-sm font-black text-[#0e382c] block font-heading mt-0.5">
+                                Rp {{ number_format($selectedProduct->price, 0, ',', '.') }}
+                            </span>
+                        </div>
                     </div>
-                    <button type="button" wire:click="closeCustomizeModal" class="text-stone-400 hover:text-stone-600 p-1 cursor-pointer">
-                        <i class="fas fa-times text-base"></i>
+
+                    {{-- Close Button --}}
+                    <button type="button" 
+                            wire:click="closeCustomizeModal" 
+                            class="w-8 h-8 rounded-full bg-white border border-stone-200 text-stone-400 hover:text-stone-700 hover:bg-stone-50 flex items-center justify-center text-xs shrink-0 cursor-pointer shadow-2xs transition">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
 
                 @php
                     $catName = strtolower($selectedProduct->category?->name ?? '');
                     $isBeverage = str_contains($catName, 'coffee') || str_contains($catName, 'tea') || str_contains($catName, 'minuman') || str_contains($catName, 'drink');
+                    
+                    $availableProductAddons = $selectedProduct->available_addons ?? collect();
+                    $modalAddonsTotal = 0;
+                    foreach($availableProductAddons as $ad) {
+                        if(in_array((int)$ad->id, $selectedAddonIds)) {
+                            $modalAddonsTotal += (float)$ad->price;
+                        }
+                    }
+                    $modalEffectiveUnitPrice = (float)$selectedProduct->price + $modalAddonsTotal;
                 @endphp
 
-                <div class="space-y-4 my-4">
+                {{-- 2. SCROLLABLE MIDDLE BODY: Options & Customizations --}}
+                <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
                     @if($isBeverage)
                         {{-- Drink Serving Type: Ice vs Hot --}}
                         <div>
@@ -639,7 +683,7 @@
                             </div>
                         </div>
 
-                        {{-- Sugar Level (Tingkat Kemanisan) --}}
+                        {{-- Sugar Level --}}
                         <div>
                             <label class="block text-xs font-black text-stone-700 mb-2">Tingkat Kemanisan (Sugar)</label>
                             <div class="grid grid-cols-3 gap-2">
@@ -653,7 +697,7 @@
                             </div>
                         </div>
 
-                        {{-- Ice Level (Tingkat Es - HANYA MUNCUL JIKA PILIH ICE) --}}
+                        {{-- Ice Level (Only if Ice) --}}
                         @if($drinkType === 'Ice')
                             <div>
                                 <label class="block text-xs font-black text-stone-700 mb-2">Tingkat Es (Ice)</label>
@@ -670,18 +714,7 @@
                         @endif
                     @endif
 
-                    {{-- Pilihan Tambahan / Add-ons --}}
-                    @php
-                        $availableProductAddons = $selectedProduct->available_addons ?? collect();
-                        $modalAddonsTotal = 0;
-                        foreach($availableProductAddons as $ad) {
-                            if(in_array((int)$ad->id, $selectedAddonIds)) {
-                                $modalAddonsTotal += (float)$ad->price;
-                            }
-                        }
-                        $modalEffectiveUnitPrice = (float)$selectedProduct->price + $modalAddonsTotal;
-                    @endphp
-
+                    {{-- Pilihan Tambahan / Add-ons (Full Width Vertical List) --}}
                     @if($availableProductAddons->count() > 0)
                         <div>
                             <div class="flex items-center justify-between mb-2">
@@ -692,23 +725,23 @@
                                     </button>
                                 @endif
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="space-y-2">
                                 @foreach($availableProductAddons as $addon)
                                     @php
                                         $isAddonSelected = in_array((int)$addon->id, $selectedAddonIds);
                                     @endphp
                                     <button type="button" 
                                             wire:click="toggleAddon({{ $addon->id }})"
-                                            class="p-2.5 rounded-2xl text-xs font-bold text-left border-2 flex items-center justify-between gap-2 transition cursor-pointer {{ $isAddonSelected ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-700 hover:bg-stone-50' }}">
-                                        <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 {{ $isAddonSelected ? 'bg-[#0e382c] border-[#0e382c] text-white' : 'border-stone-300 bg-white' }}">
+                                            class="w-full p-3 rounded-2xl text-xs sm:text-sm font-bold text-left border-2 flex items-center justify-between gap-3 transition cursor-pointer {{ $isAddonSelected ? 'border-[#0e382c] bg-emerald-50 text-[#0e382c] shadow-xs' : 'border-stone-200 text-stone-700 hover:bg-stone-50' }}">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <div class="w-4.5 h-4.5 rounded-lg border flex items-center justify-center shrink-0 {{ $isAddonSelected ? 'bg-[#0e382c] border-[#0e382c] text-white' : 'border-stone-300 bg-white' }}">
                                                 @if($isAddonSelected)
                                                     <i class="fas fa-check text-[9px]"></i>
                                                 @endif
                                             </div>
-                                            <span class="truncate">{{ $addon->name }}</span>
+                                            <span class="font-bold text-xs sm:text-sm {{ $isAddonSelected ? 'text-[#0e382c]' : 'text-stone-800' }}">{{ $addon->name }}</span>
                                         </div>
-                                        <span class="text-[11px] font-extrabold text-emerald-800 shrink-0">
+                                        <span class="text-xs sm:text-sm font-black {{ $isAddonSelected ? 'text-[#0e382c]' : 'text-emerald-800' }} shrink-0 font-heading">
                                             +Rp {{ number_format($addon->price, 0, ',', '.') }}
                                         </span>
                                     </button>
@@ -716,47 +749,43 @@
                             </div>
                         </div>
                     @endif
+                </div>
 
-                    {{-- Special Instructions / Notes --}}
-                    <div>
-                        <label class="block text-xs font-black text-stone-700 mb-1.5">Catatan Khusus (Opsional)</label>
-                        <textarea wire:model="itemNotes" 
-                                  rows="2" 
-                                  placeholder="Contoh: Pisahkan gula, jangan terlalu manis, dll..."
-                                  class="w-full p-3 rounded-xl border border-stone-300 text-xs focus:outline-none focus:ring-2 focus:ring-[#0e382c] focus:border-[#0e382c] transition"></textarea>
-                    </div>
-
-                    {{-- Quantity Selector --}}
-                    <div class="flex items-center justify-between pt-2 border-t border-stone-100">
-                        <span class="text-xs font-black text-stone-700">Jumlah Pesanan:</span>
-                        <div class="flex items-center space-x-3 bg-stone-100 p-1 rounded-xl border border-stone-200">
+                {{-- 3. STICKY FOOTER: Quantity Stepper on Top, Full-Width Submit CTA on Bottom --}}
+                <div class="p-4 sm:p-5 border-t border-stone-100 bg-[#faf8f5]/98 backdrop-blur-sm shrink-0 space-y-3 shadow-lg">
+                    {{-- Row 1: Quantity Stepper --}}
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-stone-700 font-heading">Jumlah Pesanan</span>
+                        <div class="flex items-center space-x-2.5 bg-white p-1 rounded-2xl border border-stone-200/90 shadow-2xs">
                             <button type="button" 
                                     wire:click="decrementModalQty"
-                                    class="w-8 h-8 rounded-lg bg-white shadow-xs text-stone-700 hover:bg-stone-200 flex items-center justify-center font-bold text-sm transition cursor-pointer">
-                                <i class="fas fa-minus text-xs"></i>
+                                    class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 active:scale-95 text-stone-700 flex items-center justify-center font-bold text-xs transition cursor-pointer">
+                                <i class="fas fa-minus text-[10px]"></i>
                             </button>
-                            <span class="font-black text-sm text-slate-900 w-6 text-center font-heading">{{ $modalQty }}</span>
+                            <span class="font-black text-sm text-slate-900 w-8 text-center font-heading">{{ $modalQty }}</span>
                             <button type="button" 
                                     wire:click="incrementModalQty"
-                                    class="w-8 h-8 rounded-lg bg-[#0e382c] shadow-xs text-white hover:bg-[#134e3f] flex items-center justify-center font-bold text-sm transition cursor-pointer">
-                                <i class="fas fa-plus text-xs"></i>
+                                    class="w-8 h-8 rounded-xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white flex items-center justify-center font-bold text-xs transition cursor-pointer">
+                                <i class="fas fa-plus text-[10px]"></i>
                             </button>
                         </div>
                     </div>
-                </div>
 
-                {{-- Action Button --}}
-                <div class="mt-5">
+                    {{-- Row 2: Full-Width Big CTA Submit Button --}}
                     <button type="button" 
                             wire:click="addConfiguredToCart"
-                            class="w-full py-3.5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-95 text-white font-black text-xs shadow-md shadow-[#0e382c]/20 flex items-center justify-between px-5 transition cursor-pointer">
+                            class="w-full py-3.5 px-5 rounded-2xl bg-[#0e382c] hover:bg-[#134e3f] active:scale-98 text-white font-black text-xs sm:text-sm shadow-md shadow-[#0e382c]/20 flex items-center justify-between transition cursor-pointer">
                         <span>{{ $editingCartKey ? 'Simpan Perubahan' : 'Tambahkan ke Pesanan' }}</span>
-                        <span class="font-heading">Rp {{ number_format($modalEffectiveUnitPrice * $modalQty, 0, ',', '.') }}</span>
+                        <span class="font-heading font-black text-sm">
+                            Rp {{ number_format($modalEffectiveUnitPrice * $modalQty, 0, ',', '.') }}
+                        </span>
                     </button>
                 </div>
+
             </div>
         </div>
     @endif
+
 
     {{-- ========================================================================= --}}
     {{-- MODAL 3: MOBILE CART DRAWER (Review & Checkout on Mobile)                 --}}
@@ -800,50 +829,54 @@
                 {{-- Cart Items List --}}
                 <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 my-1">
                     @foreach($cart as $key => $item)
-                        <div class="p-3 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-start justify-between gap-3">
+                        <div class="p-3.5 rounded-2xl bg-[#faf8f5] border border-stone-200/80 flex items-start justify-between gap-3">
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-black text-slate-900 text-xs font-heading truncate">{{ $item['name'] }}</h4>
-                                <span class="text-xs font-black text-slate-900 block mt-0.5 font-heading">
+                                <h4 class="font-bold text-slate-900 text-xs sm:text-sm font-heading leading-tight truncate">
+                                    {{ $item['name'] }}
+                                </h4>
+                                <div class="font-bold text-xs text-slate-900 mt-0.5 font-heading">
                                     Rp {{ number_format($item['price'], 0, ',', '.') }}
-                                </span>
-                                @if(!empty($item['addons']))
-                                    <div class="flex flex-wrap gap-1 mt-1">
-                                        @foreach($item['addons'] as $addon)
-                                            @php
-                                                $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
-                                                $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
-                                            @endphp
-                                            <span class="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white text-emerald-800 border border-stone-200">
-                                                + {{ $addonName }} @if($addonPrice > 0) (+{{ number_format($addonPrice, 0, ',', '.') }}) @endif
-                                            </span>
-                                        @endforeach
+                                </div>
+
+                                {{-- Variant & Addons as simple clean text --}}
+                                @if(!empty($item['notes']) || !empty($item['addons']))
+                                    <div class="mt-1 space-y-0.5 text-xs text-stone-500">
+                                        @if(!empty($item['notes']))
+                                            <div>{{ $item['notes'] }}</div>
+                                        @endif
+                                        @if(!empty($item['addons']))
+                                            @foreach($item['addons'] as $addon)
+                                                @php
+                                                    $addonName = is_array($addon) ? ($addon['name'] ?? '') : ($addon->name ?? '');
+                                                    $addonPrice = is_array($addon) ? ($addon['price'] ?? 0) : ($addon->price ?? 0);
+                                                @endphp
+                                                <div>
+                                                    + {{ $addonName }} @if($addonPrice > 0)<span class="text-stone-400 font-medium">(+Rp {{ number_format($addonPrice, 0, ',', '.') }})</span>@endif
+                                                </div>
+                                            @endforeach
+                                        @endif
                                     </div>
                                 @endif
-                                @if(!empty($item['notes']))
-                                    <div class="text-[11px] text-stone-500 font-medium mt-0.5">
-                                        {{ $item['notes'] }}
-                                    </div>
-                                @endif
+
                                 <button type="button" 
                                         wire:click="editCartItem('{{ $key }}')"
-                                        class="text-[11px] font-bold text-[#0e382c] hover:underline inline-flex items-center gap-1 mt-1 cursor-pointer">
-                                    <i class="fas fa-pencil-alt text-[9px]"></i>
-                                    <span>Ubah</span>
+                                        class="text-xs font-bold text-[#0e382c] hover:underline mt-1.5 inline-block cursor-pointer">
+                                    Ubah
                                 </button>
                             </div>
 
-                            {{-- Quantity Controller --}}
+                            {{-- Quantity Controls --}}
                             <div class="flex items-center space-x-1.5 bg-white px-2 py-1 rounded-xl border border-stone-200 shadow-2xs shrink-0">
                                 <button type="button" 
                                         wire:click="updateQuantity('{{ $key }}', 'decrease')"
-                                        class="w-6 h-6 rounded-lg text-stone-600 hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
-                                    <i class="fas fa-minus text-[10px]"></i>
+                                        class="w-5 h-5 rounded-lg text-stone-600 hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition cursor-pointer">
+                                    <i class="fas fa-minus text-[9px]"></i>
                                 </button>
-                                <span class="font-black text-xs text-slate-900 w-4 text-center font-heading">{{ $item['quantity'] }}</span>
+                                <span class="font-bold text-xs text-slate-900 w-4 text-center font-heading">{{ $item['quantity'] }}</span>
                                 <button type="button" 
                                         wire:click="updateQuantity('{{ $key }}', 'increase')"
-                                        class="w-6 h-6 rounded-lg text-[#0e382c] hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition">
-                                    <i class="fas fa-plus text-[10px]"></i>
+                                        class="w-5 h-5 rounded-lg text-[#0e382c] hover:bg-stone-100 flex items-center justify-center font-bold text-xs transition cursor-pointer">
+                                    <i class="fas fa-plus text-[9px]"></i>
                                 </button>
                             </div>
                         </div>
