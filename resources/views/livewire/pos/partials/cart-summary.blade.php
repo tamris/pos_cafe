@@ -64,10 +64,30 @@
             </div>
         @endif
 
+        @if ($pointsDiscountAmount > 0)
+            <div class="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+                <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3 text-amber-500 fill-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    Tukar Poin ({{ $pointsToRedeem }} pt)
+                </span>
+                <span>- Rp {{ number_format($pointsDiscountAmount, 0, ',', '.') }}</span>
+            </div>
+        @endif
+
         <div class="flex justify-between items-center pt-1.5 border-t border-slate-200 dark:border-slate-700">
             <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Total Bayar</span>
             <span class="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
         </div>
+
+        @if ($pointsToEarn > 0)
+            <div class="flex items-center justify-between text-[10px] text-emerald-600 dark:text-emerald-400 pt-0.5">
+                <span class="flex items-center gap-1 font-medium">
+                    <svg class="w-3 h-3 text-amber-500 fill-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    Poin didapat:
+                </span>
+                <span class="font-extrabold">+{{ $pointsToEarn }} Poin (Rp {{ number_format(\App\Services\LoyaltyService::calculatePointValue($pointsToEarn), 0, ',', '.') }})</span>
+            </div>
+        @endif
     </div>
 
     {{-- Action CTA buttons --}}

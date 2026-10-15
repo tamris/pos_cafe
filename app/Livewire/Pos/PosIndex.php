@@ -37,6 +37,16 @@ class PosIndex extends Component
     public $customTableNumber = '';
     public $isCustomTable = false;
     public $customerName = '';
+    public $customerPhone = '';
+    public $customerId = null;
+    public $customerPointsBalance = 0;
+    public $usePoints = false;
+    public $pointsToRedeem = 0;
+    public $pointsDiscountAmount = 0;
+    public $pointsToEarn = 0;
+    public $memberFound = false;
+    public $customerSearchResults = [];
+    public $showCustomerDropdown = false;
 
     // Shift Management State
     public $activeShift = null;
@@ -354,8 +364,6 @@ class PosIndex extends Component
             $this->selectedTable = '';
             $this->customTableNumber = '';
             $this->isCustomTable = false;
-        } else {
-            $this->customerName = '';
         }
     }
 
@@ -652,6 +660,16 @@ class PosIndex extends Component
         $this->customTableNumber = '';
         $this->isCustomTable = false;
         $this->customerName = '';
+        $this->customerPhone = '';
+        $this->customerId = null;
+        $this->customerPointsBalance = 0;
+        $this->usePoints = false;
+        $this->pointsToRedeem = 0;
+        $this->pointsDiscountAmount = 0;
+        $this->pointsToEarn = 0;
+        $this->memberFound = false;
+        $this->customerSearchResults = [];
+        $this->showCustomerDropdown = false;
         $this->currentOpenBillId = null;
         $this->currentOpenBillInvoice = '';
         $this->loadProducts();
@@ -665,7 +683,121 @@ class PosIndex extends Component
         $taxPercent = is_numeric($this->tax) ? (float) $this->tax : 0;
         $discountAmount = ($this->subtotal * $discountPercent) / 100;
         $taxAmount = ($this->subtotal * $taxPercent) / 100;
-        $this->total = (float) $this->subtotal - $discountAmount + $taxAmount;
+
+        // Poin Diskon (Loyalty)
+        if ($this->usePoints && $this->customerId && $this->customerPointsBalance > 0) {
+            $setting = \App\Services\LoyaltyService::getSetting();
+            $exchangeRate = max(1, (float) ($setting->point_exchange_rate ?? 1000));
+            $sisaBayar = max(0, $this->subtotal - $discountAmount);
+            $maxAllowedPoints = (int) floor($sisaBayar / $exchangeRate);
+            $this->pointsToRedeem = min($this->customerPointsBalance, $maxAllowedPoints);
+            $this->pointsDiscountAmount = \App\Services\LoyaltyService::calculatePointValue($this->pointsToRedeem, $setting);
+        } else {
+            $this->pointsToRedeem = 0;
+            $this->pointsDiscountAmount = 0;
+        }
+
+        $this->total = max(0, (float) $this->subtotal - $discountAmount - $this->pointsDiscountAmount + $taxAmount);
+
+        // Preview Poin yang didapatkan dari subtotal belanja
+        $this->pointsToEarn = \App\Services\LoyaltyService::calculateEarnedPoints((float) $this->subtotal);
+
+        // Sinkronkan kalkulasi kembalian jika pembayaran tunai
+        $this->calculateChange();
+    }
+
+    public function updatedCustomerPhone($val)
+    {
+        $val = trim($val);
+        if (empty($val)) {
+            $this->clearCustomer();
+            return;
+        }
+
+        $normalized = \App\Services\LoyaltyService::normalizePhone($val);
+        $customer = \App\Models\Customer::where('phone', $normalized)
+            ->orWhere('phone', $val)
+            ->first();
+
+        if ($customer) {
+            $this->customerId = $customer->id;
+            $this->customerName = $customer->name;
+            $this->customerPhone = $customer->phone;
+            $this->customerPointsBalance = (int) $customer->points_balance;
+            $this->memberFound = true;
+            $this->showCustomerDropdown = false;
+            $this->customerSearchResults = [];
+        } else {
+            $this->customerId = null;
+            $this->customerPointsBalance = 0;
+            $this->memberFound = false;
+            $this->usePoints = false;
+
+            if (strlen($val) >= 3) {
+                $this->customerSearchResults = \App\Models\Customer::where('phone', 'like', "%{$val}%")
+                    ->orWhere('name', 'like', "%{$val}%")
+                    ->take(5)
+                    ->get()
+                    ->toArray();
+                $this->showCustomerDropdown = count($this->customerSearchResults) > 0;
+            } else {
+                $this->customerSearchResults = [];
+                $this->showCustomerDropdown = false;
+            }
+        }
+
+        $this->calculateTotal();
+    }
+
+    public function selectCustomer($id)
+    {
+        $customer = \App\Models\Customer::find($id);
+        if ($customer) {
+            $this->customerId = $customer->id;
+            $this->customerName = $customer->name;
+            $this->customerPhone = $customer->phone;
+            $this->customerPointsBalance = (int) $customer->points_balance;
+            $this->memberFound = true;
+            $this->showCustomerDropdown = false;
+            $this->customerSearchResults = [];
+            $this->calculateTotal();
+            $this->notify('success', "Member '{$customer->name}' terpilih (Saldo: {$customer->points_balance} Poin).");
+        }
+    }
+
+    public function clearCustomer()
+    {
+        $this->customerId = null;
+        $this->customerPhone = '';
+        $this->customerName = '';
+        $this->customerPointsBalance = 0;
+        $this->memberFound = false;
+        $this->usePoints = false;
+        $this->pointsToRedeem = 0;
+        $this->pointsDiscountAmount = 0;
+        $this->showCustomerDropdown = false;
+        $this->customerSearchResults = [];
+        $this->calculateTotal();
+    }
+
+    public function toggleUsePoints()
+    {
+        $this->usePoints = !$this->usePoints;
+        if ($this->usePoints && $this->customerPointsBalance <= 0) {
+            $this->usePoints = false;
+            $this->notify('error', 'Pelanggan belum memiliki saldo poin.');
+            return;
+        }
+
+        $setting = \App\Services\LoyaltyService::getSetting();
+        $minRedeem = (int) ($setting->point_min_redeem ?? 5);
+        if ($this->usePoints && $this->customerPointsBalance < $minRedeem) {
+            $this->usePoints = false;
+            $this->notify('error', "Minimal penukaran poin adalah {$minRedeem} poin (Saldo pelanggan: {$this->customerPointsBalance} poin).");
+            return;
+        }
+
+        $this->calculateTotal();
     }
 
     public function openMobileCart() { $this->showMobileCart = true; }
@@ -823,6 +955,8 @@ class PosIndex extends Component
                     'total' => $total,
                     'order_type' => $this->orderType,
                     'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                    'customer_id' => $this->customerId,
+                    'customer_phone' => !empty($this->customerPhone) ? \App\Services\LoyaltyService::normalizePhone($this->customerPhone) : null,
                     'customer_name' => $this->customerName ?: null,
                     'status' => 'pending',
                     'payment_status' => 'unpaid',
@@ -844,6 +978,8 @@ class PosIndex extends Component
                     'payment_method' => 'cash',
                     'order_type' => $this->orderType,
                     'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
+                    'customer_id' => $this->customerId,
+                    'customer_phone' => !empty($this->customerPhone) ? \App\Services\LoyaltyService::normalizePhone($this->customerPhone) : null,
                     'customer_name' => $this->customerName ?: null,
                     'status' => 'pending',
                     'payment_status' => 'unpaid',
@@ -903,6 +1039,21 @@ class PosIndex extends Component
         $this->tableNumber = $transaction->table_number ?? '';
         $this->selectedTable = $transaction->table_number ?? '';
         $this->customerName = $transaction->customer_name ?? '';
+        $this->customerPhone = $transaction->customer_phone ?? '';
+        $this->customerId = $transaction->customer_id ?? null;
+        if ($this->customerId) {
+            $cust = \App\Models\Customer::find($this->customerId);
+            if ($cust) {
+                $this->customerPointsBalance = (int) $cust->points_balance;
+                $this->memberFound = true;
+            }
+        } elseif (!empty($this->customerPhone)) {
+            $this->updatedCustomerPhone($this->customerPhone);
+        } else {
+            $this->customerId = null;
+            $this->customerPointsBalance = 0;
+            $this->memberFound = false;
+        }
 
         $this->discount = ($transaction->subtotal > 0 && $transaction->discount > 0) ? round(($transaction->discount / $transaction->subtotal) * 100) : 0;
         $this->tax = ($transaction->subtotal > 0 && $transaction->tax > 0) ? round(($transaction->tax / $transaction->subtotal) * 100) : 0;
@@ -985,8 +1136,36 @@ class PosIndex extends Component
             $finalTaxAmount = ($this->subtotal * $taxPercent) / 100;
 
             $shiftId = $this->activeShift?->id;
-
             $isFromOpenBill = !empty($this->currentOpenBillId);
+
+            // 1. Loyalty & Membership Processing
+            $customerId = null;
+            $customerPhone = !empty($this->customerPhone) ? \App\Services\LoyaltyService::normalizePhone($this->customerPhone) : null;
+            $customerName = !empty($this->customerName) ? trim($this->customerName) : null;
+            $pointsEarned = 0;
+            $pointsRedeemed = 0;
+            $pointsDiscountAmount = 0;
+            $claimToken = null;
+            $customerModel = null;
+
+            if (!empty($customerPhone)) {
+                $customerModel = \App\Services\LoyaltyService::findOrCreateCustomer($customerPhone, $customerName);
+                $customerId = $customerModel->id;
+                $customerName = $customerModel->name;
+                $customerPhone = $customerModel->phone;
+
+                if ($this->usePoints && $this->pointsToRedeem > 0) {
+                    $pointsRedeemed = $this->pointsToRedeem;
+                    $pointsDiscountAmount = (float) $this->pointsDiscountAmount;
+                }
+
+                $pointsEarned = \App\Services\LoyaltyService::calculateEarnedPoints((float) $this->subtotal);
+            } else {
+                $pointsEarned = \App\Services\LoyaltyService::calculateEarnedPoints((float) $this->subtotal);
+                if ($pointsEarned > 0) {
+                    $claimToken = \App\Services\LoyaltyService::generateClaimToken();
+                }
+            }
 
             if ($this->currentOpenBillId) {
                 // Selesaikan Open Bill yang sudah ada
@@ -1003,7 +1182,13 @@ class PosIndex extends Component
                         'payment_method' => $this->paymentMethod,
                         'order_type' => $this->orderType,
                         'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
-                        'customer_name' => $this->customerName ?: null,
+                        'customer_id' => $customerId,
+                        'customer_name' => $customerName ?: null,
+                        'customer_phone' => $customerPhone ?: null,
+                        'points_earned' => $pointsEarned,
+                        'points_redeemed' => $pointsRedeemed,
+                        'points_discount_amount' => $pointsDiscountAmount,
+                        'claim_token' => $claimToken,
                         'status' => 'completed',
                         'payment_status' => 'paid',
                     ]);
@@ -1023,7 +1208,13 @@ class PosIndex extends Component
                         'payment_method' => $this->paymentMethod,
                         'order_type' => $this->orderType,
                         'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
-                        'customer_name' => $this->customerName ?: null,
+                        'customer_id' => $customerId,
+                        'customer_name' => $customerName ?: null,
+                        'customer_phone' => $customerPhone ?: null,
+                        'points_earned' => $pointsEarned,
+                        'points_redeemed' => $pointsRedeemed,
+                        'points_discount_amount' => $pointsDiscountAmount,
+                        'claim_token' => $claimToken,
                         'status' => 'completed',
                         'payment_status' => 'paid',
                     ]);
@@ -1042,7 +1233,13 @@ class PosIndex extends Component
                     'payment_method' => $this->paymentMethod,
                     'order_type' => $this->orderType,
                     'table_number' => $this->orderType === 'dine_in' ? ($this->tableNumber ?: null) : null,
-                    'customer_name' => $this->customerName ?: null,
+                    'customer_id' => $customerId,
+                    'customer_name' => $customerName ?: null,
+                    'customer_phone' => $customerPhone ?: null,
+                    'points_earned' => $pointsEarned,
+                    'points_redeemed' => $pointsRedeemed,
+                    'points_discount_amount' => $pointsDiscountAmount,
+                    'claim_token' => $claimToken,
                     'status' => 'completed',
                     'payment_status' => 'paid',
                 ]);
@@ -1065,13 +1262,34 @@ class PosIndex extends Component
                 ]);
             }
 
+            // Eksekusi mutasi poin customer
+            if ($customerModel) {
+                if ($pointsRedeemed > 0) {
+                    \App\Services\LoyaltyService::redeemPoints(
+                        $customerModel,
+                        $pointsRedeemed,
+                        $transaction,
+                        "Tukar {$pointsRedeemed} poin di POS Kasir (#{$transaction->invoice_number})"
+                    );
+                }
+
+                if ($pointsEarned > 0) {
+                    \App\Services\LoyaltyService::addPoints(
+                        $customerModel,
+                        $pointsEarned,
+                        $transaction,
+                        "Poin transaksi kasir #{$transaction->invoice_number}"
+                    );
+                }
+            }
+
             DB::commit();
 
             if ($this->activeShift) {
                 $this->activeShift->recalculateTotals();
             }
 
-            $this->lastTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
+            $this->lastTransaction = Transaction::with(['details.product', 'user', 'shift', 'customer'])->find($transaction->id);
             $this->lastInvoice = $transaction->invoice_number ?? '';
 
             // Kirim notifikasi transaksi baru ke Telegram (Background Job)

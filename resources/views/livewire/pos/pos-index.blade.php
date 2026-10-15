@@ -117,17 +117,87 @@
                                 @endif
                             </div>
 
-                            <div class="flex items-center gap-1.5">
-                                <label class="text-xs font-bold text-slate-600 dark:text-slate-300 hidden sm:inline">Pelanggan:</label>
-                                <input type="text" wire:model.live="customerName" placeholder="Nama Pelanggan (Opsional)"
-                                    class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-36 sm:w-44">
+                            {{-- Member / Pelanggan Selector (Dine In) --}}
+                            <div class="relative flex items-center gap-1.5" wire:key="member-selector-dinein">
+                                @if($memberFound || $customerId)
+                                    <div class="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/80 rounded-lg text-xs shadow-2xs">
+                                        <span class="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold">
+                                            <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            <span class="truncate max-w-[90px] sm:max-w-[120px]">{{ $customerName }}</span>
+                                            <span class="text-[10px] bg-emerald-200/80 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 px-1.5 py-0.5 rounded-full font-black">{{ $customerPointsBalance }} pt</span>
+                                        </span>
+                                        <button type="button" wire:click="clearCustomer" class="text-slate-400 hover:text-rose-500 transition ml-0.5 cursor-pointer" title="Lepas Member">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="relative flex items-center gap-1.5">
+                                        <input type="text" wire:model.live.debounce.300ms="customerPhone" placeholder="No. WA / Member"
+                                            class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-28 sm:w-32">
+                                        
+                                        <input type="text" wire:model.live="customerName" placeholder="Nama Pelanggan"
+                                            class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-28 sm:w-36">
+
+                                        @if($showCustomerDropdown && count($customerSearchResults) > 0)
+                                            <div class="absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/60">
+                                                <div class="px-2.5 py-1 bg-slate-50 dark:bg-slate-900/50 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Member Ditemukan:</div>
+                                                @foreach($customerSearchResults as $res)
+                                                    <button type="button" wire:click="selectCustomer({{ $res['id'] }})" class="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-between transition cursor-pointer">
+                                                        <div>
+                                                            <p class="text-xs font-bold text-slate-800 dark:text-white">{{ $res['name'] }}</p>
+                                                            <p class="text-[10px] text-slate-500 dark:text-slate-400">{{ $res['phone'] }}</p>
+                                                        </div>
+                                                        <span class="text-[11px] font-black text-amber-600 dark:text-amber-400">
+                                                            ⭐ {{ $res['points_balance'] }} pt
+                                                        </span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @else
-                        <div class="flex items-center gap-2" wire:key="input-container-customer">
-                            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nama Pelanggan:</label>
-                            <input type="text" wire:model.live="customerName" wire:key="input-customer-name" placeholder="Nama Pelanggan"
-                                class="px-3 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-44 sm:w-48">
+                        {{-- Member / Pelanggan Selector (Take Away / Delivery) --}}
+                        <div class="relative flex items-center gap-2" wire:key="member-selector-takeaway">
+                            @if($memberFound || $customerId)
+                                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/80 rounded-lg text-xs shadow-2xs">
+                                    <span class="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold">
+                                        <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                        <span class="truncate max-w-[120px]">{{ $customerName }}</span>
+                                        <span class="text-[10px] bg-emerald-200/80 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 px-1.5 py-0.5 rounded-full font-black">{{ $customerPointsBalance }} pt</span>
+                                    </span>
+                                    <button type="button" wire:click="clearCustomer" class="text-slate-400 hover:text-rose-500 transition ml-1 cursor-pointer" title="Lepas Member">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            @else
+                                <div class="relative flex items-center gap-1.5">
+                                    <input type="text" wire:model.live.debounce.300ms="customerPhone" placeholder="No. WA / Member"
+                                        class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-32 sm:w-36">
+
+                                    <input type="text" wire:model.live="customerName" placeholder="Nama Pelanggan"
+                                        class="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-32 sm:w-40">
+
+                                    @if($showCustomerDropdown && count($customerSearchResults) > 0)
+                                        <div class="absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/60">
+                                            <div class="px-2.5 py-1 bg-slate-50 dark:bg-slate-900/50 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Member Ditemukan:</div>
+                                            @foreach($customerSearchResults as $res)
+                                                <button type="button" wire:click="selectCustomer({{ $res['id'] }})" class="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-between transition cursor-pointer">
+                                                    <div>
+                                                        <p class="text-xs font-bold text-slate-800 dark:text-white">{{ $res['name'] }}</p>
+                                                        <p class="text-[10px] text-slate-500 dark:text-slate-400">{{ $res['phone'] }}</p>
+                                                    </div>
+                                                    <span class="text-[11px] font-black text-amber-600 dark:text-amber-400">
+                                                        ⭐ {{ $res['points_balance'] }} pt
+                                                    </span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -613,10 +683,63 @@
                         </div>
                         
                         <div class="bg-white dark:bg-slate-800 px-6 py-5 space-y-4">
+                            {{-- LOYALTY & MEMBERSHIP STATUS DI MODAL BAYAR --}}
+                            @if($memberFound || $customerId)
+                                <div class="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-emerald-950/40 border border-emerald-300 dark:border-emerald-700/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
+                                            ⭐
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-xs font-black text-slate-800 dark:text-white">{{ $customerName }}</span>
+                                                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">({{ $customerPhone }})</span>
+                                            </div>
+                                            <p class="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold mt-0.5">
+                                                Saldo: {{ $customerPointsBalance }} Poin 
+                                                <span class="text-[10px] font-normal text-slate-500 dark:text-slate-400">(Nilai: Rp {{ number_format(\App\Services\LoyaltyService::calculatePointValue($customerPointsBalance), 0, ',', '.') }})</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    @if($customerPointsBalance > 0)
+                                        <button type="button" wire:click="toggleUsePoints"
+                                            class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 {{ $usePoints ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/50' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50' }}">
+                                            <span class="w-4 h-4 rounded-md border flex items-center justify-center {{ $usePoints ? 'bg-white text-amber-600 border-white font-black text-[10px]' : 'border-slate-400 bg-transparent' }}">
+                                                @if($usePoints) ✓ @endif
+                                            </span>
+                                            <span>{{ $usePoints ? 'Tukar ' . $pointsToRedeem . ' Poin (-Rp ' . number_format($pointsDiscountAmount, 0, ',', '.') . ')' : 'Gunakan Poin' }}</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                                        <span class="font-medium">Tamu / Belum Input Member</span>
+                                    </div>
+                                    @if($pointsToEarn > 0)
+                                        <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
+                                            Klaim +{{ $pointsToEarn }} Poin di Struk
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
+
                             {{-- TOTAL TAGIHAN --}}
                             <div class="bg-emerald-50/70 dark:bg-emerald-950/30 p-4 rounded-xl text-center border border-emerald-200/80 dark:border-emerald-800/60">
                                 <p class="text-xs text-emerald-800 dark:text-emerald-300 font-bold mb-1 uppercase tracking-wider">TOTAL TAGIHAN</p>
                                 <p class="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-300">Rp {{ number_format($total, 0, ',', '.') }}</p>
+                                @if($pointsDiscountAmount > 0)
+                                    <p class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 mt-1">
+                                        🎉 Hemat Rp {{ number_format($pointsDiscountAmount, 0, ',', '.') }} dengan penukaran {{ $pointsToRedeem }} Poin
+                                    </p>
+                                @endif
+                                @if($memberFound && $pointsToEarn > 0)
+                                    <p class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                        ⭐ Transaksi ini akan menghasilkan +{{ $pointsToEarn }} Poin
+                                    </p>
+                                @endif
                             </div>
                             
                             {{-- METODE PEMBAYARAN --}}

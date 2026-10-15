@@ -211,6 +211,16 @@
             line-height: 1.3;
         }
 
+        #qrcode-box {
+            display: inline-block;
+            margin: 0 auto;
+        }
+        #qrcode-box img, #qrcode-box canvas {
+            display: block !important;
+            margin: 0 auto !important;
+            image-rendering: pixelated;
+        }
+
         @media print {
             @page {
                 margin: 0mm;
@@ -364,6 +374,13 @@
                 </div>
             @endif
 
+            @if($transaction->points_discount_amount > 0)
+                <div class="row">
+                    <span>Tukar Poin ({{ $transaction->points_redeemed }} pt)</span>
+                    <span>-{{ number_format($transaction->points_discount_amount, 0, ',', '.') }}</span>
+                </div>
+            @endif
+
             @if($transaction->tax > 0)
                 @php
                     $taxNominal = ($transaction->tax <= 100) 
@@ -400,6 +417,18 @@
             </div>
         @endif
 
+        {{-- 4b. QR KLAIM POIN (HANYA UNTUK GUEST / NON-MEMBER) --}}
+        @if(empty($transaction->customer_phone) && !empty($transaction->claim_token) && $transaction->points_earned > 0)
+            <div class="divider"></div>
+            <div class="text-center" style="padding: 6px 0;">
+                <div style="font-weight: 700; font-size: 11.5px; margin-bottom: 2px;">KLAIM POIN BELANJAAN INI!</div>
+                <div style="font-size: 10px; color: #444; margin-bottom: 6px;">Scan QR ini dalam 24 jam untuk kumpulkan poin:</div>
+                <div style="display: flex; justify-content: center; margin: 4px 0;">
+                    <div id="qrcode-box" style="display: inline-block; padding: 3px; background: #fff; border: 1px solid #000; border-radius: 4px;"></div>
+                </div>
+            </div>
+        @endif
+
         {{-- 5. WIFI CAFE (JIKA ADA) --}}
         @if(!empty($setting->wifi_name) || !empty($setting->wifi_password))
             <div class="divider"></div>
@@ -421,8 +450,25 @@
     </div>
 
     <script src="{{ asset('js/bluetooth-printer.js') }}"></script>
+    <script src="{{ asset('js/qrcode.min.js') }}"></script>
     <script>
         const rawbtData = @json($rawbtBase64);
+
+        // Generate QR Code secara lokal/offline
+        @if(empty($transaction->customer_phone) && !empty($transaction->claim_token) && $transaction->points_earned > 0)
+            const claimUrl = @json(\App\Services\LoyaltyService::getClaimUrl($transaction->claim_token));
+            const qrBox = document.getElementById('qrcode-box');
+            if (qrBox && typeof QRCode !== 'undefined') {
+                new QRCode(qrBox, {
+                    text: claimUrl,
+                    width: 105,
+                    height: 105,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        @endif
 
         async function printBluetoothDirect() {
             try {
@@ -446,20 +492,22 @@
             window.print();
         }
 
-        // Auto-print saat halaman dibuka
+        // Auto-print saat halaman dibuka (diberi jeda 150ms agar QR canvas/img ter-render sempurna)
         window.addEventListener('DOMContentLoaded', async () => {
-            // Jika Web Bluetooth sudah terkoneksi, langsung tembak ke printer
-            if (window.posBluetooth && window.posBluetooth.isConnected) {
-                await printBluetoothDirect();
-                return;
-            }
+            setTimeout(async () => {
+                // Jika Web Bluetooth sudah terkoneksi, langsung tembak ke printer
+                if (window.posBluetooth && window.posBluetooth.isConnected) {
+                    await printBluetoothDirect();
+                    return;
+                }
 
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            if (isAndroid) {
-                printRawBT();
-            } else {
-                window.print();
-            }
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                if (isAndroid) {
+                    printRawBT();
+                } else {
+                    window.print();
+                }
+            }, 150);
         });
     </script>
 </body>

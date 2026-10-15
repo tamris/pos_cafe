@@ -29,6 +29,12 @@ class SettingIndex extends Component
     public $new_logo;
     public $show_logo_receipt = true;
 
+    // Pengaturan Loyalty & Poin
+    public $point_enabled = true;
+    public $point_spend_per_point = 10000;
+    public $point_exchange_rate = 1000;
+    public $point_min_redeem = 5;
+
     public function mount()
     {
         // Ambil data pertama (karena cuma ada 1 pengaturan)
@@ -45,6 +51,10 @@ class SettingIndex extends Component
             $this->auto_print_kitchen = (bool) ($setting->auto_print_kitchen ?? false);
             $this->shop_logo = $setting->shop_logo;
             $this->show_logo_receipt = (bool) ($setting->show_logo_receipt ?? true);
+            $this->point_enabled = (bool) ($setting->point_enabled ?? true);
+            $this->point_spend_per_point = (int) ($setting->point_spend_per_point ?? 10000);
+            $this->point_exchange_rate = (int) ($setting->point_exchange_rate ?? 1000);
+            $this->point_min_redeem = (int) ($setting->point_min_redeem ?? 5);
         }
     }
 
@@ -99,6 +109,10 @@ class SettingIndex extends Component
             'auto_print_receipt' => $this->auto_print_receipt,
             'auto_print_kitchen' => $this->auto_print_kitchen,
             'show_logo_receipt' => (bool) $this->show_logo_receipt,
+            'point_enabled' => (bool) $this->point_enabled,
+            'point_spend_per_point' => max(1, (int) $this->point_spend_per_point),
+            'point_exchange_rate' => max(1, (int) $this->point_exchange_rate),
+            'point_min_redeem' => max(1, (int) $this->point_min_redeem),
         ];
 
         // Handle upload logo baru

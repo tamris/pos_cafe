@@ -30,6 +30,12 @@ class Transaction extends Model
         'qris_url',
         'qris_string',
         'customer_phone',
+        'customer_id',
+        'points_earned',
+        'points_redeemed',
+        'points_discount_amount',
+        'claim_token',
+        'points_claimed_at',
         'payment_status',
         'cancelled_reason',
         'cancelled_by',
@@ -44,8 +50,17 @@ class Transaction extends Model
         'total' => 'decimal:2',
         'paid' => 'decimal:2',
         'change' => 'decimal:2',
+        'points_earned' => 'integer',
+        'points_redeemed' => 'integer',
+        'points_discount_amount' => 'decimal:2',
+        'points_claimed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     public function user()
     {

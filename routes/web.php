@@ -27,6 +27,11 @@ Route::get('/order', CustomerOrder::class)->name('customer.order');
 Route::get('/order/pay/{token}', CustomerPayment::class)->name('customer.payment');
 Route::get('/order/status/{token}', CustomerStatus::class)->name('customer.status');
 
+// Customer Loyalty & Membership Routes (Public)
+Route::get('/claim/{token?}', \App\Livewire\Customer\ClaimPoints::class)->name('customer.claim');
+Route::get('/member', \App\Livewire\Customer\MemberCard::class)->name('customer.member');
+Route::get('/cek-poin', \App\Livewire\Customer\MemberCard::class);
+
 // Midtrans Webhook Notification
 Route::post('/api/midtrans/notification', [\App\Http\Controllers\MidtransCallbackController::class, 'handle'])->name('midtrans.notification');
 Route::post('/midtrans/callback', [\App\Http\Controllers\MidtransCallbackController::class, 'handle']);

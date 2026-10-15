@@ -124,6 +124,38 @@ class ReceiptPrintService
         return $left . str_repeat(' ', $spaces) . $right;
     }
 
+    /**
+     * Generate native ESC/POS Model 2 QR Code binary stream
+     */
+    public static function buildEscPosQrCode(string $data, int $moduleSize = 5): string
+    {
+        $esc = "\x1b";
+        $gs = "\x1d";
+        $raw = $esc . "a\x01"; // Align center
+
+        // 1. Model 2 QR Code (Function 165: GS ( k pL pH cn fn n1 n2)
+        $raw .= $gs . "(k\x04\x00\x31\x41\x32\x00";
+
+        // 2. Module Size (Function 167: GS ( k pL pH cn fn n) - default 5 dots
+        $sizeByte = chr(max(1, min(16, $moduleSize)));
+        $raw .= $gs . "(k\x03\x00\x31\x43" . $sizeByte;
+
+        // 3. Error correction Level M (Function 169: GS ( k pL pH cn fn n) - Level M (\x31)
+        $raw .= $gs . "(k\x03\x00\x31\x45\x31";
+
+        // 4. Store data into symbol storage area (Function 180: GS ( k pL pH cn fn m d1...dk)
+        $len = strlen($data) + 3;
+        $pL = chr($len % 256);
+        $pH = chr(intdiv($len, 256));
+        $raw .= $gs . "(k" . $pL . $pH . "\x31\x50\x30" . $data;
+
+        // 5. Print the symbol data (Function 181: GS ( k pL pH cn fn m)
+        $raw .= $gs . "(k\x03\x00\x31\x51\x30";
+        $raw .= "\n";
+
+        return $raw;
+    }
+
     public static function buildTransactionEscPos(Transaction $transaction, ?Setting $setting = null): string
     {
         if (!$setting) {
@@ -216,6 +248,10 @@ class ReceiptPrintService
             $raw .= self::line32($discLabel, "-" . number_format($discNominal, 0, ',', '.')) . "\n";
         }
 
+        if ($transaction->points_discount_amount > 0) {
+            $raw .= self::line32("Tukar Poin (" . $transaction->points_redeemed . " pt)", "-" . number_format($transaction->points_discount_amount, 0, ',', '.')) . "\n";
+        }
+
         if ($transaction->tax > 0) {
             $taxNominal = ($transaction->tax <= 100)
                 ? ($transaction->subtotal * $transaction->tax / 100)
@@ -238,6 +274,17 @@ class ReceiptPrintService
             $payMethod = strtoupper($transaction->payment_method === 'cash' ? 'TUNAI' : ($transaction->payment_method === 'transfer' ? 'TRANSFER' : 'QRIS'));
             $raw .= self::line32("Bayar (" . $payMethod . ")", number_format($transaction->paid, 0, ',', '.')) . "\n";
             $raw .= self::line32("Kembali", number_format($transaction->change, 0, ',', '.')) . "\n";
+        }
+
+        // 6b. KLAIM POIN STRUK (HANYA UNTUK GUEST / NON-MEMBER)
+        if (empty($transaction->customer_phone) && !empty($transaction->claim_token) && $transaction->points_earned > 0) {
+            $raw .= "--------------------------------\n";
+            $raw .= $ALIGN_CENTER;
+            $raw .= "KLAIM POIN BELANJAAN INI!\n";
+            $raw .= "Scan QR untuk kumpulkan poin:\n";
+            $claimUrl = \App\Services\LoyaltyService::getClaimUrl($transaction->claim_token);
+            $raw .= self::buildEscPosQrCode($claimUrl, 5);
+            $raw .= $ALIGN_LEFT;
         }
 
         // 7. WIFI CAFE
