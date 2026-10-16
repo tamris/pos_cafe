@@ -285,6 +285,19 @@ class ReceiptPrintService
             $claimUrl = \App\Services\LoyaltyService::getClaimUrl($transaction->claim_token);
             $raw .= self::buildEscPosQrCode($claimUrl, 5);
             $raw .= $ALIGN_LEFT;
+        } elseif (!empty($transaction->customer_phone) && ($transaction->points_earned > 0 || $transaction->points_redeemed > 0)) {
+            $raw .= "--------------------------------\n";
+            $raw .= $ALIGN_CENTER . "*** LOYALTY MEMBER ***\n" . $ALIGN_LEFT;
+            $raw .= self::line32("No. Member", $transaction->customer_phone) . "\n";
+            if ($transaction->points_earned > 0) {
+                $raw .= self::line32("Poin Didapat", "+" . $transaction->points_earned . " Poin") . "\n";
+            }
+            if ($transaction->points_redeemed > 0) {
+                $raw .= self::line32("Poin Digunakan", "-" . $transaction->points_redeemed . " Poin") . "\n";
+            }
+            if ($transaction->customer && $transaction->customer->points_balance > 0) {
+                $raw .= self::line32("Sisa Saldo Poin", $transaction->customer->points_balance . " Poin") . "\n";
+            }
         }
 
         // 7. WIFI CAFE

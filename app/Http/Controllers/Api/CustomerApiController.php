@@ -185,12 +185,14 @@ class CustomerApiController extends Controller
             ]);
         }
 
-        // Buat member baru
-        $customer = Customer::create([
-            'phone' => $normalizedPhone,
-            'name' => $name ?? 'Pelanggan',
-            'points_balance' => 0,
-        ]);
+        // Buat member baru (Atomic & Race-Condition Safe)
+        $customer = Customer::firstOrCreate(
+            ['phone' => $normalizedPhone],
+            [
+                'name' => $name ?? 'Pelanggan',
+                'points_balance' => 0,
+            ]
+        );
 
         $setting = LoyaltyService::getSetting();
         $minRedeem = (int) ($setting->point_min_redeem ?? 5);

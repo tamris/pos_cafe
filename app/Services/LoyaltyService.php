@@ -73,29 +73,28 @@ class LoyaltyService
     }
 
     /**
-     * Cari atau buat pelanggan baru berdasarkan nomor telepon
+     * Cari atau buat pelanggan baru berdasarkan nomor telepon (Atomic & Race-Condition Safe)
      */
     public static function findOrCreateCustomer(string $phone, ?string $name = null): Customer
     {
         $normalized = self::normalizePhone($phone);
-        $customer = Customer::where('phone', $normalized)->first();
+        $customer = Customer::firstOrCreate(
+            ['phone' => $normalized],
+            [
+                'name' => !empty($name) ? trim($name) : 'Pelanggan',
+                'points_balance' => 0,
+            ]
+        );
 
-        if ($customer) {
-            if (!empty($name) && ($customer->name === 'Pelanggan' || empty($customer->name))) {
-                $customer->update(['name' => trim($name)]);
-            }
-            return $customer;
+        if (!empty($name) && ($customer->name === 'Pelanggan' || empty($customer->name))) {
+            $customer->update(['name' => trim($name)]);
         }
 
-        return Customer::create([
-            'name' => !empty($name) ? trim($name) : 'Pelanggan',
-            'phone' => $normalized,
-            'points_balance' => 0,
-        ]);
+        return $customer;
     }
 
     /**
-     * Tambahkan poin ke saldo customer dengan pencatatan mutasi
+     * Tambahkan poin ke saldo customer dengan pencatatan mutasi (Atomic Row Locking)
      */
     public static function addPoints(
         Customer $customer,
@@ -104,22 +103,28 @@ class LoyaltyService
         string $description = 'Poin dari belanja'
     ): CustomerPointHistory {
         return DB::transaction(function () use ($customer, $points, $transaction, $description) {
-            $customer->increment('points_balance', $points);
-            $customer->refresh();
+            $lockedCustomer = Customer::where('id', $customer->id)->lockForUpdate()->first();
+            if (!$lockedCustomer) {
+                throw new \Exception('Data customer tidak ditemukan.');
+            }
+
+            $lockedCustomer->increment('points_balance', $points);
+            $lockedCustomer->refresh();
+            $customer->points_balance = $lockedCustomer->points_balance;
 
             return CustomerPointHistory::create([
-                'customer_id' => $customer->id,
+                'customer_id' => $lockedCustomer->id,
                 'transaction_id' => $transaction?->id,
                 'type' => 'earn',
                 'points' => $points,
-                'balance_after' => $customer->points_balance,
+                'balance_after' => $lockedCustomer->points_balance,
                 'description' => $description,
             ]);
         });
     }
 
     /**
-     * Tukar / gunakan poin customer dengan pencatatan mutasi
+     * Tukar / gunakan poin customer dengan pencatatan mutasi (Atomic Row Locking)
      */
     public static function redeemPoints(
         Customer $customer,
@@ -128,19 +133,21 @@ class LoyaltyService
         string $description = 'Tukar poin untuk potongan belanja'
     ): CustomerPointHistory {
         return DB::transaction(function () use ($customer, $points, $transaction, $description) {
-            if ($customer->points_balance < $points) {
+            $lockedCustomer = Customer::where('id', $customer->id)->lockForUpdate()->first();
+            if (!$lockedCustomer || $lockedCustomer->points_balance < $points) {
                 throw new \Exception('Saldo poin tidak mencukupi.');
             }
 
-            $customer->decrement('points_balance', $points);
-            $customer->refresh();
+            $lockedCustomer->decrement('points_balance', $points);
+            $lockedCustomer->refresh();
+            $customer->points_balance = $lockedCustomer->points_balance;
 
             return CustomerPointHistory::create([
-                'customer_id' => $customer->id,
+                'customer_id' => $lockedCustomer->id,
                 'transaction_id' => $transaction?->id,
                 'type' => 'redeem',
                 'points' => -$points,
-                'balance_after' => $customer->points_balance,
+                'balance_after' => $lockedCustomer->points_balance,
                 'description' => $description,
             ]);
         });

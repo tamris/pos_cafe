@@ -10,7 +10,7 @@ use App\Models\Setting;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TelegramService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
@@ -18,7 +18,7 @@ use Tests\TestCase;
 
 class TelegramNotificationApiTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected User $adminUser;
     protected User $cashierUser;
@@ -231,7 +231,7 @@ class TelegramNotificationApiTest extends TestCase
 
         // Verifikasi bahwa Job notifikasi Telegram berhasil di-dispatch
         Queue::assertPushed(SendTelegramNotificationJob::class, function ($job) use ($product) {
-            return str_contains($job->message, 'TRANSAKSI BARU') &&
+            return str_contains($job->message, 'Nota') &&
                    str_contains($job->message, $product->name) &&
                    str_contains($job->message, 'Andi');
         });
@@ -262,8 +262,8 @@ class TelegramNotificationApiTest extends TestCase
             ]);
 
         Queue::assertPushed(SendTelegramNotificationJob::class, function ($job) {
-            return str_contains($job->message, 'LAPORAN TUTUP SHIFT') &&
-                   str_contains($job->message, 'Uang Fisik Dihitung') &&
+            return str_contains($job->message, 'Laporan Tutup Shift') &&
+                   str_contains($job->message, 'Kas Fisik') &&
                    str_contains($job->message, 'Shift selesai dengan lancar');
         });
     }
@@ -296,7 +296,7 @@ class TelegramNotificationApiTest extends TestCase
             ]);
 
         Queue::assertPushed(SendTelegramNotificationJob::class, function ($job) use ($transaction) {
-            return str_contains($job->message, 'ALERT: TRANSAKSI DIBATALKAN / VOID') &&
+            return str_contains($job->message, 'ALERT: TRANSAKSI DIBATALKAN') &&
                    str_contains($job->message, $transaction->invoice_number) &&
                    str_contains($job->message, 'Salah input item pesanan oleh kasir');
         });

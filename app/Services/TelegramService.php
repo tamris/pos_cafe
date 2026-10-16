@@ -155,9 +155,21 @@ class TelegramService
                 'retry_after' => $retryAfter,
             ]);
 
+            $friendlyMessage = 'Telegram API Error: ' . $errorDesc;
+            $lowerError = strtolower($errorDesc);
+            if (str_contains($lowerError, 'chat not found')) {
+                $friendlyMessage = 'Chat ID tidak ditemukan. Pastikan akun Telegram Anda sudah menekan tombol Start (/start) di bot tersebut.';
+            } elseif ($response->status() === 404 || str_contains($lowerError, 'not found')) {
+                $friendlyMessage = 'Bot Token Telegram tidak valid atau bot tidak ditemukan. Pastikan token dari @BotFather sudah benar.';
+            } elseif (str_contains($lowerError, 'bot was blocked')) {
+                $friendlyMessage = 'Bot Telegram diblokir oleh akun Anda. Silakan unblock bot di Telegram terlebih dahulu.';
+            } elseif ($response->status() === 401 || str_contains($lowerError, 'unauthorized')) {
+                $friendlyMessage = 'Bot Token tidak memiliki otorisasi (Unauthorized). Periksa kembali token bot Anda.';
+            }
+
             return [
                 'success' => false,
-                'message' => 'Telegram API Error: ' . $errorDesc,
+                'message' => $friendlyMessage,
                 'data' => $body,
                 'status_code' => $response->status(),
                 'retry_after' => $retryAfter,
