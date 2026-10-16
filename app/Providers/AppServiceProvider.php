@@ -26,9 +26,10 @@ class AppServiceProvider extends ServiceProvider
         \Carbon\Carbon::setLocale('id');
         date_default_timezone_set('Asia/Jakarta');
 
-        if ($this->app->environment('production') 
-            || str_starts_with((string) config('app.url'), 'https://')
-            || request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
+        $isLocalDev = str_contains(request()->getHost(), 'localhost') 
+            || str_contains(request()->getHost(), '127.0.0.1');
+
+        if (!$isLocalDev && ($this->app->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') === 'https' || request()->isSecure())) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
     }

@@ -152,7 +152,7 @@ class LoyaltyService
     public static function generateClaimToken(): string
     {
         do {
-            $token = Str::random(32);
+            $token = Str::upper(Str::random(8));
         } while (Transaction::where('claim_token', $token)->exists());
 
         return $token;

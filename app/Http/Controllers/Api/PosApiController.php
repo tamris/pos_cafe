@@ -271,6 +271,10 @@ class PosApiController extends Controller
             'wifi_name' => $setting->wifi_name ?? '',
 
             'wifi_password' => $setting->wifi_password ?? '',
+            'point_enabled' => (bool) ($setting->point_enabled ?? true),
+            'point_spend_per_point' => (int) ($setting->point_spend_per_point ?? 10000),
+            'point_exchange_rate' => (int) ($setting->point_exchange_rate ?? 1000),
+            'point_min_redeem' => (int) ($setting->point_min_redeem ?? 5),
 
             'printer_paper_width' => 58, // 58mm thermal standard
 
@@ -353,6 +357,13 @@ class PosApiController extends Controller
                 ],
 
                 'quick_cash_presets' => [10000, 20000, 50000, 100000, 200000],
+
+                'loyalty' => [
+                    'enabled' => (bool) ($setting->point_enabled ?? true),
+                    'spend_per_point' => (int) ($setting->point_spend_per_point ?? 10000),
+                    'exchange_rate' => (int) ($setting->point_exchange_rate ?? 1000),
+                    'min_redeem' => (int) ($setting->point_min_redeem ?? 5),
+                ],
 
                 'server_time' => now()->toIso8601String(),
 
@@ -772,63 +783,37 @@ class PosApiController extends Controller
         $validator = Validator::make($request->all(), [
 
             'order_type' => 'required|in:dine_in,take_away,delivery',
-
             'table_number' => 'nullable|string|max:50',
-
             'customer_name' => 'nullable|string|max:100',
-
+            'customer_phone' => 'nullable|string|max:30',
+            'customer_id' => 'nullable|integer|exists:customers,id',
+            'redeem_points' => 'nullable|integer|min:0',
             'payment_method' => 'required|in:cash,qris,transfer,debit',
-
             'discount_percent' => 'nullable|numeric|min:0|max:100',
-
             'tax_percent' => 'nullable|numeric|min:0|max:100',
-
             'paid' => 'required|numeric|min:0',
-
             'items' => 'required|array|min:1',
-
             'items.*.id' => 'required|integer|exists:products,id',
-
             'items.*.quantity' => 'required|integer|min:1',
-
             'items.*.price' => 'required|numeric|min:0',
-
             'items.*.notes' => 'nullable|string|max:255',
-
             'items.*.addons' => 'nullable|array',
-
             'items.*.addons.*.id' => 'required_with:items.*.addons|integer',
-
             'items.*.addons.*.name' => 'required_with:items.*.addons|string|max:100',
-
             'items.*.addons.*.price' => 'required_with:items.*.addons|numeric|min:0',
-
             'open_bill_id' => 'nullable|integer|exists:transactions,id',
-
             'offline_id' => 'nullable|string|max:64',
-
         ]);
 
-
-
         if ($validator->fails()) {
-
             return response()->json([
-
                 'success' => false,
-
                 'message' => 'Data transaksi tidak valid.',
-
                 'errors' => $validator->errors(),
-
             ], 422);
-
         }
 
-
-
         $user = $request->user();
-
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -836,277 +821,235 @@ class PosApiController extends Controller
             ], 401);
         }
 
-
-
         // Cashier shift check (optional for admin, required for cashier)
-
         $activeShift = CashierShift::where('user_id', $user->id)
-
             ->where('status', 'open')
-
             ->latest()
-
             ->first();
 
-
-
         if (in_array($user->role, ['kasir', 'cashier']) && !$activeShift) {
-
             return response()->json([
-
                 'success' => false,
-
                 'message' => 'Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.',
-
                 'require_shift' => true,
-
             ], 403);
-
         }
 
-
-
         DB::beginTransaction();
-
         try {
-
             $orderType = $request->input('order_type', 'dine_in');
-
             $tableNumber = $orderType === 'dine_in' ? $request->input('table_number') : null;
-
             $customerName = $request->input('customer_name');
-
+            $rawPhone = $request->input('customer_phone');
+            $customerPhone = !empty($rawPhone) ? \App\Services\LoyaltyService::normalizePhone($rawPhone) : null;
+            $customerId = $request->input('customer_id');
+            $redeemPoints = (int) $request->input('redeem_points', 0);
             $paymentMethod = $request->input('payment_method', 'cash');
-
             $discountPercent = (float) $request->input('discount_percent', 0);
-
             $taxPercent = (float) $request->input('tax_percent', 0);
-
             $paid = (float) $request->input('paid');
-
             $items = $request->input('items', []);
-
             $openBillId = $request->input('open_bill_id');
 
-
-
             // Calculate Subtotal from items
-
             $subtotal = 0;
-
             foreach ($items as $item) {
-
                 $subtotal += ((float) $item['price'] * (int) $item['quantity']);
-
             }
 
+            // 1. Loyalty & Membership Processing
+            $setting = Setting::first();
+            $pointEnabled = (bool) ($setting->point_enabled ?? true);
+            $exchangeRate = (int) ($setting->point_exchange_rate ?? 1000);
+            $minRedeem = (int) ($setting->point_min_redeem ?? 5);
 
+            $customerModel = null;
+            if ($customerId) {
+                $customerModel = \App\Models\Customer::find($customerId);
+                if ($customerModel) {
+                    $customerPhone = $customerModel->phone;
+                    $customerName = $customerName ?: $customerModel->name;
+                }
+            } elseif (!empty($customerPhone)) {
+                $customerModel = \App\Services\LoyaltyService::findOrCreateCustomer($customerPhone, $customerName);
+                $customerId = $customerModel->id;
+                $customerName = $customerModel->name;
+            }
+
+            // Potongan Tukar Poin
+            $pointsRedeemed = 0;
+            $pointsDiscountAmount = 0;
+            if ($pointEnabled && $customerModel && $redeemPoints > 0) {
+                if ($redeemPoints < $minRedeem) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Minimal penukaran poin adalah {$minRedeem} poin.",
+                    ], 422);
+                }
+
+                if ($customerModel->points_balance < $redeemPoints) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Saldo poin member tidak mencukupi (Saldo: {$customerModel->points_balance} poin).",
+                    ], 422);
+                }
+
+                $pointsRedeemed = $redeemPoints;
+                $pointsDiscountAmount = (float) ($pointsRedeemed * $exchangeRate);
+            }
 
             $discountAmount = ($subtotal * $discountPercent) / 100;
-
             $taxAmount = ($subtotal * $taxPercent) / 100;
-
-            $total = (float) $subtotal - $discountAmount + $taxAmount;
-
-
+            $total = max(0, (float) $subtotal - $discountAmount - $pointsDiscountAmount + $taxAmount);
 
             if ($paid < $total && $paymentMethod === 'cash') {
-
                 DB::rollBack();
-
                 return response()->json([
-
                     'success' => false,
-
                     'message' => 'Jumlah uang yang dibayarkan kurang dari total tagihan (Rp ' . number_format($total, 0, ',', '.') . ').',
-
                 ], 422);
-
             }
-
-
 
             $change = $paymentMethod === 'cash' ? max(0, $paid - $total) : 0;
-
             $shiftId = $activeShift?->id;
 
-
+            // Hitung poin perolehan & generate claim token jika pembeli non-member
+            $pointsEarned = 0;
+            $claimToken = null;
+            if ($pointEnabled) {
+                // Poin dihitung dari nilai uang riil yang dibayar pelanggan (setelah diskon promo & potongan poin)
+                $netPayable = max(0, (float) $subtotal - $discountAmount - $pointsDiscountAmount);
+                $pointsEarned = 0;
+                if ($netPayable > 0) {
+                    $pointsEarned = \App\Services\LoyaltyService::calculateEarnedPoints($netPayable, $setting);
+                }
+                if (empty($customerPhone) && $pointsEarned > 0) {
+                    $claimToken = \App\Services\LoyaltyService::generateClaimToken();
+                }
+            }
 
             $isFromOpenBill = !empty($openBillId);
-
             if ($openBillId) {
-
                 // Update existing Open Bill to Completed
-
                 $transaction = Transaction::find($openBillId);
-
                 if (!$transaction || $transaction->status !== 'pending') {
-
                     DB::rollBack();
-
                     return response()->json([
-
                         'success' => false,
-
                         'message' => 'Bill pesanan tidak ditemukan atau sudah selesai dibayar.',
-
                     ], 404);
-
                 }
-
-
 
                 $transaction->update([
-
                     'user_id' => $user->id,
-
                     'shift_id' => $shiftId,
-
                     'subtotal' => $subtotal,
-
                     'discount' => $discountAmount,
-
                     'tax' => $taxAmount,
-
                     'total' => $total,
-
                     'paid' => $paid,
-
                     'change' => $change,
-
                     'payment_method' => $paymentMethod,
-
                     'order_type' => $orderType,
-
                     'table_number' => $tableNumber,
-
+                    'customer_id' => $customerId,
                     'customer_name' => $customerName,
-
+                    'customer_phone' => $customerPhone,
+                    'points_earned' => $pointsEarned,
+                    'points_redeemed' => $pointsRedeemed,
+                    'points_discount_amount' => $pointsDiscountAmount,
+                    'claim_token' => $claimToken,
                     'status' => 'completed',
-
                     'payment_status' => 'paid',
-
                     'created_at' => now(),
-
                 ]);
-
                 $transaction->created_at = now();
-
                 $transaction->save();
 
-
-
                 $transaction->details()->delete();
-
             } else {
-
                 // Create brand new transaction
-
                 $transaction = Transaction::create([
-
                     'user_id' => $user->id,
-
                     'shift_id' => $shiftId,
-
                     'subtotal' => $subtotal,
-
                     'discount' => $discountAmount,
-
                     'tax' => $taxAmount,
-
                     'total' => $total,
-
                     'paid' => $paid,
-
                     'change' => $change,
-
                     'payment_method' => $paymentMethod,
-
                     'order_type' => $orderType,
-
                     'table_number' => $tableNumber,
-
+                    'customer_id' => $customerId,
                     'customer_name' => $customerName,
-
+                    'customer_phone' => $customerPhone,
+                    'points_earned' => $pointsEarned,
+                    'points_redeemed' => $pointsRedeemed,
+                    'points_discount_amount' => $pointsDiscountAmount,
+                    'claim_token' => $claimToken,
                     'status' => 'completed',
-
                     'payment_status' => 'paid',
-
                 ]);
-
             }
-
-
 
             // Insert details & compute profit
-
             foreach ($items as $item) {
-
                 $product = Product::find($item['id']);
-
                 $hargaBeli = $product ? (float) ($product->harga_beli ?? 0) : 0;
-
                 $itemPrice = (float) $item['price'];
-
                 $itemQty = (int) $item['quantity'];
-
                 $itemSubtotal = $itemPrice * $itemQty;
 
-
-
                 $totalAddonCost = 0;
-
                 if (!empty($item['addons'])) {
-
                     $addonIds = array_column($item['addons'], 'id');
-
                     $totalAddonCost = (float) Addon::whereIn('id', $addonIds)->sum('harga_beli');
-
                 }
-
                 $unitCost = $hargaBeli + $totalAddonCost;
-
                 $itemProfit = ($itemPrice - $unitCost) * $itemQty;
 
-
-
                 TransactionDetail::create([
-
                     'transaction_id' => $transaction->id,
-
                     'product_id' => $item['id'],
-
                     'quantity' => $itemQty,
-
                     'price' => $itemPrice,
-
                     'harga_beli' => $unitCost,
-
                     'subtotal' => $itemSubtotal,
-
                     'profit' => $itemProfit,
-
                     'notes' => $item['notes'] ?? null,
-
                     'addons' => !empty($item['addons']) ? $item['addons'] : null,
-
                 ]);
-
             }
 
+            // 2. Eksekusi mutasi poin customer member
+            if ($customerModel) {
+                if ($pointsRedeemed > 0) {
+                    \App\Services\LoyaltyService::redeemPoints(
+                        $customerModel,
+                        $pointsRedeemed,
+                        $transaction,
+                        "Tukar {$pointsRedeemed} poin di POS Kasir (#{$transaction->invoice_number})"
+                    );
+                }
 
+                if ($pointsEarned > 0) {
+                    \App\Services\LoyaltyService::addPoints(
+                        $customerModel,
+                        $pointsEarned,
+                        $transaction,
+                        "Poin transaksi kasir #{$transaction->invoice_number}"
+                    );
+                }
+            }
 
             DB::commit();
 
-
-
             if ($activeShift) {
-
                 $activeShift->recalculateTotals();
-
             }
-
-
 
             $freshTransaction = Transaction::with(['details.product', 'user', 'shift'])->find($transaction->id);
 
@@ -1118,34 +1061,41 @@ class PosApiController extends Controller
 
             $receiptPayload = $this->buildCustomerReceiptPayload($freshTransaction);
 
-
+            $claimUrl = null;
+            if ($claimToken) {
+                $claimUrl = \App\Services\LoyaltyService::getClaimUrl($claimToken);
+            }
 
             return response()->json([
-
                 'success' => true,
-
                 'message' => 'Transaksi berhasil diproses.',
-
                 'data' => [
-
                     'transaction_id' => $freshTransaction->id,
-
                     'invoice_number' => $freshTransaction->invoice_number,
-
+                    'subtotal' => (float) $freshTransaction->subtotal,
+                    'discount' => (float) $freshTransaction->discount,
+                    'tax' => (float) $freshTransaction->tax,
+                    'points_discount' => (float) ($freshTransaction->points_discount_amount ?? 0),
                     'total' => (float) $freshTransaction->total,
-
                     'paid' => (float) $freshTransaction->paid,
-
                     'change' => (float) $freshTransaction->change,
-
                     'payment_method' => $freshTransaction->payment_method,
-
+                    'customer' => $customerModel ? [
+                        'id' => $customerModel->id,
+                        'name' => $customerModel->name,
+                        'phone' => $customerModel->phone,
+                        'points_balance' => (int) $customerModel->points_balance,
+                    ] : null,
+                    'loyalty' => [
+                        'points_earned' => (int) $pointsEarned,
+                        'points_redeemed' => (int) $pointsRedeemed,
+                        'points_discount_amount' => (float) $pointsDiscountAmount,
+                        'claim_token' => $claimToken,
+                        'claim_url' => $claimUrl,
+                    ],
                     'created_at' => $freshTransaction->created_at->format('Y-m-d H:i:s'),
-
                 ],
-
                 'receipt_payload' => $receiptPayload,
-
             ]);
 
 
@@ -2476,66 +2426,62 @@ class PosApiController extends Controller
 
         })->toArray();
 
+        // Native ESC/POS Binary Base64 for Bluetooth Thermal Printers
+        $escposRaw = ReceiptPrintService::buildTransactionEscPos($transaction, $setting);
+        $escposBase64 = base64_encode($escposRaw);
 
+        $claimUrl = null;
+        if (empty($transaction->customer_phone) && !empty($transaction->claim_token) && $transaction->points_earned > 0) {
+            $claimUrl = \App\Services\LoyaltyService::getClaimUrl($transaction->claim_token);
+        }
 
         return [
-
             'header' => [
-
                 'shop_name' => $setting->shop_name ?? 'POS Cafe',
-
                 'address' => $setting->address ?? '',
-
                 'phone' => $setting->phone ?? '',
-
             ],
-
             'invoice_number' => $transaction->invoice_number,
-
             'date' => $transaction->created_at->format('d/m/Y H:i'),
-
             'cashier_name' => $transaction->user?->name ?? 'Kasir',
-
             'order_type' => strtoupper(str_replace('_', ' ', $transaction->order_type)),
-
             'table_number' => $transaction->table_number ? 'Meja ' . $transaction->table_number : null,
-
             'customer_name' => $transaction->customer_name ?? null,
-
+            'customer_phone' => $transaction->customer_phone ?? null,
             'items' => $items,
-
             'summary' => [
-
                 'subtotal' => (float) $transaction->subtotal,
-
                 'discount' => (float) $transaction->discount,
-
                 'tax' => (float) $transaction->tax,
-
+                'points_discount' => (float) ($transaction->points_discount_amount ?? 0),
                 'total' => (float) $transaction->total,
-
                 'payment_method' => strtoupper($transaction->payment_method),
-
                 'paid' => (float) $transaction->paid,
-
                 'change' => (float) $transaction->change,
-
             ],
-
+            'loyalty' => [
+                'customer_id' => $transaction->customer_id,
+                'customer_name' => $transaction->customer_name,
+                'customer_phone' => $transaction->customer_phone,
+                'points_earned' => (int) $transaction->points_earned,
+                'points_redeemed' => (int) $transaction->points_redeemed,
+                'points_discount_amount' => (float) $transaction->points_discount_amount,
+                'claim_token' => $transaction->claim_token,
+                'claim_url' => $claimUrl,
+            ],
             'footer' => [
-
                 'message' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungannya!',
-
                 'wifi_name' => $setting->wifi_name ?? '',
-
                 'wifi_password' => $setting->wifi_password ?? '',
-
+            'point_enabled' => (bool) ($setting->point_enabled ?? true),
+            'point_spend_per_point' => (int) ($setting->point_spend_per_point ?? 10000),
+            'point_exchange_rate' => (int) ($setting->point_exchange_rate ?? 1000),
+            'point_min_redeem' => (int) ($setting->point_min_redeem ?? 5),
             ],
-
             'paper_width' => 58,
-
+            'escpos_base64' => $escposBase64,
+            'rawbt_base64' => $escposBase64,
         ];
-
     }
 
 

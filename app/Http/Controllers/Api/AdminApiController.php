@@ -837,7 +837,11 @@ class AdminApiController extends Controller
         $updateData = [];
 
         if ($request->has('bot_token')) {
-            $updateData['telegram_bot_token'] = trim($request->input('bot_token'));
+            $rawToken = trim($request->input('bot_token'));
+            // Jangan timpa jika token kosong atau berupa string masking (mengandung ... atau ***)
+            if (!empty($rawToken) && !str_contains($rawToken, '...') && !str_contains($rawToken, '***')) {
+                $updateData['telegram_bot_token'] = $rawToken;
+            }
         }
 
         if ($request->has('chat_id')) {
@@ -881,6 +885,9 @@ class AdminApiController extends Controller
         }
 
         $token = $request->input('bot_token');
+        if (!empty($token) && (str_contains($token, '...') || str_contains($token, '***'))) {
+            $token = null; // gunakan token asli di database atau .env
+        }
         $chatId = $request->input('chat_id');
 
         $result = $telegramService->testNotification($token, $chatId);
@@ -897,6 +904,164 @@ class AdminApiController extends Controller
             'success' => true,
             'message' => 'Pesan uji coba Telegram berhasil dikirim ke chat ID target!',
             'data' => $result['data'] ?? null,
+        ]);
+    }
+
+    /**
+     * Dapatkan Pengaturan Program Loyalitas & Poin Member.
+     * GET /api/admin/settings/loyalty
+     */
+    public function getLoyaltySettings(): JsonResponse
+    {
+        $setting = Setting::first() ?? new Setting();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengaturan loyalitas & poin berhasil dimuat.',
+            'data' => [
+                'point_enabled' => (bool) ($setting->point_enabled ?? true),
+                'point_spend_per_point' => (int) ($setting->point_spend_per_point ?? 10000),
+                'point_exchange_rate' => (int) ($setting->point_exchange_rate ?? 1000),
+                'point_min_redeem' => (int) ($setting->point_min_redeem ?? 5),
+            ],
+        ]);
+    }
+
+    /**
+     * Perbarui Pengaturan Program Loyalitas & Poin Member.
+     * POST /api/admin/settings/loyalty
+     */
+    public function updateLoyaltySettings(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'point_enabled' => 'required|boolean',
+            'point_spend_per_point' => 'required|integer|min:100|max:10000000',
+            'point_exchange_rate' => 'required|integer|min:1|max:1000000',
+            'point_min_redeem' => 'required|integer|min:1|max:10000',
+        ], [
+            'point_enabled.required' => 'Status program loyalitas wajib diatur.',
+            'point_spend_per_point.min' => 'Nominal belanja per poin minimal Rp 100.',
+            'point_exchange_rate.min' => 'Nilai tukar 1 poin minimal Rp 1.',
+            'point_min_redeem.min' => 'Minimal poin penukaran minimal 1 poin.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $setting = Setting::first();
+        if (!$setting) {
+            $setting = new Setting();
+        }
+
+        $setting->point_enabled = (bool) $request->input('point_enabled');
+        $setting->point_spend_per_point = (int) $request->input('point_spend_per_point');
+        $setting->point_exchange_rate = (int) $request->input('point_exchange_rate');
+        $setting->point_min_redeem = (int) $request->input('point_min_redeem');
+        $setting->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengaturan program loyalitas & poin berhasil disimpan.',
+            'data' => [
+                'point_enabled' => (bool) $setting->point_enabled,
+                'point_spend_per_point' => (int) $setting->point_spend_per_point,
+                'point_exchange_rate' => (int) $setting->point_exchange_rate,
+                'point_min_redeem' => (int) $setting->point_min_redeem,
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/admin/settings/general
+     */
+    public function getGeneralSettings(): JsonResponse
+    {
+        $setting = Setting::first() ?? new Setting();
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengaturan toko berhasil dimuat.',
+            'data' => [
+                'shop_name' => $setting->shop_name ?? 'Noli Coffe & Space',
+                'address' => $setting->address ?? '',
+                'phone' => $setting->phone ?? '',
+                'wifi_name' => $setting->wifi_name ?? '',
+                'wifi_password' => $setting->wifi_password ?? '',
+                'receipt_footer' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungannya!',
+                'auto_print_receipt' => (bool) ($setting->auto_print_receipt ?? false),
+                'auto_print_kitchen' => (bool) ($setting->auto_print_kitchen ?? false),
+                'show_logo_receipt' => (bool) ($setting->show_logo_receipt ?? true),
+                'point_enabled' => (bool) ($setting->point_enabled ?? true),
+                'point_spend_per_point' => (int) ($setting->point_spend_per_point ?? 10000),
+                'point_exchange_rate' => (int) ($setting->point_exchange_rate ?? 1000),
+                'point_min_redeem' => (int) ($setting->point_min_redeem ?? 5),
+            ],
+        ]);
+    }
+
+    /**
+     * POST /api/admin/settings/general
+     */
+    public function updateGeneralSettings(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'shop_name' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:30',
+            'wifi_name' => 'nullable|string|max:50',
+            'wifi_password' => 'nullable|string|max:50',
+            'receipt_footer' => 'nullable|string|max:255',
+            'auto_print_receipt' => 'nullable|boolean',
+            'auto_print_kitchen' => 'nullable|boolean',
+            'show_logo_receipt' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . $validator->errors()->first(),
+            ], 422);
+        }
+
+        $setting = Setting::first();
+        if (!$setting) {
+            $setting = new Setting();
+        }
+
+        $fields = [
+            'shop_name', 'address', 'phone', 'wifi_name', 'wifi_password',
+            'receipt_footer', 'auto_print_receipt', 'auto_print_kitchen', 'show_logo_receipt'
+        ];
+
+        foreach ($fields as $field) {
+            if ($request->has($field)) {
+                $setting->{$field} = $request->input($field);
+            }
+        }
+        $setting->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengaturan toko berhasil diperbarui.',
+            'data' => [
+                'shop_name' => $setting->shop_name ?? 'Noli Coffe & Space',
+                'address' => $setting->address ?? '',
+                'phone' => $setting->phone ?? '',
+                'wifi_name' => $setting->wifi_name ?? '',
+                'wifi_password' => $setting->wifi_password ?? '',
+                'receipt_footer' => $setting->receipt_footer ?? 'Terima Kasih Atas Kunjungannya!',
+                'auto_print_receipt' => (bool) ($setting->auto_print_receipt ?? false),
+                'auto_print_kitchen' => (bool) ($setting->auto_print_kitchen ?? false),
+                'show_logo_receipt' => (bool) ($setting->show_logo_receipt ?? true),
+                'point_enabled' => (bool) ($setting->point_enabled ?? true),
+                'point_spend_per_point' => (int) ($setting->point_spend_per_point ?? 10000),
+                'point_exchange_rate' => (int) ($setting->point_exchange_rate ?? 1000),
+                'point_min_redeem' => (int) ($setting->point_min_redeem ?? 5),
+            ],
         ]);
     }
 }

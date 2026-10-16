@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\TelegramOwnerWebhookController;
 use App\Http\Controllers\Api\ProductApiController;
 use App\Http\Controllers\Api\HppApiController;
 use App\Http\Controllers\Api\IngredientApiController;
+use App\Http\Controllers\Api\CustomerApiController;
 
 // Public Telegram Bot Webhook (Realtime Bot)
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handleWebhook']);
@@ -53,7 +54,17 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     });
 
     // 6. Telegram Bot Notification Settings
-    Route::prefix('settings/telegram')->group(function () {
+            Route::prefix('settings/general')->group(function () {
+            Route::get('/', [AdminApiController::class, 'getGeneralSettings']);
+            Route::post('/', [AdminApiController::class, 'updateGeneralSettings']);
+        });
+
+        Route::prefix('settings/loyalty')->group(function () {
+            Route::get('/', [AdminApiController::class, 'getLoyaltySettings']);
+            Route::post('/', [AdminApiController::class, 'updateLoyaltySettings']);
+        });
+
+        Route::prefix('settings/telegram')->group(function () {
         Route::get('/', [AdminApiController::class, 'getTelegramSettings']);
         Route::post('/', [AdminApiController::class, 'updateTelegramSettings']);
         Route::post('/test', [AdminApiController::class, 'testTelegramNotification']);
@@ -133,6 +144,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('pos')->group(function () {
         Route::get('/bootstrap', [PosApiController::class, 'bootstrap']);
         Route::get('/addons', [PosApiController::class, 'getAddons']);
+
+        // Customers & Loyalty Membership for POS App
+        Route::prefix('customers')->group(function () {
+            Route::get('/', [CustomerApiController::class, 'index']);
+            Route::get('/search', [CustomerApiController::class, 'search']);
+            Route::post('/', [CustomerApiController::class, 'store']);
+            Route::get('/{id}', [CustomerApiController::class, 'show']);
+        });
 
         // Menu Sales for POS
         Route::prefix('menu-sales')->group(function () {

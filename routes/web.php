@@ -29,6 +29,7 @@ Route::get('/order/status/{token}', CustomerStatus::class)->name('customer.statu
 
 // Customer Loyalty & Membership Routes (Public)
 Route::get('/claim/{token?}', \App\Livewire\Customer\ClaimPoints::class)->name('customer.claim');
+Route::get('/c/{token?}', \App\Livewire\Customer\ClaimPoints::class);
 Route::get('/member', \App\Livewire\Customer\MemberCard::class)->name('customer.member');
 Route::get('/cek-poin', \App\Livewire\Customer\MemberCard::class);
 
